@@ -8,12 +8,12 @@ It is booted using a GRUB multiboot boot sector (this part wasn't written by me)
 ![Screenshot](/screenshot.png "Screenshot")
 
 Setup:
--Install gcc
--Install nasm (sudo apt-get install nasm)
--Install bochs (sudo apt-get install bochs bochs-x)
+* Install gcc
+* Install nasm (sudo apt-get install nasm)
+* Install bochs (sudo apt-get install bochs bochs-x)
 (you may also have to install bochs-sdl and change display_library in your bochs config file from x to sdl)
--Run 'make' to compile.
--Run ./update as root to mount the flopy image as a loopback device, copy the newly built kernel to it, and unmount the floppy image.
--Run bochs!
+* Run 'make' to compile.
+* Run ./update as root to mount the flopy image as a loopback device, copy the newly built kernel to it, and unmount the floppy image.
+* Run bochs!
 
 Using the included config file, bochs will dump serial output to a file called serial.txt. You can monitor its contents with the command 'tail -f serial.txt'
