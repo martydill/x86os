@@ -1,0 +1,22 @@
+; Multiboot compliant boot code
+
+MULTIBOOT_PAGE_ALIGN   equ 1<<0
+MULTIBOOT_MEMORY_INFO  equ 1<<1
+
+MULTIBOOT_HEADER_MAGIC equ 0x1BADB002
+MULTIBOOT_HEADER_FLAGS equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
+CHECKSUM equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+
+extern _start
+
+
+; The Multiboot header (in NASM syntax)
+align 4
+dd MULTIBOOT_HEADER_MAGIC
+dd MULTIBOOT_HEADER_FLAGS
+dd CHECKSUM
+mov esp, 0x4000
+a32 push 0
+popf
+push ebx
+call _start

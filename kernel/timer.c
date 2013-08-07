@@ -1,0 +1,60 @@
+
+#include <kernel.h>
+#include <interrupt.h>
+#include <console.h>
+
+volatile int ticks = 0;
+volatile int lastUptimeInSeconds = 0;
+int ticksPerSecond = 130;
+#define PIT_FREQUENCY 18.2067903
+
+
+int TimerGetUptime()
+{
+    return ticks / ticksPerSecond;
+    //int uptime = (int)((float)ticks / PIT_FREQUENCY);
+    //return uptime;
+}
+
+
+int TimerGetTicks()
+{
+    return ticks;
+}
+
+
+void TimerHandler(Registers* registers)
+{
+    if(TimerGetUptime() != lastUptimeInSeconds)
+    {
+        lastUptimeInSeconds = TimerGetUptime();
+        //Debug("Uptime: %ds", lastUptimeInSeconds);
+    }
+
+    ++ticks;
+    return;
+}
+
+
+STATUS TimerSetFrequency(int hz)
+{
+    int divisor = 1193180 / hz;       /* Calculate our divisor */
+    IoWritePortByte(0x43, 0x36);             /* Set our command byte 0x36 */
+    IoWritePortByte(0x40, divisor & 0xFF);   /* Set low byte of divisor */
+    IoWritePortByte(0x40, divisor >> 8);     /* Set high byte of divisor */
+    return S_OK;
+}
+
+
+STATUS TimerInit(void)
+{
+    TimerSetFrequency(32);
+    InstallIrqHandler(0, TimerHandler);
+    return S_OK;
+}
+
+STATUS TimerDestroy(void)
+{
+    RemoveIrqHandler(0);
+    return S_OK;
+}
