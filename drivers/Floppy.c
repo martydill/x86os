@@ -255,7 +255,7 @@ STATUS FloppySeek(unsigned int track)
     if(drives[0].track == track)
     {
         /*KPrint("Already on track %u\n", track);*/
-        return;
+        return S_OK;
     }
 
     /* fixme - start motor if it's not already started */

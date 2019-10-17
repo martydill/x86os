@@ -2,7 +2,7 @@
 include ../config/Make.config
 
 
-objs = Keyboard.o Mouse.o Floppy.o Console.o SerialPort.o
+objs = Keyboard.o Mouse.o Floppy.o Console.o SerialPort.o pci.o
 
 
 VPATH = ../obj/

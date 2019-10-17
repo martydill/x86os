@@ -16,6 +16,7 @@
 #include <device.h>
 #include <fpu.h>
 #include <serialport.h>
+#include <pci.h>
 
 /* Enable interrupts */
 void KeEnableInterrupts(void)
@@ -71,7 +72,7 @@ int KeMain(MultibootInfo* bootInfo)
     ConInit();
     ConClearScreen();
 
-    KPrint("FizzOS kernel 0.0.1\n");
+    KPrint("FizzOS kernel 0.0.2\n");
 
     KPrint("Initializing serial port...\n");
     SerialPortInit();
@@ -98,7 +99,10 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing floppy drives...\n");
     FloppyInit();
 
-    MMInitializePaging();
+    KPrint("Initializing PCI ...\n");
+    PciInit();
+
+    // MMInitializePaging();
 
     ShellStart();
     return 0;

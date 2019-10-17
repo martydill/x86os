@@ -143,6 +143,7 @@ void MMInitializePaging()
     MMInitializePageDirectory();
     MMInitializePageTables();
     MMEnablePaging();
-
+    // int* x= (int*)989999999;
+    // int y = *x;
     // i = *((unsigned int*)pageDirectory + 0x5000);
 }
