@@ -5,7 +5,7 @@
 
 volatile int ticks = 0;
 volatile int lastUptimeInSeconds = 0;
-int ticksPerSecond = 130;
+int ticksPerSecond = 100;
 #define PIT_FREQUENCY 18.2067903
 
 
@@ -28,7 +28,7 @@ void TimerHandler(Registers* registers)
     if(TimerGetUptime() != lastUptimeInSeconds)
     {
         lastUptimeInSeconds = TimerGetUptime();
-        //Debug("Uptime: %ds", lastUptimeInSeconds);
+        Debug("Uptime: %ds %d", lastUptimeInSeconds, ticks);
     }
 
     ++ticks;
@@ -48,7 +48,7 @@ STATUS TimerSetFrequency(int hz)
 
 STATUS TimerInit(void)
 {
-    TimerSetFrequency(32);
+    TimerSetFrequency(ticksPerSecond);
     InstallIrqHandler(0, TimerHandler);
     return S_OK;
 }
