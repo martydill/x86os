@@ -2,18 +2,21 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-typedef struct Registers_S
-{
-    DWORD eax;
-    DWORD ebx;
-    DWORD ecx;
-    DWORD edx;
+#include "interrupt.h"
 
-    DWORD edi;
-    DWORD esi;
-    DWORD ebp;
+// typedef struct Registers
+// {
+//     DWORD edi;
+//     DWORD esi;
+//     DWORD ebp;
+//     DWORD esp;
 
-} Registers;
+//     DWORD edx;
+//     DWORD ebx;
+//     DWORD ecx;
+//     DWORD eax;
+// }Registers;
+
 
 typedef struct Process_S
 {
@@ -27,7 +30,11 @@ typedef struct Process_S
     DWORD UserStack;
 
     Registers Registers;
+
+    DWORD Entry;
 } Process;
 
+STATUS ProcessSchedule(Registers* registers);
+STATUS ProcessInit();
 
 #endif

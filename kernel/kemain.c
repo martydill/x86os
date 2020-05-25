@@ -17,6 +17,7 @@
 #include <fpu.h>
 #include <serialport.h>
 #include <pci.h>
+#include <process.h>
 
 /* Enable interrupts */
 void KeEnableInterrupts(void)
@@ -88,6 +89,9 @@ int KeMain(MultibootInfo* bootInfo)
 
     KPrint("Initializing FPU...\n");
     setup_x87_fpu();
+
+    KPrint("Initializing processes...\n");
+    ProcessInit();
 
     KPrint("Initializing timer...\n");
     TimerInit();

@@ -2,6 +2,7 @@
 #include <kernel.h>
 #include <interrupt.h>
 #include <console.h>
+#include <process.h>
 
 volatile int ticks = 0;
 volatile int lastUptimeInSeconds = 0;
@@ -29,6 +30,8 @@ void TimerHandler(Registers* registers)
     {
         lastUptimeInSeconds = TimerGetUptime();
         Debug("Uptime: %ds %d", lastUptimeInSeconds, ticks);
+        Debug("%d\n", registers->eax);
+        ProcessSchedule(registers);
     }
 
     ++ticks;

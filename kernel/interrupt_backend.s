@@ -207,10 +207,10 @@ _interrupt_handler:
 
 	; Save our registers
 	pusha
-    push ds
-    push es
-    push fs
-    push gs
+  push ds
+  push es
+  push fs
+  push gs
 
 	; Set up kernel data segment
 	mov ax, 0x10
@@ -226,13 +226,13 @@ _interrupt_handler:
 	call eax
 	pop eax
 
-    ; Restore our registers
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
+  ; Restore our registers
+  pop gs
+  pop fs
+  pop es
+  pop ds
+  popa
 
-    ; Done!
-    add esp, 8
-    iret
+  ; Done!
+  add esp, 8
+  iret
