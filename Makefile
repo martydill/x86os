@@ -7,19 +7,21 @@ include config/Make.config
 KERNEL = kernel0
 SUBDIRS = boot kernel drivers
 
+.PHONY: subdirs $(SUBDIRS)
+
 default: all
 
 
 all: subdirs kernel1
 
 
-subdirs:
-	@for dir in $(SUBDIRS); do \
-	$(MAKE) $(MAKECMDGOALS) -C $$dir; \
-	done
+subdirs: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) $(MAKECMDGOALS) -C $@
 
 
-kernel1: 
+kernel1: subdirs
 	$(LD) -T kernel.ls -nostdlib -melf_i386 boot/boot.o boot/startup.o obj/*.o  -o bin/$(KERNEL)
 	cp base_images/floppy.img ./floppy.img
 	mcopy -o -i ./floppy.img bin/kernel0 ::kernel0
