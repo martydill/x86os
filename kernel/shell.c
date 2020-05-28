@@ -3,6 +3,7 @@
 #include <device.h>
 #include <floppy.h>
 #include <console.h>
+#include <process.h>
 
 const char* promptChar = "# ";
 
@@ -53,6 +54,16 @@ void ProcessCommand(char* command)
     {
         static int r = 0;
         read(r++);
+    }
+    else if(!Strcmp(command, "ps"))
+    {
+      Process* processes = ProcessGetProcesses();
+      for(BYTE i = 0; i < 255; ++i) {
+        Process* p = &processes[i];
+        if(p->State == 2) {
+          KPrint("%s - %d \n", p->Name, p->CpuTicks);
+        }
+      }
     }
     else
     {

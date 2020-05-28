@@ -61,6 +61,8 @@ void KePanic(void)
     KeHalt();
 }
 
+void ShellStart();
+void IdleLoop();
 
 /* Start here ... */
 int KeMain(MultibootInfo* bootInfo)
@@ -106,12 +108,21 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing PCI ...\n");
     PciInit();
 
+  // ShellStart();
     // MMInitializePaging();
+    CreateProcess(IdleLoop, "IdleLoop");
+    CreateProcess(ShellStart, "Shell");
 
-    ShellStart();
+    IdleLoop();
+
     return 0;
 }
 
+void IdleLoop(){
+  while(1) {
+    __asm__("hlt");
+  }
+}
 volatile int xPos = 0;
 volatile int yPos = 0;
 

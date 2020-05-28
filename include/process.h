@@ -32,9 +32,12 @@ typedef struct Process_S
     Registers Registers;
 
     DWORD Entry;
+    DWORD CpuTicks;
+    char Name[32];
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
+STATUS CreateProcess(void* entryPoint, char* name);
 
 #endif
