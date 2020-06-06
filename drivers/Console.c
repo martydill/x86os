@@ -11,7 +11,7 @@
 #include <device.h>
 
 Console console[NUM_CONSOLES];
-unsigned int activeConsole;
+BYTE activeConsole;
 Console* pActiveConsole;
 
 Device consoleDevice;
@@ -34,10 +34,9 @@ STATUS ConInit(void)
         console[i].cursorX = 0;
         console[i].cursorY = 0;
         console[i].color = 0x0F;
+        Memset(console[i].buffer, 0, CONSOLE_SIZE);
     }
 
-    activeConsole = 0;
-    pActiveConsole = &console[0];
 
     consoleDevice.Name = "Console";
     consoleDevice.Write = ConsoleDeviceWrite;
@@ -45,18 +44,39 @@ STATUS ConInit(void)
     consoleDevice.Status |= DEVICE_CAN_WRITE;
 
     DeviceRegister(&consoleDevice);
+    ConActivateConsole(0);
+
     return S_OK;
 }
 
+// STATUS ConSetActiveConsole(BYTE console)
+// {
+//   activeConsole = console;
+//   pActiveConsole = &console[console];
+//   return S_OK;
+// }
+STATUS ConpUpdateHardwareCursor(void);
 
 /* Switch to the specified console */
-STATUS ConActivateConsole(unsigned int number)
+STATUS ConActivateConsole(BYTE number)
 {
     if(number >= NUM_CONSOLES)
         return S_FAIL;
 
     activeConsole = number;
     pActiveConsole = &console[activeConsole];
+
+      
+    // offset += CONSOLE_WIDTH;
+    // DWORD offset = jvj
+    DWORD offset = CONSOLE_SIZE * activeConsole / 2; // Divide by 2 because the low word is only 7 bits
+    Debug("Switch to console %d at %d %d %d %d\n, ", number, offset, pActiveConsole, offset >> 8, offset & 0xff);
+    IoWritePortByte(0x3d4, 12);
+    IoWritePortByte(0x3d5, offset >> 8);
+    IoWritePortByte(0x3d4, 13);
+    IoWritePortByte(0x3d5, offset & 0xff);
+    ConpUpdateHardwareCursor();
+
     return S_OK;
 }
 
@@ -66,7 +86,7 @@ static int offset = 0;
 STATUS ConpUpdateHardwareCursor(void)
 {
     WORD position = pActiveConsole->cursorY * CONSOLE_WIDTH + pActiveConsole->cursorX + offset;
-
+    // Debug("%d %d %d\n", pActiveConsole->cursorY, pActiveConsole->cursorX, position);
     IoWritePortByte(0x3d4, 0x0e);
     IoWritePortByte(0x3d5, position >> 8);
 
@@ -78,12 +98,19 @@ STATUS ConpUpdateHardwareCursor(void)
 
 void ScrollDown()
 {
-    offset += CONSOLE_WIDTH;
-    IoWritePortByte(0x3d4, 12);
-    IoWritePortByte(0x3d5, offset >> 8);
-    IoWritePortByte(0x3d4, 13);
-    IoWritePortByte(0x3d5, offset & 0xff);
-    ConpUpdateHardwareCursor();
+  Memcopy(pActiveConsole->buffer, pActiveConsole->buffer + (CONSOLE_WIDTH  * 2), (CONSOLE_WIDTH * (CONSOLE_HEIGHT - 1) * 2));
+  Memset(pActiveConsole->buffer + (CONSOLE_WIDTH * 2) * (CONSOLE_HEIGHT - 1), 0, CONSOLE_WIDTH * 2);
+  // pActiveConsole->cursorY = 0;
+  // pActiveConsole->cursorX = 0;
+
+  
+    // offset += CONSOLE_WIDTH;
+    // DWORD offset = jvj
+    // IoWritePortByte(0x3d4, 12);
+    // IoWritePortByte(0x3d5, offset >> 8);
+    // IoWritePortByte(0x3d4, 13);
+    // IoWritePortByte(0x3d5, offset & 0xff);
+    // ConpUpdateHardwareCursor();
 }
 
 STATUS ConGetCursorPosition(POINT* point)

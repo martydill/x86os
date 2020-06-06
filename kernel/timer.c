@@ -30,8 +30,8 @@ void TimerHandler(Registers* registers)
     if(ticks % 10 == 0)
     {
         lastUptimeInSeconds = TimerGetUptime();
-        Debug("Uptime: %ds %d", lastUptimeInSeconds, ticks);
-        Debug("%d\n", registers->eax);
+        // Debug("Uptime: %ds %d", lastUptimeInSeconds, ticks);
+        // Debug("%d\n", registers->eax);
         ProcessSchedule(registers);
     }
     ++ticks;

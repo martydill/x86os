@@ -26,7 +26,7 @@ typedef struct
 
 
 STATUS ConInit(void);
-STATUS ConActivateConsole(unsigned int number);
+STATUS ConActivateConsole(BYTE number);
 STATUS ConMoveCursor(WORD newX, WORD newY);
 STATUS ConClearScreen(void);
 STATUS ConDisplayString(const char* str, WORD x, WORD y);

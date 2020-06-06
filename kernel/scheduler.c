@@ -34,7 +34,7 @@ STATUS CreateProcess(void* entryPoint, char* name)
 void p1() {
   int counter = 100;
   while(1) {
-    Debug("%d ", counter);
+    // Debug("%d ", counter);
     for(int i = 0; i < 10000000; ++i) {
 
     }
@@ -45,7 +45,7 @@ void p1() {
 void p2() {
   int counter = 888;
   while (1) {
-    Debug("%d ", counter);
+    // Debug("%d ", counter);
     for(int i = 0; i < 10000000; ++i) {
 
     }
@@ -103,13 +103,13 @@ STATUS ProcessSchedule(Registers* registers)
     if(currentProcess >= processCount) {
       currentProcess = 0;
     }
-    Debug("Switch to process %d\n", currentProcess);
+    // Debug("Switch to process %d\n", currentProcess);
     active = &processes[currentProcess];
   }
 
   if(active) {
     if (active->State == STATE_PENDING) {
-      Debug("Making process running");
+      // Debug("Making process running");
       active->State = STATE_RUNNING;
       active->Registers.eip = active->Entry;
     }
@@ -126,8 +126,8 @@ STATUS ProcessSchedule(Registers* registers)
     registers->eip = active->Registers.eip;
 
 
-    Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
-    Debug("Eip %d Eax %d Ebx %d Ecx %d Edx %d\n", active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+    // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
+    // Debug("Eip %d Eax %d Ebx %d Ecx %d Edx %d\n", active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
   }
 }

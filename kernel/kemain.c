@@ -143,9 +143,11 @@ void KPrint(const char* format, ...)
         ConDisplayString(buffer, point.X, point.Y);
         point.Y++;
         point.X = 0;
-        ConMoveCursor(point.X, point.Y);
-        if(point.Y > 24)
+        if(point.Y > 24) {
             ScrollDown();
+            point.Y--;
+        }
+        ConMoveCursor(point.X, point.Y);
     }
     else
     {

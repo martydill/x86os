@@ -65,10 +65,16 @@ void ProcessCommand(char* command)
         }
       }
     }
-    else
+    else 
     {
-        KPrint("'%s' is an unknown command", command);
+      BYTE console = (BYTE)(command[0] - '0');
+      console--;
+      ConActivateConsole(console);
     }
+    // else
+    // {
+    //     KPrint("'%s' is an unknown command", command);
+    // }
 
     KPrint("\n");
     KPrint(promptChar);
