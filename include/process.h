@@ -38,6 +38,8 @@ typedef struct Process_S
 
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
-STATUS CreateProcess(void* entryPoint, char* name);
+STATUS CreateProcess(void* entryPoint, char* name, BYTE priority);
+STATUS ProcessGetCurrentProcess(BYTE* id);
+STATUS ProcessGetForegroundProcessId(BYTE* id);
 
 #endif

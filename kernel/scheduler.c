@@ -1,12 +1,14 @@
 #include <kernel.h>
 #include <process.h>
 
-const MAX_PROCESSES = 256;
+const MAX_PROCESSES = 255;
 BYTE currentProcess =0;
 BYTE processCount = 0;
 const STATE_PENDING = 0;
 const STATE_WAITING = 1;
 const STATE_RUNNING = 2;
+const PRIORITY_FOREGROUND = 255;
+const PRIORITY_BACKGROUND = 0;
 
 // typedef struct
 // {
@@ -17,44 +19,26 @@ const STATE_RUNNING = 2;
 
 Process processes[MAX_PROCESSES];
 
-STATUS CreateProcess(void* entryPoint, char* name)
+Process* foreground = NULL;
+
+STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
 {
   Process* p = &processes[processCount];
   Memset(p, 0, sizeof(Process));
   p->Id = processCount;
   p->State = STATE_PENDING;
   p->Entry = entryPoint;
+  p->Priority = priority;
   Strcpy(&p->Name, name, Strlen(name));
 
   ++processCount;
   Debug("Created %d\n", entryPoint);
-}
-
-
-void p1() {
-  int counter = 100;
-  while(1) {
-    // Debug("%d ", counter);
-    for(int i = 0; i < 10000000; ++i) {
-
-    }
-    counter++;
+  if(priority == PRIORITY_FOREGROUND) {
+    foreground = p;
   }
 }
 
-void p2() {
-  int counter = 888;
-  while (1) {
-    // Debug("%d ", counter);
-    for(int i = 0; i < 10000000; ++i) {
 
-    }
-    counter++;
-  }
-}
-
-// Process pr1;
-// Process pr2;
 Process* active = NULL; //&pr1;
 
 DWORD LastTicks;
@@ -89,6 +73,7 @@ STATUS ProcessSchedule(Registers* registers)
   active->Registers.esp = registers->esp;
   active->Registers.eip = registers->eip;
   active->CpuTicks += (currentTicks - LastTicks);
+  active->State = STATE_WAITING;
   }
   // Memcopy(registers, &active->Registers, sizeof(Registers));
 
@@ -99,12 +84,18 @@ STATUS ProcessSchedule(Registers* registers)
   //   active = &pr1;
   // }
   if(processCount > 0) {
-    currentProcess = currentProcess + 1;
-    if(currentProcess >= processCount) {
-      currentProcess = 0;
-    }
-    // Debug("Switch to process %d\n", currentProcess);
+    if (foreground == active) {
+      currentProcess = currentProcess + 1;
+      if(currentProcess >= processCount) {
+        currentProcess = 0;
+      }
     active = &processes[currentProcess];
+    }
+    else {
+      active = foreground;
+    }
+
+    // Debug("Switch to process %d\n", currentProcess);
   }
 
   if(active) {
@@ -135,3 +126,46 @@ STATUS ProcessSchedule(Registers* registers)
 Process* ProcessGetProcesses(){
   return &processes;
 }
+
+STATUS ProcessGetCurrentProcess(BYTE* id) {
+  if(id == NULL) {
+    return S_FAIL;
+  }
+  if(active == NULL) {
+    return S_FAIL;
+  }
+
+  *id = active->Id;
+  return S_OK;
+}
+
+STATUS ProcessGetForegroundProcessId(BYTE* id) {
+  if(id == NULL) {
+    return S_FAIL;
+  }
+  if(foreground == NULL) {
+    return S_FAIL;
+  } 
+  *id = foreground->Id;
+  return S_OK;
+}
+
+
+STATUS ProcessSetForegroundProcessId(BYTE id) {
+  if(foreground == NULL) {
+    return S_FAIL;
+  } 
+  if(foreground->Id == id) {
+    return S_FAIL;
+  }
+  for(BYTE i = 0; i < MAX_PROCESSES; ++i) {
+      Process* p = &processes[i];
+      if(p->Id == id) {
+        Debug("Activating process %s\n", p->Name);
+        foreground = p;
+        return S_OK;
+      }
+  }
+  return S_FAIL;
+}
+

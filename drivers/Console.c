@@ -70,7 +70,7 @@ STATUS ConActivateConsole(BYTE number)
     // offset += CONSOLE_WIDTH;
     // DWORD offset = jvj
     DWORD offset = CONSOLE_SIZE * activeConsole / 2; // Divide by 2 because the low word is only 7 bits
-    Debug("Switch to console %d at %d %d %d %d\n, ", number, offset, pActiveConsole, offset >> 8, offset & 0xff);
+    Debug("Switch to console %d at %d %d %d %d\n", number, offset, pActiveConsole, offset >> 8, offset & 0xff);
     IoWritePortByte(0x3d4, 12);
     IoWritePortByte(0x3d5, offset >> 8);
     IoWritePortByte(0x3d4, 13);

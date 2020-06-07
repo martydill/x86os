@@ -7,6 +7,7 @@
 
 const char* promptChar = "# ";
 
+
 void ProcessCommand(char* command)
 {
     char buf[32];
@@ -57,24 +58,30 @@ void ProcessCommand(char* command)
     }
     else if(!Strcmp(command, "ps"))
     {
+      KPrint("Name     ID    State    CpuTicks    Priority\n");
+      BYTE foreground;
+      ProcessGetForegroundProcessId(&foreground);
       Process* processes = ProcessGetProcesses();
       for(BYTE i = 0; i < 255; ++i) {
         Process* p = &processes[i];
-        if(p->State == 2) {
-          KPrint("%s - %d \n", p->Name, p->CpuTicks);
+        if(p->State > 0) {
+          KPrint("%s    %d     %d     %d    %s \n", p->Name, p->Id, p->State, p->CpuTicks, p->Id == foreground ? "(foreground)" : "");
         }
       }
     }
     else 
     {
       BYTE console = (BYTE)(command[0] - '0');
-      console--;
-      ConActivateConsole(console);
+      // if(console > 0 && console <= 8) {
+        console--;
+        ConActivateConsole(console);
+        ProcessSetForegroundProcessId(console + 1);
+      // }
+      // else {
+      //   KPrint("'%s' is an unknown command 2", command);
+      // }
     }
-    // else
-    // {
-    //     KPrint("'%s' is an unknown command", command);
-    // }
+   
 
     KPrint("\n");
     KPrint(promptChar);
@@ -86,6 +93,10 @@ void ShellStart()
     char buf[1];
     char command[64];
     char lastCommand[64];
+    BYTE currentProcess;
+    BYTE activeProcess;
+
+    ProcessGetCurrentProcess(&currentProcess);
 
     int currentPos = 0;
     Memset(command, 0, sizeof(command));
@@ -94,9 +105,15 @@ void ShellStart()
 
     KPrint(promptChar);
 
+    Debug("Device: %d id: %d\n", device, currentProcess);
+
     while(1)
     {
         __asm__("hlt");
+        ProcessGetForegroundProcessId(&activeProcess);
+        if(activeProcess != currentProcess) {
+          continue;
+        }
 
         STATUS status = DeviceRead(device, buf, 1);
         if(status == S_OK)
