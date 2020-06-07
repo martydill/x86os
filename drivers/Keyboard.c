@@ -54,6 +54,12 @@ char shiftKeyCodes[128] =
     LSHIFT, UNKNOWN43, 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', RSHIFT,
     UNKNOWN55, LALT, SPACEBAR /* fixme add rest of keys */
 };
+const BYTE functionKeyStart = 59;
+const BYTE functionKeyEnd = functionKeyStart + 11;
+
+BOOL IsNonPrintableKey(BYTE key) {
+  return key >= functionKeyStart && key <= functionKeyEnd;
+}
 
 void AddKeyToBuffer(char key)
 {
@@ -68,10 +74,19 @@ void KeyboardHandler(Registers* registers)
 {
     char c;
     BYTE key = IoReadPortByte(KB_DATA_REGISTER);
-
     if(key & KEY_RELEASED_MASK)
     {
         key = key - 128;
+        // Keyboard driver-level support for switching between consoles
+        if(key >= functionKeyStart && key <= functionKeyEnd) {
+          // Switch consoles
+          BYTE console = key - functionKeyStart;
+          Debug("Switching to console %d\n", key);
+          ConActivateConsole(console);
+          ProcessSetForegroundProcessId(console + 1);
+          return;
+        }
+        
         c = keyCodes[key];
         if(c == LSHIFT)
             controlKeyState &= ~CONTROL_KEY_SHIFT;
@@ -79,6 +94,10 @@ void KeyboardHandler(Registers* registers)
     }
     else
     {
+        if(IsNonPrintableKey(key)) {
+          return;
+        }
+
         c = keyCodes[key];
 
         if(c == LSHIFT)

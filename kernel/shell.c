@@ -71,17 +71,8 @@ void ProcessCommand(char* command)
     }
     else 
     {
-      BYTE console = (BYTE)(command[0] - '0');
-      // if(console > 0 && console <= 8) {
-        console--;
-        ConActivateConsole(console);
-        ProcessSetForegroundProcessId(console + 1);
-      // }
-      // else {
-      //   KPrint("'%s' is an unknown command 2", command);
-      // }
-    }
-   
+      KPrint("'%s' is an unknown command", command);
+    } 
 
     KPrint("\n");
     KPrint(promptChar);
