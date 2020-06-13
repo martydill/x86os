@@ -1,5 +1,6 @@
 #include <kernel.h>
 #include <process.h>
+#include <mm.h>
 
 const MAX_PROCESSES = 255;
 BYTE currentProcess =0;
@@ -29,6 +30,8 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
   p->State = STATE_PENDING;
   p->Entry = entryPoint;
   p->Priority = priority;
+  MMInitializePageDirectory(&p->PageDirectory);
+  // MMInitializePageTables(&p->PageDirectory);
   Strcpy(&p->Name, name, Strlen(name));
 
   ++processCount;

@@ -1,6 +1,7 @@
 
 #include <kernel.h>
 #include <interrupt.h>
+#include <mm.h>
 
 /* Kernel is loaded at 0x101000, we need to be above that ... */
 #define BASE_MALLOC_ADDRESS		0X200000
@@ -46,63 +47,86 @@ void KFree(void* pointer)
     return;
 }
 
-
-#define NUM_PAGE_DIRECTORY_ENTRIES  1024
-#define NUM_PAGE_TABLE_ENTRIES      1024
-
-
-typedef struct
-{
-    unsigned int Entries[NUM_PAGE_DIRECTORY_ENTRIES];
-} PageDirectory;
-
-
 //unsigned int page_aligned_end = (((unsigned int*)BASE_MALLOC_ADDRESS) & 0xFFFFF000) + 0x1000;
 
 extern char _kernelEndAddress[];
 
-PageDirectory* pageDirectory;
-unsigned int* firstPageTable;
-void MMInitializePageDirectory()
+extern char _physical_load_addr[];
+
+PageDirectory* kernelPageDirectory;
+
+void MMInitializePageDirectory(PageDirectory* pageDirectory)
 {
-    Debug("Initializing page directory\r\n");
-    Debug("End: %d\r\n", (unsigned int)_kernelEndAddress);
-    pageDirectory = (PageDirectory*)((unsigned int)_kernelEndAddress & 0xFFFFF000) + 0x1000;
-    Debug("Page Directory Address: %d\r\n", (unsigned int)pageDirectory);
+   
+    Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory, pageDirectory->Entries);
     //set each entry to not present
-    int i = 0;
+    unsigned int i = 0;
     for(i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i)
     {
+        pageDirectory->Entries[i] = (i * 1024 * 1024 * 4);// | (1 << 3) | (1 << 7);
         //attribute: supervisor level, read/write, not present.
-        pageDirectory->Entries[i] = 0 | 2;
+        // pageDirectory->Entries[i] = 0;
+        // pageDirectory->Entries[i] |= 1;
+        // pageDirectory->Entries[i] |= 1 << 0;
+        pageDirectory->Entries[i] |= 1 << 1;
+        pageDirectory->Entries[i] |= 1 << 7;
+        // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
+    pageDirectory->Entries[0] |= 1 << 0; 
+    pageDirectory->Entries[1] |= 1 << 0; 
 }
 
-void MMInitializePageTables()
+void MMInitializePageTables(PageDirectory* pageDirectory)
 {
-    Debug("Initializing page tables");
-    firstPageTable = (unsigned int*)((unsigned int*)pageDirectory + 0x1000);
+    Debug("Initializing page tables for directory %d\n", pageDirectory);
+    unsigned int* pageTable = (unsigned int*)((unsigned int*)pageDirectory + 0x1000);
     int address = 0;
     int i = 0;
-    for(i = 0; i < NUM_PAGE_TABLE_ENTRIES; ++i)
-    {
-        firstPageTable[i] = address | 3;
-        address += NUM_PAGE_TABLE_ENTRIES * sizeof(int);
-    }
+    for(int pd = 0; pd < NUM_PAGE_DIRECTORY_ENTRIES; ++pd) {
+      for(i = 0; i < NUM_PAGE_TABLE_ENTRIES; ++i)
+      {
+          pageTable[i] = ((1024 * 1024 * 4) * pd + (i * 0x1000)) | 3;
+          // Debug("PT %d %d %d\n", i, pd, pageTable[i]);
+          // address += NUM_PAGE_TABLE_ENTRIES * sizeof(int);
+      }
 
-    pageDirectory->Entries[0] = firstPageTable;
-    pageDirectory->Entries[0] |= 3;
+      pageDirectory->Entries[pd] = pageTable;
+      pageDirectory->Entries[pd] |= 3;
+      pageTable = pageTable + (4096);
+
+      Debug("%d %d %d\n", pageTable, pd, i);
+    }
 }
 
-void MMEnablePaging()
+void MMEnablePaging(PageDirectory* pageDirectory)
 {
-    Debug("Enabling paging");
+    // Debug("Enabling large pages\n");
+
+  // Enable pse for 4mb pages
+    
+
+      // asm volatile("movl %%cr4, %%eax");
+      // asm volatile("or eax, 0x00000010");
+      // asm volatile("movl cr4, eax");
+     //mov eax, cr4
+    // or eax, 0x00000010
+    //mov cr4, eax
+
+    unsigned int cr4;
+    asm volatile("mov %%cr4, %0": "=b"(cr4));
+    cr4 |= 0x00000010;
+    asm volatile("mov %0, %%cr4":: "b"(cr4));
+
+    Debug("Enabling paging\n");
     asm volatile("mov %0, %%cr3":: "b"(pageDirectory));
     //reads cr0, switches the "paging enable" bit, and writes it back.
     unsigned int cr0;
     asm volatile("mov %%cr0, %0": "=b"(cr0));
     cr0 |= 0x80000000;
     asm volatile("mov %0, %%cr0":: "b"(cr0));
+
+    Debug("Done\n");
+
 }
 
 void MMPageFaultHandler(Registers* registers)
@@ -139,11 +163,18 @@ void MMInstallPageFaultHandler()
 void MMInitializePaging()
 {
     int i;
+    Debug("Addr: %u\n", _physical_load_addr);
+    Debug("Initializing page directory\r\n");
+    Debug("End: %d\r\n", (unsigned int)_kernelEndAddress);
+    kernelPageDirectory = (PageDirectory*)((unsigned int)_kernelEndAddress & 0xFFFFF000) + 0x1000;
+
     MMInstallPageFaultHandler();
-    MMInitializePageDirectory();
-    MMInitializePageTables();
-    MMEnablePaging();
+    MMInitializePageDirectory(kernelPageDirectory);
+    // MMInitializePageTables(kernelPageDirectory);
+    MMEnablePaging(kernelPageDirectory);
+    
+    // while(1) {}
     // int* x= (int*)989999999;
-    // int y = *x;
+    // *x = 5;
     // i = *((unsigned int*)pageDirectory + 0x5000);
 }

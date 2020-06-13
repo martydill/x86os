@@ -81,7 +81,6 @@ void KeyboardHandler(Registers* registers)
         if(key >= functionKeyStart && key <= functionKeyEnd) {
           // Switch consoles
           BYTE console = key - functionKeyStart;
-          Debug("Switching to console %d\n", key);
           ConActivateConsole(console);
           ProcessSetForegroundProcessId(console + 1);
           return;
@@ -132,7 +131,6 @@ STATUS KbRead(char* buffer, int numBytes)
         if(startPos == KB_BUFFER_SIZE)
             startPos = 0;
     }
-
     return S_OK;
 }
 

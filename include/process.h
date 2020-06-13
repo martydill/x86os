@@ -3,6 +3,7 @@
 #define PROCESS_H
 
 #include "interrupt.h"
+#include "mm.h"
 
 // typedef struct Registers
 // {
@@ -34,6 +35,7 @@ typedef struct Process_S
     DWORD Entry;
     DWORD CpuTicks;
     char Name[32];
+    PageDirectory PageDirectory;
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);

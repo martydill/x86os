@@ -109,7 +109,7 @@ int KeMain(MultibootInfo* bootInfo)
     PciInit();
 
   // ShellStart();
-    // MMInitializePaging();
+    MMInitializePaging();
     CreateProcess(IdleLoop, "Idle00", 0);
     CreateProcess(ShellStart, "Shell1", 255);
     CreateProcess(ShellStart, "Shell2", 0);
