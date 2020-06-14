@@ -4,14 +4,16 @@
 #include <mm.h>
 
 /* Kernel is loaded at 0x101000, we need to be above that ... */
-#define BASE_MALLOC_ADDRESS		0X200000
 #define MEM_FILL_CHAR	'X'
 
 
 unsigned int counter = 0;
 int pos = 8;
-
+unsigned int BaseMallocAddress;// = kernelPageDirectory
 // fixme - use actual dynamic memory allocationG114
+
+// 4MB page -> Process ID map
+WORD PhysicalMemoryToProcessMap[NUM_PAGE_DIRECTORY_ENTRIES];
 
 void* KMallocWithTag(unsigned int numBytes, char* tag)
 {
@@ -20,7 +22,8 @@ void* KMallocWithTag(unsigned int numBytes, char* tag)
 
     if(counter == 0)
     {
-        counter = BASE_MALLOC_ADDRESS;
+        Debug("Setting counter to %d\n", BaseMallocAddress);
+        counter = BaseMallocAddress;
     }
 
     pointer = (void*)counter;
@@ -55,9 +58,24 @@ extern char _physical_load_addr[];
 
 PageDirectory* kernelPageDirectory;
 
+STATUS MMMapPageToProcess(WORD page, WORD process) {
+
+  if(page >= NUM_PAGE_DIRECTORY_ENTRIES) {
+    return S_FAIL;
+  }
+
+  // Keep track of what process owns it
+  PhysicalMemoryToProcessMap[page] = process;
+
+  Debug("Marking page %d as present\n", page);
+  // Mark as present
+  kernelPageDirectory->Entries[page] |= 1 << 0; 
+  // asm volatile("invlpg  (%0)" ::"r"(kernelPageDirectory->Entries): "memory");
+  return S_OK;
+}
+
 void MMInitializePageDirectory(PageDirectory* pageDirectory)
 {
-   
     Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory, pageDirectory->Entries);
     //set each entry to not present
     unsigned int i = 0;
@@ -72,8 +90,10 @@ void MMInitializePageDirectory(PageDirectory* pageDirectory)
         pageDirectory->Entries[i] |= 1 << 7;
         // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
-    pageDirectory->Entries[0] |= 1 << 0; 
-    pageDirectory->Entries[1] |= 1 << 0; 
+    Memset(PhysicalMemoryToProcessMap, 0, sizeof(PhysicalMemoryToProcessMap));
+    for(i = 0; i < 8; ++i) {
+      MMMapPageToProcess(i, 1);
+    }
 }
 
 void MMInitializePageTables(PageDirectory* pageDirectory)
@@ -131,9 +151,11 @@ void MMEnablePaging(PageDirectory* pageDirectory)
 
 void MMPageFaultHandler(Registers* registers)
 {
-    int code = registers->errorCode;
-    Debug("Caught page fault\r\n");
+    const unsigned int code = registers->errorCode;
+    unsigned int cr2;
+    asm volatile("mov %%cr2, %0": "=b"(cr2));
 
+    Debug("Caught page fault\r\n");
     if(code & (1 << 0))
         Debug("Protection violation\r\n");
     else
@@ -149,10 +171,14 @@ void MMPageFaultHandler(Registers* registers)
     else
         Debug("Ring 0\r\n");
 
-    unsigned int cr2;
-    asm volatile("mov %%cr2, %0": "=b"(cr2));
-
     Debug("Page fault address: %u\r\n", cr2);
+
+    if ((code & (1 << 0)) == 0) {
+      Debug("Not present, mapping\n");
+      const unsigned int page = cr2 / (1024 * 1024 * 4);
+      Debug("Page %u\n", page);
+      MMMapPageToProcess(page, 1);
+    }
 }
 
 void MMInstallPageFaultHandler()
@@ -173,6 +199,13 @@ void MMInitializePaging()
     // MMInitializePageTables(kernelPageDirectory);
     MMEnablePaging(kernelPageDirectory);
     
+    // Available memory starts at kernel end + size of page directory and page tables
+    BaseMallocAddress = kernelPageDirectory + (4096 * 1024) + 1024;
+    Debug("%u %u\n", BaseMallocAddress, kernelPageDirectory);
+    for (i = 0; i < 1024; ++i) {
+      const unsigned int z = KMalloc(1024 * i);
+      Debug("Allocated %u bytes at %u", 1024 * i, z);
+    }
     // while(1) {}
     // int* x= (int*)989999999;
     // *x = 5;

@@ -70,6 +70,18 @@ int KeMain(MultibootInfo* bootInfo)
     unsigned int amount;
     char* buf;
 
+
+    KPrint("Initializing GDT...\n");
+    InitializeGDT();
+
+    KPrint("Initializing IDT...\n");
+    InitializeIDT();
+
+    KPrint("Initializing timer...\n");
+    TimerInit();
+
+    MMInitializePaging();
+
     DeviceInit();
 
     ConInit();
@@ -80,11 +92,6 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing serial port...\n");
     SerialPortInit();
 
-    KPrint("Initializing GDT...\n");
-    InitializeGDT();
-
-    KPrint("Initializing IDT...\n");
-    InitializeIDT();
 
     KPrint("Initializing DMA...\n");
     DmaInit();
@@ -95,8 +102,7 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing processes...\n");
     ProcessInit();
 
-    KPrint("Initializing timer...\n");
-    TimerInit();
+    ;
 
     KPrint("Initializing keyboard...\n");
     KbInit();
@@ -109,7 +115,6 @@ int KeMain(MultibootInfo* bootInfo)
     PciInit();
 
   // ShellStart();
-    MMInitializePaging();
     CreateProcess(IdleLoop, "Idle00", 0);
     CreateProcess(ShellStart, "Shell1", 255);
     CreateProcess(ShellStart, "Shell2", 0);
