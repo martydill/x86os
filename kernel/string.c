@@ -53,6 +53,7 @@ int Strcmp(const char* string1, const char* string2)
 /* FIXME: Can't end on a %s */
 STATUS DoSprintf(int size, char* buffer, const char* format, va_list args)
 {
+    int numSpacesToAdd = 0;
     int index = 0;
     int digit = 0;
     int digitSize = 0;
@@ -84,6 +85,13 @@ STATUS DoSprintf(int size, char* buffer, const char* format, va_list args)
             case '\\':
                 /* Escape sequence */
                 state = STATE_ESCAPE_SEQUENCE;
+                break;
+
+            case '\t':
+                numSpacesToAdd = 4 - index % 4;
+                for(int i = 0; i < numSpacesToAdd; ++i) {
+                    buffer[index++] = ' ';
+                }
                 break;
 
             default:

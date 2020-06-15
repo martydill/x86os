@@ -58,14 +58,14 @@ void ProcessCommand(char* command)
     }
     else if(!Strcmp(command, "ps"))
     {
-      KPrint("Name     ID    State    CpuTicks    Priority\n");
+      KPrint("Name\t\tID\t\tState\t\tCpu\t\tPriority\n");
       BYTE foreground;
       ProcessGetForegroundProcessId(&foreground);
       Process* processes = ProcessGetProcesses();
       for(BYTE i = 0; i < 255; ++i) {
         Process* p = &processes[i];
         if(p->State > 0) {
-          KPrint("%s    %d     %d     %d    %s \n", p->Name, p->Id, p->State, p->CpuTicks, p->Id == foreground ? "(foreground)" : "");
+          KPrint("%s\t\t%d\t\t%d\t\t\t%d\t\t%s\n", p->Name, p->Id, p->State, p->CpuTicks, p->Id == foreground ? "(foreground)" : "");
         }
       }
     }

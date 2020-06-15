@@ -201,11 +201,11 @@ void MMInitializePaging()
     
     // Available memory starts at kernel end + size of page directory and page tables
     BaseMallocAddress = kernelPageDirectory + (4096 * 1024) + 1024;
-    Debug("%u %u\n", BaseMallocAddress, kernelPageDirectory);
-    for (i = 0; i < 1024; ++i) {
-      const unsigned int z = KMalloc(1024 * i);
-      Debug("Allocated %u bytes at %u", 1024 * i, z);
-    }
+    // Debug("%u %u\n", BaseMallocAddress, kernelPageDirectory);
+    // for (i = 0; i < 1024; ++i) {
+    //   const unsigned int z = KMalloc(1024 * i);
+    //   Debug("Allocated %u bytes at %u", 1024 * i, z);
+    // }
     // while(1) {}
     // int* x= (int*)989999999;
     // *x = 5;
