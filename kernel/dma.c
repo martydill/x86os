@@ -1,21 +1,16 @@
 
 #include <kernel.h>
+#include <dma.h>
 
 /*
 * http://www.osdev.org/osfaq2/index.php/DMA
 */
 
-#define MAX_DMA_CHANNELS	4
-#define FLOPPY_DMA_CHANNEL
-
 STATUS DmaInit()
 {
     int i;
-    unsigned char* blah = (unsigned char*)0x0000;
-    for( i = 0; i < 512; ++i)
-    {
-        blah[i] = 'X'; // fixme - use memset
-    }
+    unsigned char* blah = (unsigned char*)FLOPPY_DMA_ADDRESS;
+    Memset(blah, 0, FLOPPY_DMA_BUFFER_SIZE);
 
     /* Disable channel 2 */
     IoWritePortByte(0x0a, 6);
@@ -27,8 +22,8 @@ STATUS DmaInit()
     IoWritePortByte(0xD8, 0xFF);
 
     /* offset address */
-    IoWritePortByte(0x04, 0);
-    IoWritePortByte(0x04, 0x00);
+    IoWritePortByte(0x04, FLOPPY_DMA_ADDRESS & 0xFF);
+    IoWritePortByte(0x04, (FLOPPY_DMA_ADDRESS & 0xFF00) >> 8);
 
     /* flip flop */
     IoWritePortByte(0xD8, 0xFF);

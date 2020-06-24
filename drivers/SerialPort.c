@@ -37,7 +37,7 @@ void WriteCharacter(char a)
 void SerialPortWriteString(const char* format, ...)
 {
     va_list args;
-    char buffer[256];
+    char buffer[2048];
 
     va_start(args, format);
     DoSprintf(sizeof(buffer), buffer, format, args);

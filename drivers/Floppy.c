@@ -12,6 +12,8 @@
 #include <io.h>
 #include <interrupt.h>
 #include <device.h>
+#include <fat.h>
+#include <dma.h>
 
 const char* floppyTypeString[] =
 {
@@ -259,7 +261,7 @@ STATUS FloppySeek(unsigned int track)
     }
 
     /* fixme - start motor if it's not already started */
-    KPrint("Seeking to track %u ", track);
+    Debug("Seeking to track %u ", track);
     WriteByte(SEEK_TRACK);
     WriteByte(0);
     WriteByte(track);
@@ -271,7 +273,7 @@ STATUS FloppySeek(unsigned int track)
     BYTE b = ReadByte();
     BYTE b2 = ReadByte();
 
-    KPrint("Now on track %d, sr0=%d\n", (int)b2, (int)b);
+    Debug("Now on track %d, sr0=%d\n", (int)b2, (int)b);
     if(b2 != track)
     {
         /* fixme: reset? */
@@ -284,6 +286,10 @@ STATUS FloppySeek(unsigned int track)
 }
 
 int dir = 0;
+extern 
+STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat);
+
+extern FAT12BootSector s;
 
 /* Reads the given sector into the supplied buffer */
 STATUS FloppyReadSector(int sector, char* buffer)
@@ -329,15 +335,19 @@ STATUS FloppyReadSector(int sector, char* buffer)
     for(z = 0; z < 7; ++z)
         ReadByte();
 
-    int i;
-    unsigned char* blah = (unsigned char*)0x0000;
-    for(i = 0; i < 512; ++i)
-    {
-        buffer[i] = blah[i];
-    }
+    Memcopy(buffer, FLOPPY_DMA_ADDRESS, FLOPPY_DMA_BUFFER_SIZE);
+    // int i;
+    // unsigned char* blah = (unsigned char*)0x0000;
+    // for(i = 0; i < 512; ++i)
+    // {
+    //     buffer[i] = blah[i];
+    // }
 
-    if(dir == 0)
+    if(dir == 0) {
         dir = FATParseBootSector(buffer);
+        // BYTE buffer[90 * 1024];
+        // FATReadFile(&s, buffer, fat);
+    }
 
     /* fixme: check for errors */
     /* fixme: turn off motor */
@@ -345,12 +355,14 @@ STATUS FloppyReadSector(int sector, char* buffer)
     return S_OK;
 }
 
+WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
 void read(int z)
 {
     int i;
-    char buf[512];
+    BYTE buf[512];
     FloppyReadSector(z, buf);
+    BYTE fat[512*9];
     /*for(i = 0; i < 70; ++i)
     	KPrint("%c", buf[i]);*/
 
@@ -358,11 +370,93 @@ void read(int z)
     {
         FloppyReadSector(dir, buf);
         FATReadDirectory(buf);
-        /*for(i = 0; i < 70; ++i)
-        KPrint("%c", buf[i]);*/
+        // for(i = 0; i < 512; ++i)
+        //   Debug("%c", buf[i]);
+        
+        for(i = 1; i < 10; ++i)
+        {
+          Debug("Reading sector %d\n", i);
+          FloppyReadSector(i, fat + (i - 1) * 512);
+        }
+
+      BYTE* foo = KMalloc(1025);
+
+      FATReadFile(foo, &s, fat);
+      Debug("Got file\n");
+      Debug("%s\n", foo);
+      Debug("Done reading file\n");
+        // for(i = 0; i < 512; ++i) {
+        //   Debug("%c", fat[i]);
+        // }
+        // WORD cluster = 195;
+        // while(1) {
+        //   WORD nextCluster = FATGetNextCluster(fat, cluster);
+        //   Debug("Current: %u Next: %u\n", cluster, nextCluster);
+        //   if(nextCluster > 0xFF8) {
+        //     Debug("No more clusters\n");
+        //     break;
+        //   }
+        //   cluster = nextCluster;
+        // }
     }
 }
 
+extern WORD FATSectorForCluster(FAT12BootSector* bs, WORD cluster);
+// {
+//   return FATFirstDataSector(bs) + (cluster - 2) * bs->sectorsPerCluster;
+// }
+
+STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat)
+{
+  if(buffer == NULL){
+    return S_FAIL;
+  }
+
+  WORD clustersRead = 0;
+
+  WORD cluster = 371;
+  while(1) {
+    WORD sector = FATSectorForCluster(bs, cluster);
+    FloppyReadSector(sector, buffer + (clustersRead * 512));
+
+    WORD nextCluster = FATGetNextCluster(fat, cluster);
+    Debug("Current: %u Next: %u  Count: %u\n", cluster, nextCluster, clustersRead);
+    if(nextCluster > 0xFF8) {
+      Debug("No more clusters\n");
+      break;
+    }
+    cluster = nextCluster;
+    clustersRead++;
+  }
+
+  return S_OK;
+}
+
+
+WORD FATGetNextCluster(BYTE* fat, WORD cluster)
+{
+  Debug("Cluster: %u\n", cluster);
+  WORD offset = cluster + cluster / 2;
+  Debug("Offset: %u\n", offset);
+  BYTE first = *(BYTE*)&fat[offset];
+  BYTE second = *(BYTE*)&fat[offset + 1];
+  // BYTE third = (BYTE)fat[offset + 2];
+  Debug("%d %d\n", first, second);
+  // WORD fatValue = (WORD)fat[offset];//first * 256 + second;
+  // xx// WORD fatValue = *(WORD*)&fat[offset];
+  WORD fatValue = second *  256 + first;
+
+  if(cluster & 0x0001)
+  {
+    fatValue = fatValue >> 4;
+  }
+  else 
+  {
+    fatValue = fatValue & 0x0FFF;
+  }
+  Debug("value: %u\n", fatValue);
+  return fatValue;
+}
 
 /* Initialize floppy driver */
 STATUS FloppyInit(void)

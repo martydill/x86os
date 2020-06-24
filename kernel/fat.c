@@ -49,6 +49,19 @@ typedef struct FATDirectoryEntry_S
 
 
 FAT12BootSector s;
+int FATFirstDataSector(FAT12BootSector* bs) 
+{
+  DWORD sizeOfRootDir =(bs->numRootDirectoryEntries * 32 +
+    (bs->bytesPerSector - 1)) / bs->bytesPerSector;
+  DWORD firstSector = sizeOfRootDir + bs->numReservedSectors + bs->sectorsPerFAT * bs->numFATCopies;
+  return firstSector;
+}
+
+int FATSectorForCluster(FAT12BootSector* bs, int cluster)
+{
+  return FATFirstDataSector(bs) + (cluster - 2) * bs->sectorsPerCluster;
+}
+
 int FATParseBootSector(char* bootSector)
 {
     bootSector += 3; /* skip jump thing */
@@ -79,6 +92,7 @@ int FATParseBootSector(char* bootSector)
     Debug("Sectors per track: %d\r\n", (int)s.sectorsPerTrack);
     Debug("Number of heads: %d\r\n", (int)s.numHeads);
 
+    Debug("First data sector: %d\n", FATFirstDataSector(&s));
     return s.numReservedSectors + (s.numFATCopies * s.sectorsPerFAT);
 }
 
@@ -163,9 +177,11 @@ void FATReadDirectory(unsigned char* directorySector)
             KPrint("Volume id ");
         if(e.attributes & FAT_ATTR_DIRECTORY)
             KPrint("<DIR> ");
-
+        KPrint(" %d sector ", FATSectorForCluster(&s, e.firstClusterLow));
+        KPrint(" %d cluster ", e.firstClusterLow);
         KPrint("  %d B", e.size);
 
         KPrint("\n");
     }
+
 }
