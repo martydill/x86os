@@ -14,6 +14,7 @@
 #include <device.h>
 #include <fat.h>
 #include <dma.h>
+#include <elf.h>
 
 const char* floppyTypeString[] =
 {
@@ -357,11 +358,11 @@ STATUS FloppyReadSector(int sector, char* buffer)
 
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
-void read(int z)
+void read(char* name)
 {
     int i;
     BYTE buf[512];
-    FloppyReadSector(z, buf);
+    FloppyReadSector(0, buf);
     BYTE fat[512*9];
     /*for(i = 0; i < 70; ++i)
     	KPrint("%c", buf[i]);*/
@@ -379,13 +380,16 @@ void read(int z)
           FloppyReadSector(i, fat + (i - 1) * 512);
         }
 
-      BYTE* foo = KMalloc(1025);
+      BYTE* foo = KMalloc(6100);
 
       FATReadFile(foo, &s, fat);
+
+      ELFParseFile(foo);
+
       Debug("Got file\n");
       Debug("%s\n", foo);
       Debug("Done reading file\n");
-        // for(i = 0; i < 512; ++i) {
+       // for(i = 0; i < 512; ++i) {
         //   Debug("%c", fat[i]);
         // }
         // WORD cluster = 195;
@@ -414,7 +418,7 @@ STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat)
 
   WORD clustersRead = 0;
 
-  WORD cluster = 371;
+  WORD cluster = 376;//483;//371;
   while(1) {
     WORD sector = FATSectorForCluster(bs, cluster);
     FloppyReadSector(sector, buffer + (clustersRead * 512));

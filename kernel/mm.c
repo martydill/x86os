@@ -91,7 +91,7 @@ void MMInitializePageDirectory(PageDirectory* pageDirectory)
         // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
     Memset(PhysicalMemoryToProcessMap, 0, sizeof(PhysicalMemoryToProcessMap));
-    for(i = 0; i < 8; ++i) {
+    for(i = 0; i < 20; ++i) {
       MMMapPageToProcess(i, 1);
     }
 }

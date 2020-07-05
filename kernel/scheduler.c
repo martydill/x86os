@@ -120,7 +120,7 @@ STATUS ProcessSchedule(Registers* registers)
     registers->eip = active->Registers.eip;
 
 
-    // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
+    Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
     // Debug("Eip %d Eax %d Ebx %d Ecx %d Edx %d\n", active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
   }

@@ -5,3 +5,4 @@ bin/floppy.img
 bin/kernel0
 floppy.img
 output.txt
+*.exe

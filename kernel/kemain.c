@@ -18,6 +18,7 @@
 #include <serialport.h>
 #include <pci.h>
 #include <process.h>
+#include <fs.h>
 
 /* Enable interrupts */
 void KeEnableInterrupts(void)
@@ -63,6 +64,12 @@ void KePanic(void)
 
 void ShellStart();
 void IdleLoop();
+
+void KeSysCallHandler(Registers* registers)
+{
+   Debug("Syscall %d", registers->eax);
+}
+
 
 /* Start here ... */
 int KeMain(MultibootInfo* bootInfo)
@@ -114,6 +121,8 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing PCI ...\n");
     PciInit();
 
+    InstallInterruptHandler(0x80, KeSysCallHandler);
+
   // ShellStart();
     CreateProcess(IdleLoop, "Idle00", 0);
     CreateProcess(ShellStart, "Shell1", 255);
@@ -125,6 +134,7 @@ int KeMain(MultibootInfo* bootInfo)
     // CreateProcess(ShellStart, "Shell7", 0);
     // CreateProcess(ShellStart, "Shell8", 0);
 
+    FSInit();
 
     IdleLoop();
 
@@ -132,6 +142,11 @@ int KeMain(MultibootInfo* bootInfo)
 }
 
 void IdleLoop(){
+ 
+
+  asm volatile("movl $0x999, %eax");
+  __asm__ __volatile__("int $0x80");
+
   while(1) {
     __asm__("hlt");
   }

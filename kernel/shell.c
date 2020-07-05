@@ -51,10 +51,9 @@ void ProcessCommand(char* command)
         static int seek = 0;
         FloppySeek(seek++);
     }
-    else if(!Strcmp(command, "read"))
+    else if(!Strcmp(command, "cat"))
     {
-        static int r = 0;
-        read(r++);
+        read("README.md");
     }
     else if(!Strcmp(command, "ps"))
     {

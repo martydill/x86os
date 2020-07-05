@@ -194,6 +194,14 @@ _interrupt112:
 	jmp _interrupt_handler
 
 
+global _interrupt128
+_interrupt128:
+	cli
+	push 0
+	push 128
+	jmp _interrupt_handler
+  
+
 global _reservedexceptionhandler
 _reservedexceptionhandler:
 	cli

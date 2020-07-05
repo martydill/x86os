@@ -62,6 +62,7 @@ extern void _interrupt39();
 extern void _interrupt40();
 extern void _interrupt41();
 extern void _interrupt112();
+extern void _interrupt128();
 extern void _reservedexceptionhandler();
 
 /*defines what the stack looks like after an ISR was running */

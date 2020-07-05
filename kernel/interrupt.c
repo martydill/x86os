@@ -201,6 +201,8 @@ void InitializeIDT(void)
     AddInterruptHandler(39, _interrupt39);
     AddInterruptHandler(40, _interrupt40);
     AddInterruptHandler(41, _interrupt41);
+    AddInterruptHandler(112, _interrupt112);
+    AddInterruptHandler(128, _interrupt128);
 
     idtPointer.Limit = sizeof(struct IDTEntry_S) * 256 - 1;
     idtPointer.Base = (DWORD)&idtTable;
