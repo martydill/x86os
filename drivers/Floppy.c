@@ -418,7 +418,7 @@ STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat)
 
   WORD clustersRead = 0;
 
-  WORD cluster = 376;//483;//371;
+  WORD cluster = 286;//378;//483;//371;
   while(1) {
     WORD sector = FATSectorForCluster(bs, cluster);
     FloppyReadSector(sector, buffer + (clustersRead * 512));

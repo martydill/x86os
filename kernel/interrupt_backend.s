@@ -230,8 +230,8 @@ _interrupt_handler:
 	; Send our stack to the exception handler
 	mov eax, esp
 	push eax
-	mov eax, KeExceptionHandler
-	call eax
+	;mov eax, KeExceptionHandler
+	call KeExceptionHandler
 	pop eax
 
   ; Restore our registers

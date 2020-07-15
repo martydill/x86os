@@ -91,7 +91,7 @@ typedef struct
     unsigned int flags;
     unsigned int userEsp;
     unsigned int ss;
-} Registers;
+} __attribute__((packed)) Registers;
 
 void InitializeIDT(void);
 

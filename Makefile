@@ -22,6 +22,8 @@ $(SUBDIRS):
 
 
 kernel1: subdirs
+	vboxmanage controlvm fizzos poweroff | true
+	sleep 1
 	$(LD) -T kernel.ls -nostdlib -melf_i386 boot/boot.o boot/startup.o obj/*.o  -o bin/$(KERNEL)
 	cp base_images/floppy.img ./floppy.img
 	mcopy -o -i ./floppy.img bin/kernel0 ::
@@ -36,6 +38,7 @@ kernel1: subdirs
 
 
 clean:
+	vboxmanage controlvm fizzos poweroff | true
 	-rm -rf obj/*.o
 	-rm bin/$(KERNEL)
 	-rm boot/*.o

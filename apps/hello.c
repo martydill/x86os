@@ -4,6 +4,5 @@
 
 int main()
 {
-  KPrint("Hello World");
-  while(1) {}
+  KPrint("Hello World\n");
 }

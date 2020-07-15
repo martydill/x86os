@@ -17,14 +17,13 @@ all: $(libs) $(objs) $(apps)
 
 
 $(libs): %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
+	$(CC) $(CFLAGS) -g0 -nostartfiles -c $< -o $@
 
 $(objs): %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -g0 -nostartfiles -c $< -o $@
 
-$(apps): %.exe: %.o
-	$(LD) -T apps.ls -nostdlib -melf_i386 $< $(libs) -o $@
+$(apps): hello.o syscall.o
+	$(LD) -T apps.ls -nostdlib -melf_i386 -static syscall.o hello.o -o hello.exe
 
 
 

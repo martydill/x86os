@@ -67,7 +67,22 @@ void IdleLoop();
 
 void KeSysCallHandler(Registers* registers)
 {
-   Debug("Syscall %d", registers->eax);
+   Debug("Syscall handler %u %u %u %u %u %u %u %u \n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp);
+   if(registers->eax == 0) {
+     Debug("ok\n");
+     BYTE processId;
+     if(ProcessGetCurrentProcess(&processId) == S_OK) {
+       Debug("killing\n");
+       ProcessTerminate(processId);
+     }
+     else {
+      Debug("Could not get current process\n");
+     }
+   }
+   else if(registers->eax == 1) {
+    Debug("calling kprint %u\n", registers->ebx);
+    KPrint(registers->ebx);
+   }
 }
 
 

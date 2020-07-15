@@ -8,6 +8,7 @@ BYTE processCount = 0;
 const STATE_PENDING = 0;
 const STATE_WAITING = 1;
 const STATE_RUNNING = 2;
+const STATE_TERMINATING = 3;
 const PRIORITY_FOREGROUND = 255;
 const PRIORITY_BACKGROUND = 0;
 
@@ -65,18 +66,24 @@ STATUS ProcessSchedule(Registers* registers)
 {
   DWORD currentTicks = TimerGetTicks();
   if(active) {
-    active->Registers.eax = registers->eax;
-  active->Registers.ebx = registers->ebx;
-  active->Registers.ecx = registers->ecx;
-  active->Registers.edx = registers->edx;
+    if(active->State == STATE_TERMINATING) {
+      Debug("%s %d died\n", active->Name, active->CpuTicks);
+      processCount--;
+    }
+    else {
+      active->Registers.eax = registers->eax;
+    active->Registers.ebx = registers->ebx;
+    active->Registers.ecx = registers->ecx;
+    active->Registers.edx = registers->edx;
 
-  active->Registers.edi = registers->edi;
-  active->Registers.esi = registers->esi;
-  active->Registers.ebp = registers->ebp;
-  active->Registers.esp = registers->esp;
-  active->Registers.eip = registers->eip;
-  active->CpuTicks += (currentTicks - LastTicks);
-  active->State = STATE_WAITING;
+    active->Registers.edi = registers->edi;
+    active->Registers.esi = registers->esi;
+    active->Registers.ebp = registers->ebp;
+    active->Registers.esp = registers->esp;
+    active->Registers.eip = registers->eip;
+    active->CpuTicks += (currentTicks - LastTicks);
+    active->State = STATE_WAITING;
+    }
   }
   // Memcopy(registers, &active->Registers, sizeof(Registers));
 
@@ -120,7 +127,7 @@ STATUS ProcessSchedule(Registers* registers)
     registers->eip = active->Registers.eip;
 
 
-    Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
+    // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
     // Debug("Eip %d Eax %d Ebx %d Ecx %d Edx %d\n", active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
   }
@@ -172,3 +179,18 @@ STATUS ProcessSetForegroundProcessId(BYTE id) {
   return S_FAIL;
 }
 
+STATUS ProcessTerminate(BYTE id) {
+  if(id == NULL) {
+    return S_FAIL;
+  }
+    
+  for(BYTE i = 0; i < MAX_PROCESSES; ++i) {
+      Process* p = &processes[i];
+      if(p->Id == id) {
+        Debug("Terminating process %s\n", p->Name);
+        p->State = STATE_TERMINATING;
+        return S_OK;
+      }
+  }
+  return S_FAIL;
+}

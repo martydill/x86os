@@ -42,6 +42,7 @@ STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
 STATUS CreateProcess(void* entryPoint, char* name, BYTE priority);
 STATUS ProcessGetCurrentProcess(BYTE* id);
+STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);
 
 #endif
