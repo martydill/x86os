@@ -157,11 +157,6 @@ int KeMain(MultibootInfo* bootInfo)
 }
 
 void IdleLoop(){
- 
-
-  asm volatile("movl $0x999, %eax");
-  __asm__ __volatile__("int $0x80");
-
   while(1) {
     __asm__("hlt");
   }
