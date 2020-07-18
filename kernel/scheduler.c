@@ -44,6 +44,7 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
   }
   else {
     Debug("Creating new process list node\n");
+    Debug("Old end was %d\n", processListEnd->Process->Id);
     ProcessList* next = KMalloc(sizeof(ProcessList));
     next->Next = NULL;
     next->Prev = processListEnd;
@@ -52,7 +53,8 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
     processListEnd = next;
     ++processCount;
   
-    Debug("Created %u %u %u %u %u\n", entryPoint, p, next, processListStart, processListEnd);
+    Debug("New end is %d\n", processListEnd->Process->Id);
+    Debug("Created %u %u %u %u %u %s\n", entryPoint, p, next, processListStart, processListEnd, name);
     if(priority == PRIORITY_FOREGROUND) {
       foreground = p;
     }
@@ -87,12 +89,12 @@ STATUS ProcessInit()
 
 
 ProcessList* ProcessGetProcessListNodeById(BYTE id) {
-  Debug("Searching for process %d\n", id);
+  // Debug("Searching for process %d\n", id);
   ProcessList *ps = processListStart;
   do {
-    Debug("Checking %d\n", ps->Process ? ps->Process->Id : 0);
+    // Debug("Checking %d\n", ps->Process ? ps->Process->Id : 0);
     if (ps->Process && ps->Process->Id == id) {
-      Debug("Found match %s\n", ps->Process->Name);
+      // Debug("Found match %s\n", ps->Process->Name);
       return ps;
     }
 
@@ -101,17 +103,27 @@ ProcessList* ProcessGetProcessListNodeById(BYTE id) {
   Debug("Could not find it\n");
   return NULL;
 }
-
+void DumpProcesses() {
+  int count = 0;
+  ProcessList* node = processListStart;
+  do 
+  {
+    Debug("%d:  %s Self: %u  Next: %u Prev: %u\n", count, node->Process->Name, node, node->Next, node->Prev);
+    node = node->Next;
+    count++;
+  }while(node != NULL);
+}
 
 STATUS ProcessSchedule(Registers* registers) {
 
   ProcessList* node;
-  Debug("Schedule\n");
+  // Debug("Schedule\n");
   if(processListStart->Process == NULL) {
     Debug("No processes yet\n");
     return S_FAIL;
   }
 
+  DumpProcesses();
   if(active) {
     node = ProcessGetProcessListNodeById(active->Id);
     if(node == NULL) {
@@ -130,8 +142,14 @@ STATUS ProcessSchedule(Registers* registers) {
       }
       if(node->Prev) {
         node->Prev->Next = node->Next;
+        processListEnd = node->Prev;
+
+        if(processListEnd == node) {
+          processListEnd = node->Prev;
+        }
       }
       Debug("Removed from list");
+      active = NULL;
     }
     else {
       active->Registers.eax = registers->eax;
@@ -161,13 +179,13 @@ STATUS ProcessSchedule(Registers* registers) {
     // if(node == NULL) {
     //   return S_FAIL;
     // }
-    Debug("Current: %s %u %s\n", active->Name, active->Id, node->Process->Name);
+    // Debug("Current: %s %u %s\n", active->Name, active->Id, node->Process->Name);
     if(node->Next) {
-      Debug("Switching to next process %u %s\n", node->Next, node->Next->Process->Name);
+      // Debug("Switching to next process %u %s\n", node->Next, node->Next->Process->Name);
       active = node->Next->Process;
     }
     else {
-      Debug("Switching to first process %s\n", processListStart->Process->Name);
+      // Debug("Switching to first process %s\n", processListStart->Process->Name);
       active = processListStart->Process;
     }
   }
