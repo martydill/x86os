@@ -12,20 +12,22 @@ const STATE_TERMINATING = 3;
 const PRIORITY_FOREGROUND = 255;
 const PRIORITY_BACKGROUND = 0;
 
-// typedef struct
-// {
-//   ProcessList* Next;
-//   ProcessList* Prev;
-//   Process* Process;
-// } ProcessList;
+typedef struct ProcessList
+{
+  struct ProcessList* Next;
+  struct ProcessList* Prev;
+  Process* Process;
+} ProcessList;
 
-Process processes[MAX_PROCESSES];
+// Process processes[MAX_PROCESSES];
 
 Process* foreground = NULL;
+ProcessList* processListStart = NULL;
+ProcessList* processListEnd = NULL;
 
 STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
 {
-  Process* p = &processes[processCount];
+  Process* p = KMalloc(sizeof(Process));
   Memset(p, 0, sizeof(Process));
   p->Id = processCount;
   p->State = STATE_PENDING;
@@ -35,10 +37,25 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
   // MMInitializePageTables(&p->PageDirectory);
   Strcpy(&p->Name, name, Strlen(name));
 
-  ++processCount;
-  Debug("Created %d\n", entryPoint);
-  if(priority == PRIORITY_FOREGROUND) {
-    foreground = p;
+  if(processListStart->Process == NULL) {
+    Debug("Updating existing process list node %u %u %u\n", p, processListStart, processListStart->Next);
+    processListStart->Process = p;
+    ++processCount;
+  }
+  else {
+    Debug("Creating new process list node\n");
+    ProcessList* next = KMalloc(sizeof(ProcessList));
+    next->Next = NULL;
+    next->Prev = processListEnd;
+    processListEnd->Next = next;
+    next->Process = p;
+    processListEnd = next;
+    ++processCount;
+  
+    Debug("Created %u %u %u %u %u\n", entryPoint, p, next, processListStart, processListEnd);
+    if(priority == PRIORITY_FOREGROUND) {
+      foreground = p;
+    }
   }
 }
 
@@ -49,6 +66,12 @@ DWORD LastTicks;
 
 STATUS ProcessInit()
 {
+  processListStart = KMalloc(sizeof(ProcessList));
+  processListStart->Next = NULL;
+  processListStart->Prev = NULL;
+  processListStart->Process = NULL;
+  processListEnd = processListStart;
+
   // CreateProcess(p1);
   // CreateProcess(p2);
 
@@ -62,27 +85,67 @@ STATUS ProcessInit()
   return S_OK;
 }
 
-STATUS ProcessSchedule(Registers* registers)
-{
+
+ProcessList* ProcessGetProcessListNodeById(BYTE id) {
+  Debug("Searching for process %d\n", id);
+  ProcessList *ps = processListStart;
+  do {
+    Debug("Checking %d\n", ps->Process ? ps->Process->Id : 0);
+    if (ps->Process && ps->Process->Id == id) {
+      Debug("Found match %s\n", ps->Process->Name);
+      return ps;
+    }
+
+    ps = ps->Next;
+  } while (ps != NULL);
+  Debug("Could not find it\n");
+  return NULL;
+}
+
+
+STATUS ProcessSchedule(Registers* registers) {
+
+  ProcessList* node;
+  Debug("Schedule\n");
+  if(processListStart->Process == NULL) {
+    Debug("No processes yet\n");
+    return S_FAIL;
+  }
+
+  if(active) {
+    node = ProcessGetProcessListNodeById(active->Id);
+    if(node == NULL) {
+      return S_FAIL;
+    }
+  }
+
   DWORD currentTicks = TimerGetTicks();
   if(active) {
     if(active->State == STATE_TERMINATING) {
       Debug("%s %d died\n", active->Name, active->CpuTicks);
       processCount--;
+      
+      if(node->Next) {
+        node->Next->Prev = node->Prev;
+      }
+      if(node->Prev) {
+        node->Prev->Next = node->Next;
+      }
+      Debug("Removed from list");
     }
     else {
       active->Registers.eax = registers->eax;
-    active->Registers.ebx = registers->ebx;
-    active->Registers.ecx = registers->ecx;
-    active->Registers.edx = registers->edx;
+      active->Registers.ebx = registers->ebx;
+      active->Registers.ecx = registers->ecx;
+      active->Registers.edx = registers->edx;
 
-    active->Registers.edi = registers->edi;
-    active->Registers.esi = registers->esi;
-    active->Registers.ebp = registers->ebp;
-    active->Registers.esp = registers->esp;
-    active->Registers.eip = registers->eip;
-    active->CpuTicks += (currentTicks - LastTicks);
-    active->State = STATE_WAITING;
+      active->Registers.edi = registers->edi;
+      active->Registers.esi = registers->esi;
+      active->Registers.ebp = registers->ebp;
+      active->Registers.esp = registers->esp;
+      active->Registers.eip = registers->eip;
+      active->CpuTicks += (currentTicks - LastTicks);
+      active->State = STATE_WAITING;
     }
   }
   // Memcopy(registers, &active->Registers, sizeof(Registers));
@@ -93,22 +156,43 @@ STATUS ProcessSchedule(Registers* registers)
   // else {
   //   active = &pr1;
   // }
-  if(processCount > 0) {
-    if (foreground == active) {
-      currentProcess = currentProcess + 1;
-      if(currentProcess >= processCount) {
-        currentProcess = 0;
-      }
-    active = &processes[currentProcess];
+  if(active) {
+    // node = ProcessGetProcessListNodeById(active->Id);
+    // if(node == NULL) {
+    //   return S_FAIL;
+    // }
+    Debug("Current: %s %u %s\n", active->Name, active->Id, node->Process->Name);
+    if(node->Next) {
+      Debug("Switching to next process %u %s\n", node->Next, node->Next->Process->Name);
+      active = node->Next->Process;
     }
     else {
-      active = foreground;
+      Debug("Switching to first process %s\n", processListStart->Process->Name);
+      active = processListStart->Process;
     }
-
-    // Debug("Switch to process %d\n", currentProcess);
+  }
+  
+  else {
+      Debug("Switching to real first process %s\n", processListStart->Process->Name);
+    active = processListStart->Process;
   }
 
+  // if (processCount > 0) {
+  //   if (foreground == active) {
+  //     currentProcess = currentProcess + 1;
+  //     if (currentProcess >= processCount) {
+  //       currentProcess = 0;
+  //     }
+  //     active = &processes[currentProcess];
+  //   } else {
+  //     active = foreground;
+  //   }
+
+  //   // Debug("Switch to process %d\n", currentProcess);
+  // }
+
   if(active) {
+    Debug("Switching to process %s %u %u\n", active->Name, active->Entry, active->State);
     if (active->State == STATE_PENDING) {
       // Debug("Making process running");
       active->State = STATE_RUNNING;
@@ -133,8 +217,8 @@ STATUS ProcessSchedule(Registers* registers)
   }
 }
 
-Process* ProcessGetProcesses(){
-  return &processes;
+ProcessList* ProcessGetProcesses(){
+  return processListStart;
 }
 
 STATUS ProcessGetCurrentProcess(BYTE* id) {
@@ -161,6 +245,7 @@ STATUS ProcessGetForegroundProcessId(BYTE* id) {
 }
 
 
+
 STATUS ProcessSetForegroundProcessId(BYTE id) {
   if(foreground == NULL) {
     return S_FAIL;
@@ -168,29 +253,30 @@ STATUS ProcessSetForegroundProcessId(BYTE id) {
   if(foreground->Id == id) {
     return S_FAIL;
   }
-  for(BYTE i = 0; i < MAX_PROCESSES; ++i) {
-      Process* p = &processes[i];
-      if(p->Id == id) {
-        Debug("Activating process %s\n", p->Name);
-        foreground = p;
-        return S_OK;
-      }
+
+  ProcessList* node = ProcessGetProcessListNodeById(id);
+  if(node == NULL) {
+    return S_FAIL;
   }
-  return S_FAIL;
+
+  Process* p = node->Process;
+  Debug("Activating process %s\n", p->Name);
+ 
+  return S_OK;
 }
 
 STATUS ProcessTerminate(BYTE id) {
-  if(id == NULL) {
+  ProcessList* node;
+  if (id == NULL) {
     return S_FAIL;
   }
-    
-  for(BYTE i = 0; i < MAX_PROCESSES; ++i) {
-      Process* p = &processes[i];
-      if(p->Id == id) {
-        Debug("Terminating process %s\n", p->Name);
-        p->State = STATE_TERMINATING;
-        return S_OK;
-      }
+  node = ProcessGetProcessListNodeById(id);
+  if(node == NULL) {
+    return S_FAIL;
   }
-  return S_FAIL;
+  Process *p = node->Process;
+
+  Debug("Terminating process %s\n", p->Name);
+  p->State = STATE_TERMINATING;
+  return S_OK;
 }
