@@ -31,7 +31,7 @@ kernel1: subdirs
 	mcopy -o -i ./floppy.img README.md ::README.md
 	rm -f ./output.txt
 	vboxmanage startvm fizzos
-	sleep 3
+	sleep 1 
 	vboxmanage controlvm fizzos keyboardputscancode 1c 9c
 	tail -f ./output.txt
 
