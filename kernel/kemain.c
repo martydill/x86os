@@ -46,18 +46,13 @@ void KeHalt(void)
 
 
 /* Dumps registers to the screen and halts */
-void KePanic(void)
+void KePanic(Registers* registers)
 {
-    int eax, ebx, ecx, edx;
-    char buffer[128];
-
-    __asm__ __volatile__ ("":"=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx));
-
-    ConDisplayString("Kernel panic", 0, 0);
-    ConDisplayString("Contents of CPU registers: ", 0, 1);
-
-    Sprintf(128, buffer, "EAX: %d    EBX: %d   ECX: %d   EDX: %d ", eax, ebx, ecx, edx);
-    ConDisplayString(buffer, 0, 2);
+    ConClearScreen();
+    ConMoveCursor(0,0);
+    KPrint("Kernel panic, interrupt #%d\n", registers->interruptNumber);
+    KPrint("EAX: %u    EBX: %u   ECX: %u   EDX: %u\n", registers->eax, registers->ebx, registers->ecx, registers->edx);
+    KPrint("Done dumping\n");
 
     KeHalt();
 }

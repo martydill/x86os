@@ -222,6 +222,9 @@ void KeExceptionHandler(Registers* registers)
     {
         /* Exception */
         Debug("Caught exception %d: %s", registers->interruptNumber, exceptionStrings[registers->interruptNumber]);
+        if(registers->interruptNumber != 14) {
+          KePanic(registers);
+        }
     }
     else if(registers->interruptNumber == 999)
     {
