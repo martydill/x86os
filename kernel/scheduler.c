@@ -108,7 +108,7 @@ void DumpProcesses() {
   ProcessList* node = processListStart;
   do 
   {
-    Debug("%d:  %s Self: %u  Next: %u Prev: %u\n", count, node->Process->Name, node, node->Next, node->Prev);
+    Debug("%d:  %s Self: %u  Next: %u Prev: %u  eip: %u  esp: %u  edx%u\n", count, node->Process->Name, node, node->Next, node->Prev, node->Process->Registers.eip, node->Process->Registers.esp, node->Process->Registers.edx);
     node = node->Next;
     count++;
   }while(node != NULL);
@@ -148,10 +148,12 @@ STATUS ProcessSchedule(Registers* registers) {
           processListEnd = node->Prev;
         }
       }
-      Debug("Removed from list");
+      Debug("Removed from list\n");
       active = NULL;
     }
     else {
+      Debug("Switching from %s\n", active->Name);
+      Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
       active->Registers.eax = registers->eax;
       active->Registers.ebx = registers->ebx;
       active->Registers.ecx = registers->ecx;
@@ -229,8 +231,8 @@ STATUS ProcessSchedule(Registers* registers) {
     registers->eip = active->Registers.eip;
 
 
-    // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
-    // Debug("Eip %d Eax %d Ebx %d Ecx %d Edx %d\n", active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+    Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
+    Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
   }
 }
