@@ -277,6 +277,35 @@ STATUS Strcpy(char* dest, const char* src, int size)
     return S_OK;
 }
 
+// Search for the given substring in the given string
+char* strstr(const char* s1, const char* s2)
+{
+  if(s1 == NULL || s2 == NULL) {
+    return NULL;
+  }
+
+}
+
+int isalpha(int c) {
+  if(c >= 'A' && c <= 'Z') {
+    return 1;
+  }
+  if(c >= 'a' && c <= 'z') {
+    return 1;
+  }
+  return 0;
+}
+
+int tolower(int c) {
+  if(!isalpha(c)) {
+    return c;
+  }
+  if(c >= 'A' && c <= 'Z') {
+    return (c - 'A') + 'a';
+  }
+
+  return c;
+}
 
 void Test_Strlen()
 {
@@ -352,12 +381,39 @@ void Test_Sprintf()
     Assert(Strcmp(buf, "Alloc 99\n") == 0);
 }
 
+void Test_strstr(){
+
+}
+
+void Test_isalpha(){
+  for(int i = 0; i < 26; ++i) {
+    Assert(isalpha(i + 'a'));
+    Assert(isalpha(i + 'A'));
+  }
+  Assert(!isalpha(1));
+  Assert(!isalpha('$'));
+  Assert(!isalpha('.'));
+  Assert(!isalpha(NULL));
+  Assert(!isalpha(0));
+}
+
+void Test_tolower() {
+  for(int i = 0; i < 26; ++i) {
+    Assert(tolower(i + 'A') == i + 'a');
+    Assert(tolower(i + 'a') == i + 'a');
+  }
+    Assert(tolower(999) == 999);
+    Assert(tolower('$') == '$');
+}
+
 void Test_String()
 {
     Test_Strlen();
     Test_Strcmp();
     Test_Strcpy();
     Test_Sprintf();
-
+    Test_strstr();
+    Test_isalpha();
+    Test_tolower();
     return;
 }
