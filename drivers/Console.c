@@ -184,16 +184,47 @@ STATUS ConDisplayString(const char* str, WORD x, WORD y)
 
     if(str == NULL)
         return S_FAIL;
+    POINT point; 
+    ConGetCursorPosition(&point);
 
     while(*str != '\0')
     {
-        pActiveConsole->buffer[loc++] = *str++;
-        pActiveConsole->buffer[loc++] = pActiveConsole->color;
+       if(*str == 10) {
+          // If we hit a newline character, update position but don't write anything
+          loc += (CONSOLE_WIDTH - point.X) * 2;
+          point.Y++;
+          point.X = 0;
+        }
+        else {
+          // Otherwise, write the character to the console buffer
+          pActiveConsole->buffer[loc++] = *str;
+          pActiveConsole->buffer[loc++] = pActiveConsole->color;
+          point.X++;
+        }
+       
+        // If we're too far to the right, go to the start of the next line
+        if(point.X >= CONSOLE_WIDTH) {
+            point.X = 0;
+            point.Y++;
+        }
+
+        // If we're too far down, scroll
+        if(point.Y > 24) {
+          ScrollDown();
+          point.Y--;
+          loc -= CONSOLE_WIDTH * 2;
+        }
+
+        // Update cursor position
+        // ConMoveCursor(point.X, point.Y);
+        // ScrollDown();
+        *str++;
     }
 
-    newX = (loc % (CONSOLE_WIDTH * 2)) / 2;
-    newY = loc / (CONSOLE_WIDTH * 2);
-    ConMoveCursor(newX, newY);
+    // TODO - calculate everything from loc instead of keeping track of position separately
+    // newX = (loc % (CONSOLE_WIDTH * 2)) / 2;
+    // newY = loc / (CONSOLE_WIDTH * 2);
+    ConMoveCursor(point.X, point.Y);
 
     return S_OK;
 }

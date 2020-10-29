@@ -119,8 +119,6 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing processes...\n");
     ProcessInit();
 
-    ;
-
     KPrint("Initializing keyboard...\n");
     KbInit();
     KeEnableInterrupts();
@@ -162,32 +160,15 @@ volatile int yPos = 0;
 void KPrint(const char* format, ...)
 {
     va_list args;
-    char buffer[256];
+    char buffer[8192]; // TODO make dynamic
     POINT point;
 
     va_start(args, format);
     DoSprintf(sizeof(buffer), buffer, format, args);
     va_end(args);
 
-    if(buffer[Strlen(buffer) - 1] == '\n')
-    {
-        buffer[Strlen(buffer) - 1] = ' ';
-        ConGetCursorPosition(&point);
-        ConDisplayString(buffer, point.X, point.Y);
-        point.Y++;
-        point.X = 0;
-        if(point.Y > 24) {
-            ScrollDown();
-            point.Y--;
-        }
-        ConMoveCursor(point.X, point.Y);
-    }
-    else
-    {
-        ConGetCursorPosition(&point);
-        ConDisplayString(buffer, point.X, point.Y);
-        point.X += Strlen(buffer);
-    }
+    ConGetCursorPosition(&point);
+    ConDisplayString(buffer, point.X, point.Y);
 
     return;
 }
