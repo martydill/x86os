@@ -87,6 +87,13 @@ int KeMain(MultibootInfo* bootInfo)
     unsigned int amount;
     char* buf;
 
+    MMInitializePaging();
+    DeviceInit();
+
+    ConInit();
+    ConClearScreen();
+
+    KPrint("FizzOS kernel 0.0.2\n");
 
     KPrint("Initializing GDT...\n");
     InitializeGDT();
@@ -97,18 +104,8 @@ int KeMain(MultibootInfo* bootInfo)
     KPrint("Initializing timer...\n");
     TimerInit();
 
-    MMInitializePaging();
-
-    DeviceInit();
-
-    ConInit();
-    ConClearScreen();
-
-    KPrint("FizzOS kernel 0.0.2\n");
-
     KPrint("Initializing serial port...\n");
     SerialPortInit();
-
 
     KPrint("Initializing DMA...\n");
     DmaInit();
