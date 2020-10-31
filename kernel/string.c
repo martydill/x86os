@@ -307,6 +307,31 @@ int tolower(int c) {
   return c;
 }
 
+char* strtok(char* str, const char delim) {
+  static char* current;
+  char* p;
+  if(str == NULL) {
+    str = current;
+    if(current == NULL){
+      return NULL;
+    }
+  }
+
+  current = str;
+  p = str;
+  while(*str && *str != delim) {
+    str++;
+  }
+  if(*str) {
+    *str = '\0';
+    current = str + 1;
+  } else {
+    current = NULL;
+  }
+
+  return p;
+}
+
 void Test_Strlen()
 {
     char* p;
@@ -406,6 +431,32 @@ void Test_tolower() {
     Assert(tolower('$') == '$');
 }
 
+void Test_strtok() {
+    char* p = strtok("hello world abc", ' ');
+    Assert(!Strcmp(p, "hello"));
+
+    p = strtok(NULL, ' ');
+    Assert(!Strcmp(p, "world"));
+
+    p = strtok(NULL, ' ');
+    Assert(!Strcmp(p, "abc"));
+
+    p = strtok(NULL, ' ');
+    Assert(p == NULL);
+
+    p = strtok("111x222", 'x');
+    Assert(!Strcmp(p, "111"));
+
+    p = strtok(NULL, ' ');
+    Assert(!Strcmp(p, "222"));
+
+    p = strtok(NULL, ' ');
+    Assert(p == NULL); 
+
+    p = strtok(NULL, '1');
+    Assert(p == NULL); 
+}
+
 void Test_String()
 {
     Test_Strlen();
@@ -415,5 +466,6 @@ void Test_String()
     Test_strstr();
     Test_isalpha();
     Test_tolower();
+    Test_strtok();
     return;
 }

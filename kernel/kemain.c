@@ -127,7 +127,7 @@ int KeMain(MultibootInfo* bootInfo)
     PciInit();
 
     InstallInterruptHandler(0x80, KeSysCallHandler);
-
+    Test_String();
   // ShellStart();
     CreateProcess(IdleLoop, "Idle00", 0);
     CreateProcess(ShellStart, "Shell1", 255);
