@@ -2,7 +2,7 @@
 #include <elf.h>
 
 
-STATUS ELFParseFile(BYTE* data)
+STATUS ELFParseFile(BYTE* data, char* processName)
 {
   if(data == NULL) 
   {
@@ -10,6 +10,7 @@ STATUS ELFParseFile(BYTE* data)
   }
 
   ELFHeader* header = (ELFHeader*)data;
+  KPrint("Running %s\n", processName);
   KPrint("Ident: %s\n", header->e_ident);
   KPrint("Type: %d\n", header->e_type);
   KPrint("Entry: %u\n", header->e_entry);
@@ -40,7 +41,7 @@ STATUS ELFParseFile(BYTE* data)
     }
   }
 
-  CreateProcess(header->e_entry, "test", 1);
+  CreateProcess(header->e_entry, processName, 1);
   return S_OK; 
 }
 

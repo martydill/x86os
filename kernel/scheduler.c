@@ -33,6 +33,8 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
   p->State = STATE_PENDING;
   p->Entry = entryPoint;
   p->Priority = priority;
+  p->Registers.esp = KMalloc(1024 * 1024 * 2);
+
   MMInitializePageDirectory(&p->PageDirectory);
   // MMInitializePageTables(&p->PageDirectory);
   Strcpy(&p->Name, name, Strlen(name));
@@ -55,9 +57,10 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
   
     Debug("New end is %d\n", processListEnd->Process->Id);
     Debug("Created %u %u %u %u %u %s\n", entryPoint, p, next, processListStart, processListEnd, name);
-    if(priority == PRIORITY_FOREGROUND) {
-      foreground = p;
-    }
+  }
+
+  if(priority == PRIORITY_FOREGROUND) {
+    foreground = p;
   }
 }
 
@@ -152,8 +155,8 @@ STATUS ProcessSchedule(Registers* registers) {
       active = NULL;
     }
     else {
-      Debug("Switching from %s\n", active->Name);
-      Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+      // Debug("Switching from %s\n", active->Name);
+      // Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
       active->Registers.eax = registers->eax;
       active->Registers.ebx = registers->ebx;
       active->Registers.ecx = registers->ecx;
@@ -212,7 +215,7 @@ STATUS ProcessSchedule(Registers* registers) {
   // }
 
   if(active) {
-    Debug("Switching to process %s %u %u\n", active->Name, active->Entry, active->State);
+    // Debug("Switching to process %s %u %u\n", active->Name, active->Entry, active->State);
     if (active->State == STATE_PENDING) {
       // Debug("Making process running");
       active->State = STATE_RUNNING;

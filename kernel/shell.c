@@ -12,6 +12,9 @@ void ProcessCommand(char* command)
 {
     char buf[32];
     KPrint("\n");
+    char* cmd = strtok(command, ' ');
+    char* args = strtok(NULL, ' ');
+    
     if(!Strcmp(command, "clear"))
     {
         ConClearScreen();
@@ -51,9 +54,11 @@ void ProcessCommand(char* command)
         static int seek = 0;
         FloppySeek(seek++);
     }
-    else if(!Strcmp(command, "cat"))
+    else if(!Strcmp(cmd, "cat"))
     {
-        read("README.md");
+        if(args != NULL) {
+          read(args);
+        }
     }
     else if(!Strcmp(command, "ps"))
     {

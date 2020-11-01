@@ -83,7 +83,7 @@ typedef struct {
 #define SHF_EXCLUDE 0x8000000 
 
 
-STATUS ELFParseFile(BYTE* data);
+STATUS ELFParseFile(BYTE* data, char* processName);
 
 #endif
 

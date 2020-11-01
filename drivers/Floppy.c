@@ -288,7 +288,7 @@ STATUS FloppySeek(unsigned int track)
 
 int dir = 0;
 extern 
-STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat);
+STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat, WORD cluster);
 
 extern FAT12BootSector s;
 
@@ -360,19 +360,44 @@ WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
 void read(char* name)
 {
+    Debug("Start of read\n");
     int i;
     BYTE buf[512];
     FloppyReadSector(0, buf);
     BYTE fat[512*9];
     /*for(i = 0; i < 70; ++i)
     	KPrint("%c", buf[i]);*/
+    WORD sector;
+
+   WORD clusterToFetch = 0;
 
     if(dir != 0)
     {
         FloppyReadSector(dir, buf);
-        FATReadDirectory(buf);
-        // for(i = 0; i < 512; ++i)
-        //   Debug("%c", buf[i]);
+        FATDirectoryEntry* e = FATReadDirectory(buf);
+        while(e != NULL) {
+          KPrint("  %s%s", e->name, e->attributes & FAT_ATTR_DIRECTORY ? "/" : "");
+          KPrint("     ");
+          if(e->attributes & FAT_ATTR_READ_ONLY)
+              KPrint("Read-only ");
+          if(e->attributes & FAT_ATTR_HIDDEN)
+              KPrint("Hidden ");
+          if(e->attributes & FAT_ATTR_SYSTEM)
+              KPrint("System ");
+          if(e->attributes & FAT_ATTR_VOLUME_ID)
+              KPrint("Volume id ");
+          // // KPrint(" %d sector ", FATSectorForCluster(&s, e->firstClusterLow));
+          KPrint(" %d cluster ", e->firstClusterLow);
+          KPrint("  %d B", e->size);
+
+          KPrint("\n");
+
+          if(!Strcmp(e->name, name)) {
+            clusterToFetch = e->firstClusterLow;
+          }
+
+          e = e->next;
+        }
         
         for(i = 1; i < 10; ++i)
         {
@@ -382,13 +407,23 @@ void read(char* name)
 
       BYTE* foo = KMalloc(6100);
 
-      FATReadFile(foo, &s, fat);
-
-      ELFParseFile(foo);
+      
+      FATReadFile(foo, &s, fat, clusterToFetch);
+      // ELFParseFile(foo, "hello");
 
       Debug("Got file\n");
-      Debug("%s\n", foo);
+      KPrint("%s\n", foo);
       Debug("Done reading file\n");
+
+      // foo = KMalloc(6100);
+      // FATReadFile(foo, &s, fat, 304);
+
+      // ELFParseFile(foo, "shell");
+
+      // Debug("Got file\n");
+      // Debug("%s\n", foo);
+      // Debug("Done reading file\n");
+
        // for(i = 0; i < 512; ++i) {
         //   Debug("%c", fat[i]);
         // }
@@ -410,7 +445,7 @@ extern WORD FATSectorForCluster(FAT12BootSector* bs, WORD cluster);
 //   return FATFirstDataSector(bs) + (cluster - 2) * bs->sectorsPerCluster;
 // }
 
-STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat)
+STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat, WORD cluster)
 {
   if(buffer == NULL){
     return S_FAIL;
@@ -418,7 +453,7 @@ STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat)
 
   WORD clustersRead = 0;
 
-  WORD cluster = 294;
+  // cluster = 294; // hello = 294, shell = 304
   while(1) {
     WORD sector = FATSectorForCluster(bs, cluster);
     FloppyReadSector(sector, buffer + (clustersRead * 512));
