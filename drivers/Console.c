@@ -195,6 +195,15 @@ STATUS ConDisplayString(const char* str, WORD x, WORD y)
           point.Y++;
           point.X = 0;
         }
+        else if(*str == 9) {
+          // Tab character, write out tab
+          BYTE tabWidth = 4; // TODO how to handle tab width?
+          for(int i = 0; i < tabWidth; ++i) {
+            pActiveConsole->buffer[loc++] = NULL;
+            pActiveConsole->buffer[loc++] = 0x0;
+          }
+          point.X += 4;
+        }
         else {
           // Otherwise, write the character to the console buffer
           pActiveConsole->buffer[loc++] = *str;
