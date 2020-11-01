@@ -129,8 +129,11 @@ int KeMain(MultibootInfo* bootInfo)
     InstallInterruptHandler(0x80, KeSysCallHandler);
     Test_String();
   // ShellStart();
+    
+    KeDisableInterrupts();
     CreateProcess(IdleLoop, "Idle00", 0);
     CreateProcess(ShellStart, "Shell1", 255);
+    KeEnableInterrupts();
     // CreateProcess(ShellStart, "Shell2", 0);
     // CreateProcess(ShellStart, "Shell3", 0);
     // CreateProcess(ShellStart, "Shell4", 0);
