@@ -3,8 +3,8 @@ include ../config/Make.config
 
 
 libs = syscall.o
-objs = hello.o
-apps = hello.exe
+objs = hello.o shell.o
+apps = hello.exe shell.exe
 
 VPATH = ../obj/
 
@@ -22,8 +22,9 @@ $(libs): %.o: %.c
 $(objs): %.o: %.c
 	$(CC) $(CFLAGS) -g0 -nostartfiles -c $< -o $@
 
-$(apps): hello.o syscall.o
+$(apps): $(objs) $(libs)
 	$(LD) -T apps.ls -nostdlib -melf_i386 -static syscall.o hello.o -o hello.exe
+	$(LD) -T apps.ls -nostdlib -melf_i386 -static syscall.o shell.o -o shell.exe
 
 
 
