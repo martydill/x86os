@@ -87,6 +87,8 @@ int KeMain(MultibootInfo* bootInfo)
     unsigned int amount;
     char* buf;
 
+    InitializeGDT();
+    InitializeIDT();
     MMInitializePaging();
     DeviceInit();
 
@@ -94,12 +96,6 @@ int KeMain(MultibootInfo* bootInfo)
     ConClearScreen();
 
     KPrint("FizzOS kernel 0.0.2\n");
-
-    KPrint("Initializing GDT...\n");
-    InitializeGDT();
-
-    KPrint("Initializing IDT...\n");
-    InitializeIDT();
 
     KPrint("Initializing timer...\n");
     TimerInit();
@@ -128,11 +124,14 @@ int KeMain(MultibootInfo* bootInfo)
 
     InstallInterruptHandler(0x80, KeSysCallHandler);
     Test_String();
+
+    KeDisableInterrupts();
+    KPrint("Initializing VFS\n");
+    FSInit();
   // ShellStart();
     
-    KeDisableInterrupts();
-    CreateProcess(IdleLoop, "Idle00", 0);
-    CreateProcess(ShellStart, "Shell1", 255);
+    CreateProcess(IdleLoop, "Idle00", 0, "idle");
+    CreateProcess(ShellStart, "Shell1", 255, "shell");
     KeEnableInterrupts();
     // CreateProcess(ShellStart, "Shell2", 0);
     // CreateProcess(ShellStart, "Shell3", 0);
@@ -142,7 +141,6 @@ int KeMain(MultibootInfo* bootInfo)
     // CreateProcess(ShellStart, "Shell7", 0);
     // CreateProcess(ShellStart, "Shell8", 0);
 
-    FSInit();
 
     IdleLoop();
 
