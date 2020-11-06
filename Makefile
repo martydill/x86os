@@ -27,7 +27,7 @@ kernel1: subdirs
 	$(LD) -T kernel.ls -nostdlib -melf_i386 boot/boot.o boot/startup.o obj/*.o  -o bin/$(KERNEL)
 	cp base_images/floppy.img ./floppy.img
 	mcopy -o -i ./floppy.img bin/kernel0 ::
-	mcopy -o -i ./floppy.img apps/*.exe ::
+	mcopy -o -i ./floppy.img apps/bin/* ::
 	mcopy -o -i ./floppy.img README.md ::README.md
 	mcopy -o -i ./floppy.img Makefile ::makefile
 	rm -f ./output.txt

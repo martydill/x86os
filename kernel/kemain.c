@@ -19,6 +19,7 @@
 #include <pci.h>
 #include <process.h>
 #include <fs.h>
+#include <syscall.h>
 
 /* Enable interrupts */
 void KeEnableInterrupts(void)
@@ -63,7 +64,7 @@ void IdleLoop();
 void KeSysCallHandler(Registers* registers)
 {
    Debug("Syscall handler %u %u %u %u %u %u %u %u \n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp);
-   if(registers->eax == 0) {
+   if(registers->eax == SYSCALL_EXIT) {
      Debug("ok\n");
      BYTE processId;
      if(ProcessGetCurrentProcess(&processId) == S_OK) {
@@ -74,7 +75,7 @@ void KeSysCallHandler(Registers* registers)
       Debug("Could not get current process\n");
      }
    }
-   else if(registers->eax == 1) {
+   else if(registers->eax == SYSCALL_KPRINT) {
     Debug("calling kprint %u\n", registers->ebx);
     KPrint(registers->ebx);
    }

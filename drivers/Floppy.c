@@ -358,7 +358,7 @@ STATUS FloppyReadSector(int sector, char* buffer)
 
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
-void read(char* name)
+void read(char* name, char* commandLine)
 {
     Debug("Start of read\n");
     int i;
@@ -409,10 +409,10 @@ void read(char* name)
 
       
       FATReadFile(foo, &s, fat, clusterToFetch);
-      // ELFParseFile(foo, "hello");
+      ELFParseFile(foo, name, commandLine);
 
       Debug("Got file\n");
-      KPrint("%s\n", foo);
+      // KPrint("%s\n", foo);
       Debug("Done reading file\n");
 
       // foo = KMalloc(6100);
@@ -547,7 +547,7 @@ STATUS FloppyInit(void)
             KPrint("\n");*/
 
             drives[i].device.Name = KMalloc(16);
-            Sprintf(16, drives[i].device.Name, "Floppy%d", i);
+            Sprintf(16, drives[i].device.Name, "floppy%d", i);
             drives[i].device.Status = DEVICE_OPEN;
             DeviceRegister(&drives[i].device);
         }

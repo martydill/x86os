@@ -24,20 +24,25 @@ typedef struct ProcessList
 Process* foreground = NULL;
 ProcessList* processListStart = NULL;
 ProcessList* processListEnd = NULL;
-
-STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
+STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine)
 {
+  unsigned int* stackAddress = KMalloc(1024 * 1024) + 1024 * 1024;
+  // Memset(stackAddress - 1024*1024, 0, 1024*1024);
   Process* p = KMalloc(sizeof(Process));
   Memset(p, 0, sizeof(Process));
   p->Id = processCount;
   p->State = STATE_PENDING;
   p->Entry = entryPoint;
   p->Priority = priority;
-  p->Registers.esp = KMalloc(1024 * 1024 * 2);
+  p->KernelStack = stackAddress;
+
+  Debug("Stack address %u contains value %u\n", stackAddress, *stackAddress);
 
   MMInitializePageDirectory(&p->PageDirectory);
   // MMInitializePageTables(&p->PageDirectory);
+  Debug("Commandline: %s\n", commandLine);
   Strcpy(&p->Name, name, Strlen(name));
+  Strcpy(&p->CommandLine, commandLine, Strlen(commandLine));
 
   if(processListStart->Process == NULL) {
     Debug("Updating existing process list node %u %u %u\n", p, processListStart, processListStart->Next);
@@ -62,6 +67,8 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority)
   if(priority == PRIORITY_FOREGROUND) {
     foreground = p;
   }
+
+  int counter = 0;
 }
 
 
@@ -77,15 +84,6 @@ STATUS ProcessInit()
   processListStart->Process = NULL;
   processListEnd = processListStart;
 
-  // CreateProcess(p1);
-  // CreateProcess(p2);
-
-  // Memset(&pr1, 0, sizeof(Process)); 
-  // Memset(&pr2, 0, sizeof(Process)); 
-  // pr1.Entry = p1;
-  // pr2.Entry = p2;
-  // pr1.State = STATE_PENDING;
-  // pr2.State = STATE_PENDING;
   LastTicks = TimerGetTicks();
   return S_OK;
 }
@@ -111,7 +109,7 @@ void DumpProcesses() {
   ProcessList* node = processListStart;
   do 
   {
-    Debug("%d:  %s Self: %u  Next: %u Prev: %u  eip: %u  esp: %u  edx%u\n", count, node->Process->Name, node, node->Next, node->Prev, node->Process->Registers.eip, node->Process->Registers.esp, node->Process->Registers.edx);
+    // Debug("%d:  %s Self: %u  Next: %u Prev: %u  eip: %u  esp: %u  edx%u\n", count, node->Process->Name, node, node->Next, node->Prev, node->Process->Registers.eip, node->Process->Registers.esp, node->Process->Registers.edx);
     node = node->Next;
     count++;
   }while(node != NULL);
@@ -218,14 +216,36 @@ STATUS ProcessSchedule(Registers* registers) {
     // Debug("Switching to process %s %u %u\n", active->Name, active->Entry, active->State);
     if (active->State == STATE_PENDING) {
       // Debug("Making process running");
-      active->State = STATE_RUNNING;
-      active->Registers.eip = active->Entry;
-    }
+      Debug("Command line: %s\n", active->CommandLine);
+      BYTE argcCounter = 1;
+      char* c = active->CommandLine;
+      while(*c) {
+        if(*c++ == ' ') {
+          argcCounter++;
+        }
+      }
+    char**p = KMalloc(argcCounter * sizeof(char*));
+    char* tok = strtok(active->CommandLine, ' ');
+    int cur = 0;
+    while(tok) {
+        Debug("Found token %s\n", tok);
+        p[cur] = KMalloc(Strlen(tok) + 1);
+        Strcpy(p[cur], tok, Strlen(tok) + 1);
+        cur++;
+        tok = strtok(NULL, ' ');
+      }
 
-    // Memcopy(&active->Registers, registers, sizeof(Registers));
+      active->State = STATE_RUNNING;
+      Memset(&active->Registers, 0, sizeof(Registers));
+      active->Registers.eip = active->Entry;
+      active->Registers.esp = active->KernelStack;
+      active->Registers.eax = argcCounter;
+      active->Registers.ebx = p;
+      Debug("Stack is %u\n, count is %d\n", active->Registers.esp, argcCounter);
+    }
     registers->eax = active->Registers.eax;
     registers->ebx= active->Registers.ebx;
-    registers->ecx= active->Registers.ecx;
+    registers->ecx = active->Registers.ecx;
     registers->edx = active->Registers.edx;
     registers->edi = active->Registers.edi;
     registers->esi = active->Registers.esi;
@@ -233,11 +253,11 @@ STATUS ProcessSchedule(Registers* registers) {
     registers->esp = active->Registers.esp;
     registers->eip = active->Registers.eip;
 
-
-    Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
-    Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+    // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
+    // Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
   }
+
 }
 
 ProcessList* ProcessGetProcesses(){

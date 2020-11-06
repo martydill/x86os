@@ -10,6 +10,9 @@ const char* promptChar = "# ";
 
 void ProcessCommand(char* command)
 {
+  char commandLine[64];
+  Strcpy(commandLine, command, 64);
+
     char buf[32];
     KPrint("\n");
     char* cmd = strtok(command, ' ');
@@ -73,9 +76,19 @@ void ProcessCommand(char* command)
         }
       }
     }
-    else 
+    else if (!Strcmp(command, "ls")) {
+      Device* device = FSDeviceForPath("/mnt/floppy0");
+      if(device) {
+      KPrint("Found device %u %s\n", device, device->Name);
+      }
+      else {
+        KPrint("No device\n");
+      }
+    }
+    else
     {
-      KPrint("'%s' is an unknown command", command);
+      read(command, commandLine);
+      // KPrint("'%s' is an unknown command", command);
     } 
 
     KPrint("\n");

@@ -6,3 +6,4 @@ bin/kernel0
 floppy.img
 output.txt
 *.exe
+apps/bin

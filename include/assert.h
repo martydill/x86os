@@ -10,7 +10,8 @@ void DoAssert(const char* expression, const char* fileName, int lineNumber);
 
 /* Assert macro */
 #ifdef DEBUG
-#define Assert(expression) if(!(expression)) { DoAssert(#expression, __FILE__, __LINE__); }
+//#define Assert(expression) if(!(expression)) { DoAssert(#expression, __FILE__, __LINE__); }
+#define Assert(expression) ;
 #else
 #define Assert(expression) ;
 #endif

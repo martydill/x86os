@@ -35,12 +35,13 @@ typedef struct Process_S
     DWORD Entry;
     DWORD CpuTicks;
     char Name[32];
+    char CommandLine[255];
     PageDirectory PageDirectory;
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
-STATUS CreateProcess(void* entryPoint, char* name, BYTE priority);
+STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine);
 STATUS ProcessGetCurrentProcess(BYTE* id);
 STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);

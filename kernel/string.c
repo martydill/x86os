@@ -48,6 +48,9 @@ int Strcmp(const char* string1, const char* string2)
 #define	SPECIFIER_CHAR			3
 #define SPECIFIER_UINT			4
 
+#ifndef Assert
+#define Assert(x) ;
+#endif
 /* Copies a format specifier'd string to another string. Private. */
 /* FIXME: Count characters and handle size */
 /* FIXME: Can't end on a %s */

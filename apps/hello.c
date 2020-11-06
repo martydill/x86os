@@ -1,8 +1,7 @@
-// #include <kernel.h>
-// #include <console.h>
-// vkkkA
 
-int main()
+int main(int argc, char* argv[])
 {
-  KPrint("Hello World\n");
+  for(int i = 0; i < argc; ++i){
+    KPrint(argv[i]);
+  }
 }

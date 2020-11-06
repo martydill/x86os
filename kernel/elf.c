@@ -2,7 +2,7 @@
 #include <elf.h>
 
 
-STATUS ELFParseFile(BYTE* data, char* processName)
+STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
 {
   if(data == NULL) 
   {
@@ -41,7 +41,7 @@ STATUS ELFParseFile(BYTE* data, char* processName)
     }
   }
 
-  CreateProcess(header->e_entry, processName, 1);
+  CreateProcess(header->e_entry, processName, 1, commandLine);
   return S_OK; 
 }
 
