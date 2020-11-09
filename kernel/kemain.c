@@ -65,19 +65,22 @@ void KeSysCallHandler(Registers* registers)
 {
    Debug("Syscall handler %u %u %u %u %u %u %u %u \n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp);
    if(registers->eax == SYSCALL_EXIT) {
-     Debug("ok\n");
-     BYTE processId;
-     if(ProcessGetCurrentProcess(&processId) == S_OK) {
-       Debug("killing\n");
-       ProcessTerminate(processId);
-     }
-     else {
-      Debug("Could not get current process\n");
-     }
+     SyscallExit(0);
    }
    else if(registers->eax == SYSCALL_KPRINT) {
-    Debug("calling kprint %u\n", registers->ebx);
-    KPrint(registers->ebx);
+     SyscallKPrint(registers->ebx);
+     registers->eax = 1234;
+   }
+   else if(registers->eax == SYSCALL_OPEN) {
+    //  BYTE id;
+    //  ProcessGetCurrentProcess(&id);
+    //  ProcessBlockForIO(id);
+    //  ProcessSchedule(registers);
+    int fd  = SyscallOpen(registers->ebx, registers->ecx);
+    registers->eax = fd;
+   }
+   else if(registers->eax == SYSCALL_READ) {
+     SyscallRead(registers->ebx, registers->ecx, registers->edx);
    }
 }
 

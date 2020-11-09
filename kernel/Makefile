@@ -1,7 +1,7 @@
 
 include ../config/Make.config
 
-objs = kemain.o elf.o gdt.o timer.o interrupt.o io.o dbgmain.o string.o mm.o memory.o assert.o device.o shell.o dma.o fat.o scheduler.o fpu.o fs.o
+objs = kemain.o elf.o gdt.o timer.o interrupt.o io.o dbgmain.o string.o mm.o memory.o assert.o device.o shell.o dma.o fat.o scheduler.o fpu.o fs.o syscall.o
 
 asms = interrupt_backend.o
 
