@@ -57,12 +57,12 @@ void ProcessCommand(char* command)
         static int seek = 0;
         FloppySeek(seek++);
     }
-    else if(!Strcmp(cmd, "cat"))
-    {
-        if(args != NULL) {
-          read(args);
-        }
-    }
+    // else if(!Strcmp(cmd, "cat"))
+    // {
+    //     if(args != NULL) {
+    //       //read(args);
+    //     }
+    // }
     else if(!Strcmp(command, "ps"))
     {
       KPrint("Name\t\tID\t\tState\t\tCpu\t\tPriority\n");
