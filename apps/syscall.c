@@ -30,11 +30,11 @@ int open(const char *pathname, int flags) {
 }
 
 int read(int fd, void *buf, int count) {
-  _syscall(SYSCALL_READ, fd, buf, count, 0);
+  return _syscall(SYSCALL_READ, fd, buf, count, 0);
 }  // TODO ssize_t, size_t
 
 int write(int fd, void *buf, int count) {
-  _syscall(SYSCALL_WRITE, fd, buf, count, 0);
+  return _syscall(SYSCALL_WRITE, fd, buf, count, 0);
 }  // 
 
 int __attribute__((noreturn)) _start2(int argc, char* argv[]) {
