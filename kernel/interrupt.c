@@ -221,7 +221,19 @@ void KeExceptionHandler(Registers* registers)
     if(registers->interruptNumber < MAX_INTERRUPT)
     {
         /* Exception */
-        Debug("Caught exception %d: %s", registers->interruptNumber, exceptionStrings[registers->interruptNumber]);
+        Debug("Caught exception %u: %s, error: %u", registers->interruptNumber, exceptionStrings[registers->interruptNumber], registers->errorCode);
+        if(registers->interruptNumber == 13) {
+          if(registers->errorCode & (1 << 0)){
+            Debug("External\n");
+          }
+          if(registers->errorCode & (1 << 1)){
+            Debug("Bit 1 set\n");
+          }
+          if(registers->errorCode & (1 << 2)){
+            Debug("Bit 2 set\n");
+          }
+        }
+
         if(registers->interruptNumber != 14) {
           KePanic(registers);
         }
