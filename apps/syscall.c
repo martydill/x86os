@@ -18,7 +18,7 @@ void KPrint(const char* data){
 }
 
 void _exit(int code) {
-  _syscall(SYSCALL_EXIT, 0, 0, 0, 0);
+  _syscall(SYSCALL_EXIT, code, 0, 0, 0);
 }
 
 void Mount(const char* mountPoint, const char* destination) {
