@@ -87,6 +87,7 @@ void MMInitializePageDirectory(PageDirectory* pageDirectory)
         // pageDirectory->Entries[i] |= 1;
         // pageDirectory->Entries[i] |= 1 << 0;
         pageDirectory->Entries[i] |= 1 << 1;
+        pageDirectory->Entries[i] |= 1 << 2;
         pageDirectory->Entries[i] |= 1 << 7;
         // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
