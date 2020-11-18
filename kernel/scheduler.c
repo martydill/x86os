@@ -323,3 +323,47 @@ STATUS ProcessTerminate(BYTE id) {
   p->State = STATE_TERMINATING;
   return S_OK;
 }
+int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size)
+{
+   ProcessList* node = ProcessGetProcessListNodeById(id);
+  if(node == NULL) {
+    return S_FAIL;
+  }
+  Process *p = node->Process;
+  p->Files[0].Data = fileData;
+  p->Files[0].CurrentLocation = fileData;
+  // p->Files[0].Path = &name;
+  p->Files[0].FileDescriptor = 123;
+  p->Files[0].Size = size;
+  Debug("Opened fd %d\n", p->Files[0].FileDescriptor);
+  return p->Files[0].FileDescriptor;
+}
+
+int ProcessReadFile(BYTE id, int fd, void* buf, int count)
+{
+  Debug("Read file\n");
+   ProcessList* node = ProcessGetProcessListNodeById(id);
+  if(node == NULL) {
+    return S_FAIL;
+  }
+  Process *p = node->Process;
+  // Debug(p->Files[0].Data);
+  int bytesInFile = p->Files[0].Size - (p->Files[0].CurrentLocation - p->Files[0].Data);
+  int bytesToRead = bytesInFile >= count ? count : bytesInFile;
+
+  // if(p->Files[0].CurrentLocation - p->Files[0].Data > p->Files[0].Size) {
+  if(bytesToRead <= 0) {
+    return 0;
+  }
+  Debug("Copying %d bytes out of %d to %u, currently at %d\n", bytesToRead, bytesInFile, buf, p->Files[0].CurrentLocation);
+  Memcopy(buf, p->Files[0].CurrentLocation, bytesToRead);
+  p->Files[0].CurrentLocation += bytesToRead;
+  Debug("Done readfile\n");
+  return bytesToRead;
+  // p->Files[0].Data = fileData;
+  // p->Files[0].CurrentLocation = fileData;
+  // // p->Files[0].Path = &name;
+  // p->Files[0].FileDescriptor = 123;
+  // Debug("Opened fd %d\n", p->Files[0].FileDescriptor);
+  // return p->Files[0].FileDescriptor;
+}

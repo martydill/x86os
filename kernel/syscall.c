@@ -46,8 +46,9 @@ int SyscallOpen(const char *pathname, int flags) {
   Debug("SyscallOpen!\n");
     BYTE processId;
     if (ProcessGetCurrentProcess(&processId) == S_OK) {
-      BYTE* fileData = FloppyReadFile(pathname);
-      int fd = ProcessOpenFile(processId, pathname, fileData);
+      int size;
+      BYTE* fileData = FloppyReadFile(pathname, &size);
+      int fd = ProcessOpenFile(processId, pathname, fileData, size);
       Debug("Found fd %d\n", fd);
       return fd;
     } else {
@@ -56,4 +57,13 @@ int SyscallOpen(const char *pathname, int flags) {
 }
 
 int SyscallRead(int fd, void *buf, int count) {
+    Debug("SyscallRead! %u\n", buf);
+    BYTE processId;
+    if (ProcessGetCurrentProcess(&processId) == S_OK) {
+      int bytesRead = ProcessReadFile(processId, fd, buf, count);
+      Debug("Read %d bytes\n", bytesRead);
+      return bytesRead;
+    } else {
+      Debug("Could not get current process\n");
+    }
 }  // TODO ssize_t, size_t
