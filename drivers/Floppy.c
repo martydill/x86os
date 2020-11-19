@@ -100,6 +100,7 @@ typedef struct FloppyDrive_S
 } FloppyDrive;
 
 
+
 FloppyDrive drives[2];
 volatile int intcount = 0;
 void GetDriveStatus(FloppyDrive* drive);
@@ -121,6 +122,21 @@ void WaitForReady(FloppyDrive* drive)
     }
 }
 
+/* Waits for the MRQ bit of the MSR to be set */
+void WaitForSeek(FloppyDrive* drive)
+{
+    while(1)
+    {
+        GetDriveStatus(drive);
+
+        Debug("Waiting for seek\n");
+        if(!(drive->msr & ACTA)) {
+          Debug("Done seek\n");
+            break;
+        }
+    }
+}
+
 
 void WriteByte(BYTE byte)
 {
@@ -135,7 +151,7 @@ void WriteByte(BYTE byte)
         {
             IoWritePortByte(DATA, byte);
             return;
-        }
+    }
         IoReadPortByte(0x80); /* delay */
     }
     return; /* write timeout */
@@ -163,6 +179,7 @@ volatile int expectingInterrupt = 0;
 /* IRQ 6 handler */
 void FloppyHandler(Registers* registers)
 {
+  Debug("Got floppy interrupt\n");
     expectingInterrupt = 1;
 }
 
@@ -200,7 +217,8 @@ void DiskReset(FloppyDrive* drive)
     drive->dor |= MOTA;
     IoWritePortByte(DOR, drive->dor);
 
-    WaitForInterrupt();
+WaitForSeek(drive);
+    //WaitForInterrupt();
     int i = 0;
     for(i = 0; i < 4; ++i)
     {
@@ -243,31 +261,34 @@ void WaitForReady2()
     }
 }
 
-
 /* busy waits until we receive an interrupt */
 void WaitForInterrupt()
 {
+    Debug("Waiting for interrupt\n");
     while(!expectingInterrupt) {}
     expectingInterrupt = 0;
+    Debug("Got interrupt\n");
 }
-
 
 /* Seeks to the given track */
 STATUS FloppySeek(unsigned int track)
 {
     if(drives[0].track == track)
     {
-        /*KPrint("Already on track %u\n", track);*/
+        Debug("Already on track %u\n", track);
         return S_OK;
     }
 
-    /* fixme - start motor if it's not already started */
+    DiskReset(&drives[0]);
     Debug("Seeking to track %u ", track);
     WriteByte(SEEK_TRACK);
     WriteByte(0);
     WriteByte(track);
-    WaitForInterrupt();
-    sleep();
+    WaitForSeek(&drives[0]);
+    // WaitForInterrupt();
+    // WaitForSeek(&drives[0]); 
+    // sleep();
+    Debug("Done wait");
 
     /* Ensure that the seek was successful */
     WriteByte(SENSE_INTERRUPT);
@@ -283,6 +304,7 @@ STATUS FloppySeek(unsigned int track)
     }
 
     drives[0].track = track;
+    Debug("Done seek\n");
     return S_OK;
 }
 
@@ -312,53 +334,56 @@ STATUS FloppyReadSector(int sector, char* buffer)
         KPrint("Disk changed\n");
         return S_FAIL;
     }
+  Debug("Seekabc\n");
+  FloppySeek(CYL);
 
-    FloppySeek(CYL);
+  IoWritePortByte(CCR, 0);
 
-    IoWritePortByte(CCR, 0);
+  DmaFloppyRead();
+  WriteByte(READ_SECTOR);
+  WriteByte((HEAD << 2));
+  WriteByte(CYL);
+  WriteByte(HEAD);
+  WriteByte(SECT);
+  WriteByte(2);
+  WriteByte(18);
+  WriteByte(0x1b);
+  WriteByte(0xff);
 
-    DmaFloppyRead();
-    WriteByte(READ_SECTOR);
-    WriteByte((HEAD << 2));
-    WriteByte(CYL);
-    WriteByte(HEAD);
-    WriteByte(SECT);
-    WriteByte(2);
-    WriteByte(18);
-    WriteByte(0x1b);
-    WriteByte(0xff);
+  WaitForReady(&drives[0]);
+  Debug("Waiting in read\n");
+  WaitForSeek(&drives[0]);
+  Debug("Done wait in read\n");
 
-    WaitForReady(&drives[0]);
-    WaitForInterrupt();
+  /* clear up the fifo queue */
+  int z = 0;
+  for(z = 0; z < 7; ++z)
+      ReadByte();
 
-    /* clear up the fifo queue */
-    int z = 0;
-    for(z = 0; z < 7; ++z)
-        ReadByte();
+  Memcopy(buffer, FLOPPY_DMA_ADDRESS, FLOPPY_DMA_BUFFER_SIZE);
+  // int i;
+  // unsigned char* blah = (unsigned char*)0x0000;
+  // for(i = 0; i < 512; ++i)
+  // {
+  //     buffer[i] = blah[i];
+  // }
+// Debug(buffer);
+  if(dir == 0) {
+      dir = FATParseBootSector(buffer);
+      // BYTE buffer[90 * 1024];
+      // FATReadFile(&s, buffer, fat);
+  }
 
-    Memcopy(buffer, FLOPPY_DMA_ADDRESS, FLOPPY_DMA_BUFFER_SIZE);
-    // int i;
-    // unsigned char* blah = (unsigned char*)0x0000;
-    // for(i = 0; i < 512; ++i)
-    // {
-    //     buffer[i] = blah[i];
-    // }
-
-    if(dir == 0) {
-        dir = FATParseBootSector(buffer);
-        // BYTE buffer[90 * 1024];
-        // FATReadFile(&s, buffer, fat);
-    }
-
-    /* fixme: check for errors */
-    /* fixme: turn off motor */
-    /* fixme: use memcopy */
-    return S_OK;
+  /* fixme: check for errors */
+  /* fixme: turn off motor */
+  /* fixme: use memcopy */
+  return S_OK;
 }
 
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
-void read(char* name, char* commandLine)
+
+BYTE* FloppyReadFile(char* name, int* size) //todo get size
 {
     Debug("Start of read\n");
     int i;
@@ -373,6 +398,7 @@ void read(char* name, char* commandLine)
 
     if(dir != 0)
     {
+      Debug("Reading sector\n");
         FloppyReadSector(dir, buf);
         FATDirectoryEntry* e = FATReadDirectory(buf);
         while(e != NULL) {
@@ -394,6 +420,61 @@ void read(char* name, char* commandLine)
 
           if(!Strcmp(e->name, name)) {
             clusterToFetch = e->firstClusterLow;
+            *size = e->size;
+          }
+
+          e = e->next;
+        }
+        for(i = 1; i < 10; ++i)
+        {
+          Debug("Reading sector %d\n", i);
+          FloppyReadSector(i, fat + (i - 1) * 512);
+        }
+
+      BYTE* foo = KMalloc(size);
+
+      FATReadFile(foo, &s, fat, clusterToFetch);
+      return foo;
+    }
+}
+
+
+void read(char* name, char* commandLine)
+{
+    Debug("Start of read\n");
+    int i;
+    BYTE buf[512];
+    FloppyReadSector(0, buf);
+    BYTE fat[512*9];
+    /*for(i = 0; i < 70; ++i)
+    	KPrint("%c", buf[i]);*/
+    WORD sector;
+
+   WORD clusterToFetch = 0;
+
+    if(dir != 0)
+    {
+        FloppyReadSector(dir, buf);
+        FATDirectoryEntry* e = FATReadDirectory(buf);
+        while(e != NULL) {
+          // KPrint("  %s%s", e->name, e->attributes & FAT_ATTR_DIRECTORY ? "/" : "");
+          // KPrint("     ");
+          // if(e->attributes & FAT_ATTR_READ_ONLY)
+          //     KPrint("Read-only ");
+          // if(e->attributes & FAT_ATTR_HIDDEN)
+          //     KPrint("Hidden ");
+          // if(e->attributes & FAT_ATTR_SYSTEM)
+          //     KPrint("System ");
+          // if(e->attributes & FAT_ATTR_VOLUME_ID)
+          //     KPrint("Volume id ");
+          // // // KPrint(" %d sector ", FATSectorForCluster(&s, e->firstClusterLow));
+          // KPrint(" %d cluster ", e->firstClusterLow);
+          // KPrint("  %d B", e->size);
+
+          // KPrint("\n");
+
+          if(!Strcmp(e->name, name)) {
+            clusterToFetch = e->firstClusterLow;
           }
 
           e = e->next;
@@ -409,11 +490,12 @@ void read(char* name, char* commandLine)
 
       
       FATReadFile(foo, &s, fat, clusterToFetch);
+      // return foo;
       ELFParseFile(foo, name, commandLine);
 
-      Debug("Got file\n");
+      //Debug("Got file\n");
       // KPrint("%s\n", foo);
-      Debug("Done reading file\n");
+      //Debug("Done reading file\n");
 
       // foo = KMalloc(6100);
       // FATReadFile(foo, &s, fat, 304);
@@ -453,14 +535,13 @@ STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat, WORD cluster)
 
   WORD clustersRead = 0;
 
-  // cluster = 294; // hello = 294, shell = 304
   while(1) {
     WORD sector = FATSectorForCluster(bs, cluster);
     FloppyReadSector(sector, buffer + (clustersRead * 512));
 
     WORD nextCluster = FATGetNextCluster(fat, cluster);
     Debug("Current: %u Next: %u  Count: %u\n", cluster, nextCluster, clustersRead);
-    if(nextCluster > 0xFF8) {
+    if(nextCluster >= 0xFF8 || nextCluster == 0xFF0) { 
       Debug("No more clusters\n");
       break;
     }
@@ -479,10 +560,7 @@ WORD FATGetNextCluster(BYTE* fat, WORD cluster)
   Debug("Offset: %u\n", offset);
   BYTE first = *(BYTE*)&fat[offset];
   BYTE second = *(BYTE*)&fat[offset + 1];
-  // BYTE third = (BYTE)fat[offset + 2];
   Debug("%d %d\n", first, second);
-  // WORD fatValue = (WORD)fat[offset];//first * 256 + second;
-  // xx// WORD fatValue = *(WORD*)&fat[offset];
   WORD fatValue = second *  256 + first;
 
   if(cluster & 0x0001)
@@ -493,7 +571,7 @@ WORD FATGetNextCluster(BYTE* fat, WORD cluster)
   {
     fatValue = fatValue & 0x0FFF;
   }
-  Debug("value: %u\n", fatValue);
+  Debug("Next cluster: %u\n", fatValue);
   return fatValue;
 }
 

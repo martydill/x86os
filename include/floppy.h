@@ -26,5 +26,6 @@ STATUS FloppyEnableMotor(void);
 /* Disables the floppy drive's motor */
 STATUS FloppyDisableMotor(void);
 
+BYTE* FloppyReadFile(char* name, int* size);
 
 #endif
