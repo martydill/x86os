@@ -117,17 +117,19 @@ STATUS GetShortName(unsigned char* dest, unsigned char* name)
 FATDirectoryEntry* FATReadDirectory(unsigned char* directorySector)
 {
     KPrint("Contents of directory /\n");
-    int i;
 
     FATDirectoryEntry* head = NULL;
     FATDirectoryEntry* e = NULL;
     FATDirectoryEntry* current= NULL;
-    for(i = 0; i < 6; ++i)
+    do
     {
-        if(*directorySector == FREE_DIRECTORY_ENTRY)
-        {
-            directorySector += 32;
-            continue;
+        if(*directorySector == 0) {
+          break;
+        }
+
+        if(*directorySector == FREE_DIRECTORY_ENTRY) {
+          directorySector += 32;
+          continue;
         }
 
         e = KMalloc(sizeof(FATDirectoryEntry));
@@ -153,6 +155,7 @@ FATDirectoryEntry* FATReadDirectory(unsigned char* directorySector)
         READ_DWORD(e->size, directorySector);
         e->next = NULL;
     }
+    while(1);
 
   return head;
 }
