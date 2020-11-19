@@ -49,7 +49,7 @@ int SyscallOpen(const char *pathname, int flags) {
       int size;
       BYTE* fileData = FloppyReadFile(pathname, &size);
       int fd = ProcessOpenFile(processId, pathname, fileData, size);
-      Debug("Found fd %d\n", fd);
+      Debug("Found fd %d with size %d\n", fd, size);
       return fd;
     } else {
       Debug("Could not get current process\n");
