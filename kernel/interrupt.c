@@ -59,7 +59,7 @@ IDTPointer idtPointer;
 * Installs a handler for the specified interrupt)
 * Handler must be a naked function (i.e. ASM)
 */
-void AddInterruptHandler(int number, void* handler)
+void AddInterruptHandler(int number, void* handler, BYTE accessMode)
 {
     Assert(number >= 0 && number < 256);
     Assert(handler != NULL);
@@ -68,8 +68,16 @@ void AddInterruptHandler(int number, void* handler)
     idtTable[number].High = ((unsigned long)handler >> 16) & 0xFFFF;
     idtTable[number].Selector = 0x08;
     idtTable[number].Unused = 0;
-    idtTable[number].AccessMode = RING_0_INTERRUPT;
+    idtTable[number].AccessMode = accessMode;
 }
+
+void AddUserModeHandler(int number, void* handler) {
+  AddInterruptHandler(number, handler, RING_3_INTERRUPT);
+}
+
+void AddKernelModeHandler(int number, void* handler) {
+  AddInterruptHandler(number, handler, RING_0_INTERRUPT);
+} 
 
 /* fixme */
 void irq_remap(void)
@@ -156,53 +164,55 @@ void InitializeIDT(void)
     Memset((void*)&irqHandlers, 0, MAX_IRQ * sizeof(void*));
 
     /* Standard exceptions */
-    AddInterruptHandler(0, _interrupt0);
-    AddInterruptHandler(1, _interrupt1);
-    AddInterruptHandler(2, _interrupt2);
-    AddInterruptHandler(3, _interrupt3);
-    AddInterruptHandler(4, _interrupt4);
-    AddInterruptHandler(5, _interrupt5);
-    AddInterruptHandler(6, _interrupt6);
-    AddInterruptHandler(7, _interrupt7);
-    AddInterruptHandler(8, _interrupt8);
-    AddInterruptHandler(9, _interrupt9);
-    AddInterruptHandler(10, _interrupt10);
-    AddInterruptHandler(11, _interrupt11);
-    AddInterruptHandler(12, _interrupt12);
-    AddInterruptHandler(13, _interrupt13);
-    AddInterruptHandler(14, _interrupt14);
-    AddInterruptHandler(15, _interrupt15);
+    AddKernelModeHandler(0, _interrupt0);
+    AddKernelModeHandler(1, _interrupt1);
+    AddKernelModeHandler(2, _interrupt2);
+    AddKernelModeHandler(3, _interrupt3);
+    AddKernelModeHandler(4, _interrupt4);
+    AddKernelModeHandler(5, _interrupt5);
+    AddKernelModeHandler(6, _interrupt6);
+    AddKernelModeHandler(7, _interrupt7);
+    AddKernelModeHandler(8, _interrupt8);
+    AddKernelModeHandler(9, _interrupt9);
+    AddKernelModeHandler(10, _interrupt10);
+    AddKernelModeHandler(11, _interrupt11);
+    AddKernelModeHandler(12, _interrupt12);
+    AddKernelModeHandler(13, _interrupt13);
+    AddKernelModeHandler(14, _interrupt14);
+    AddKernelModeHandler(15, _interrupt15);
 
-    AddInterruptHandler(16, _reservedexceptionhandler);
-    AddInterruptHandler(17, _reservedexceptionhandler);
-    AddInterruptHandler(18, _reservedexceptionhandler);
-    AddInterruptHandler(19, _reservedexceptionhandler);
-    AddInterruptHandler(20, _reservedexceptionhandler);
-    AddInterruptHandler(21, _reservedexceptionhandler);
-    AddInterruptHandler(22, _reservedexceptionhandler);
-    AddInterruptHandler(23, _reservedexceptionhandler);
-    AddInterruptHandler(24, _reservedexceptionhandler);
-    AddInterruptHandler(25, _reservedexceptionhandler);
-    AddInterruptHandler(26, _reservedexceptionhandler);
-    AddInterruptHandler(27, _reservedexceptionhandler);
-    AddInterruptHandler(28, _reservedexceptionhandler);
-    AddInterruptHandler(29, _reservedexceptionhandler);
-    AddInterruptHandler(30, _reservedexceptionhandler);
-    AddInterruptHandler(31, _reservedexceptionhandler);
+    AddKernelModeHandler(16, _reservedexceptionhandler);
+    AddKernelModeHandler(17, _reservedexceptionhandler);
+    AddKernelModeHandler(18, _reservedexceptionhandler);
+    AddKernelModeHandler(19, _reservedexceptionhandler);
+    AddKernelModeHandler(20, _reservedexceptionhandler);
+    AddKernelModeHandler(21, _reservedexceptionhandler);
+    AddKernelModeHandler(22, _reservedexceptionhandler);
+    AddKernelModeHandler(23, _reservedexceptionhandler);
+    AddKernelModeHandler(24, _reservedexceptionhandler);
+    AddKernelModeHandler(25, _reservedexceptionhandler);
+    AddKernelModeHandler(26, _reservedexceptionhandler);
+    AddKernelModeHandler(27, _reservedexceptionhandler);
+    AddKernelModeHandler(28, _reservedexceptionhandler);
+    AddKernelModeHandler(29, _reservedexceptionhandler);
+    AddKernelModeHandler(30, _reservedexceptionhandler);
+    AddKernelModeHandler(31, _reservedexceptionhandler);
 
     /* Standard interrupt handlers */
-    AddInterruptHandler(32, _interrupt32);
-    AddInterruptHandler(33, _interrupt33);
-    AddInterruptHandler(34, _interrupt34);
-    AddInterruptHandler(35, _interrupt35);
-    AddInterruptHandler(36, _interrupt36);
-    AddInterruptHandler(37, _interrupt37);
-    AddInterruptHandler(38, _interrupt38);
-    AddInterruptHandler(39, _interrupt39);
-    AddInterruptHandler(40, _interrupt40);
-    AddInterruptHandler(41, _interrupt41);
-    AddInterruptHandler(112, _interrupt112);
-    AddInterruptHandler(128, _interrupt128);
+    AddKernelModeHandler(32, _interrupt32);
+    AddKernelModeHandler(33, _interrupt33);
+    AddKernelModeHandler(34, _interrupt34);
+    AddKernelModeHandler(35, _interrupt35);
+    AddKernelModeHandler(36, _interrupt36);
+    AddKernelModeHandler(37, _interrupt37);
+    AddKernelModeHandler(38, _interrupt38);
+    AddKernelModeHandler(39, _interrupt39);
+    AddKernelModeHandler(40, _interrupt40);
+    AddKernelModeHandler(41, _interrupt41);
+    AddKernelModeHandler(112, _interrupt112);
+
+    // Syscall handler is in user mode
+    AddUserModeHandler(128, _interrupt128);
 
     idtPointer.Limit = sizeof(struct IDTEntry_S) * 256 - 1;
     idtPointer.Base = (DWORD)&idtTable;
