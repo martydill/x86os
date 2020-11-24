@@ -49,10 +49,10 @@ void KeHalt(void)
 /* Dumps registers to the screen and halts */
 void KePanic(Registers* registers)
 {
-    ConClearScreen();
-    ConMoveCursor(0,0);
+    ConMoveCursor(0,20);
     KPrint("Kernel panic, interrupt #%d\n", registers->interruptNumber);
     KPrint("EAX: %u    EBX: %u   ECX: %u   EDX: %u\n", registers->eax, registers->ebx, registers->ecx, registers->edx);
+    KPrint("EDI: %u    ESI: %u   ESP: %u   EIP: %u\n", registers->edi, registers->esi, registers->esp, registers->eip);
     KPrint("Done dumping\n");
 
     KeHalt();
