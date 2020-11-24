@@ -6,10 +6,6 @@ int main(int argc, char *argv[]) {
   }
 
   int fd = open(argv[1], 0);
-  char buf[32];
-  Sprintf(32, buf, "FD: %d\n\0", fd);
-  KPrint(buf);
-  return 0;
   if (fd == -1) {
     write(1, "Could not open file\n", 20);
     return 1;
