@@ -14,6 +14,6 @@ void SyscallKPrint(const char* data);
 void SyscallExit(int code);
 void SyscallMount(const char* mountPoint, const char* destination);
 int SyscallOpen(const char *pathname, int flags);
-int SyscallRead(int fd, void *buf, int count); // TODO ssize_t, size_t
+int SyscallRead(Registers* registers); // TODO ssize_t, size_t
 
 #endif

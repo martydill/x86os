@@ -4,6 +4,17 @@
 
 #include "interrupt.h"
 #include "mm.h"
+#include "device.h"
+
+#define MAX_PROCESSES 255
+
+#define STATE_PENDING 0
+#define STATE_WAITING 1
+#define STATE_RUNNING 2 
+#define STATE_TERMINATING  3
+#define STATE_FOREGROUND_BLOCKED 4
+#define PRIORITY_FOREGROUND 255
+#define PRIORITY_BACKGROUND  0
 
 // typedef struct Registers
 // {
@@ -18,6 +29,25 @@
 //     DWORD eax;
 // }Registers;
 
+#define MAX_FILES_PER_PROCESS 255
+
+typedef struct File_S
+{
+  int FileDescriptor;
+  int Flags;
+  char Path[255];
+  BYTE* Data;
+  BYTE* CurrentLocation;
+  Device* Device;
+  int Size;
+} File;
+
+typedef struct IOBlock_S
+{
+  int Fd;
+  void* Buf;
+  int Count;
+} IOBlock;
 
 typedef struct Process_S
 {
@@ -37,6 +67,10 @@ typedef struct Process_S
     char Name[32];
     char CommandLine[255];
     PageDirectory PageDirectory;
+    File Files[MAX_FILES_PER_PROCESS];
+    char StdinBuffer[1024];
+    int StdinPosition;
+    IOBlock IOBlock;
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);
@@ -45,5 +79,6 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandL
 STATUS ProcessGetCurrentProcess(BYTE* id);
 STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);
+int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size);
 
 #endif

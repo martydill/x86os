@@ -22,7 +22,8 @@ typedef unsigned char BOOL;
 #define TRUE	1
 
 #define S_OK	0
-#define S_FAIL	1
+#define S_FAIL	-1
+#define S_BLOCKED 1
 
 typedef struct sPOINT
 {
@@ -38,7 +39,7 @@ typedef struct sPOINT
 
 
 void KPrint(const char* format, ...);
-
+void KeEnableInterrupts();
 
 void SerialPortWriteString(const char* format, ...);
 

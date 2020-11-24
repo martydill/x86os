@@ -63,27 +63,28 @@ void IdleLoop();
 
 void KeSysCallHandler(Registers* registers)
 {
-   Debug("Syscall handler %u %u %u %u %u %u %u %u \n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp);
+   Debug("Syscall handler %u %u %u %u %u %u %u %u %u\n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp, registers->eip);
    if(registers->eax == SYSCALL_EXIT) {
-     SyscallExit(0);
+     SyscallExit(registers);
    }
    else if(registers->eax == SYSCALL_KPRINT) {
-     SyscallKPrint(registers->ebx);
-     registers->eax = 1234;
+      SyscallKPrint(registers->ebx);
+     registers->eax = 0;
    }
    else if(registers->eax == SYSCALL_OPEN) {
-    //  BYTE id;
-    //  ProcessGetCurrentProcess(&id);
-    //  ProcessBlockForIO(id);
-    //  ProcessSchedule(registers);
     int fd  = SyscallOpen(registers->ebx, registers->ecx);
     registers->eax = fd;
    }
    else if(registers->eax == SYSCALL_READ) {
-     SyscallRead(registers->ebx, registers->ecx, registers->edx);
+    SyscallRead(registers);
    }
+   else if(registers->eax == SYSCALL_WRITE) {
+     SyscallWrite(registers);
+   }
+   Debug("Done syscall handler, returning to %u for stack %u\n", registers->eip, registers->esp);
 }
 
+extern void _jump_usermode();
 
 /* Start here ... */
 int KeMain(MultibootInfo* bootInfo)

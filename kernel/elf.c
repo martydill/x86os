@@ -41,7 +41,7 @@ STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
     }
   }
 
-  CreateProcess(header->e_entry, processName, 1, commandLine);
+  CreateProcess(header->e_entry, processName, 255, commandLine);
   return S_OK; 
 }
 

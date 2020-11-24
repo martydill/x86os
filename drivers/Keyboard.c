@@ -68,6 +68,7 @@ void AddKeyToBuffer(char key)
 
     kbBuffer[endPos] = key;
     ++endPos;
+    ProcessAddToStdinBuffer(key);
 }
 
 void KeyboardHandler(Registers* registers)
@@ -108,8 +109,17 @@ void KeyboardHandler(Registers* registers)
         if(controlKeyState & CONTROL_KEY_SHIFT)
             c = shiftKeyCodes[key];
 
-        AddKeyToBuffer(c);
-    }
+        // Backspace
+        if(c == 8) {
+          kbBuffer[--endPos] = '\0';
+          ConBackspace();
+        }
+        else {
+          AddKeyToBuffer(c);
+          Debug(kbBuffer);
+          KPrint("%c", c);
+        }
+      }
 
     /*AddKeyToBuffer(c);*/
 }

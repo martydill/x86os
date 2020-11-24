@@ -2,15 +2,8 @@
 #include <process.h>
 #include <mm.h>
 
-const MAX_PROCESSES = 255;
 BYTE currentProcess =0;
 BYTE processCount = 0;
-const STATE_PENDING = 0;
-const STATE_WAITING = 1;
-const STATE_RUNNING = 2;
-const STATE_TERMINATING = 3;
-const PRIORITY_FOREGROUND = 255;
-const PRIORITY_BACKGROUND = 0;
 
 typedef struct ProcessList
 {
@@ -64,9 +57,9 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandL
     Debug("Created %u %u %u %u %u %s\n", entryPoint, p, next, processListStart, processListEnd, name);
   }
 
-  if(priority == PRIORITY_FOREGROUND) {
+  // if(priority == PRIORITY_FOREGROUND) {
     foreground = p;
-  }
+  // }
 
   int counter = 0;
 }
@@ -163,10 +156,10 @@ STATUS ProcessSchedule(Registers* registers) {
       active->Registers.edi = registers->edi;
       active->Registers.esi = registers->esi;
       active->Registers.ebp = registers->ebp;
-      active->Registers.esp = registers->esp;
+      active->Registers.userEsp = registers->userEsp;
       active->Registers.eip = registers->eip;
       active->CpuTicks += (currentTicks - LastTicks);
-      active->State = STATE_WAITING;
+      // active->State = STATE_WAITING;
     }
   }
   // Memcopy(registers, &active->Registers, sizeof(Registers));
@@ -183,7 +176,7 @@ STATUS ProcessSchedule(Registers* registers) {
     //   return S_FAIL;
     // }
     // Debug("Current: %s %u %s\n", active->Name, active->Id, node->Process->Name);
-    if(node->Next) {
+    if(node->Next && node->Next->Process->State != STATE_FOREGROUND_BLOCKED) {
       // Debug("Switching to next process %u %s\n", node->Next, node->Next->Process->Name);
       active = node->Next->Process;
     }
@@ -238,10 +231,10 @@ STATUS ProcessSchedule(Registers* registers) {
       active->State = STATE_RUNNING;
       Memset(&active->Registers, 0, sizeof(Registers));
       active->Registers.eip = active->Entry;
-      active->Registers.esp = active->KernelStack;
+      active->Registers.userEsp = active->KernelStack;
       active->Registers.eax = argcCounter;
       active->Registers.ebx = p;
-      Debug("Stack is %u\n, count is %d\n", active->Registers.esp, argcCounter);
+      Debug("Stack is %u\n, count is %d\n", active->Registers.userEsp, argcCounter);
     }
     registers->eax = active->Registers.eax;
     registers->ebx= active->Registers.ebx;
@@ -250,11 +243,11 @@ STATUS ProcessSchedule(Registers* registers) {
     registers->edi = active->Registers.edi;
     registers->esi = active->Registers.esi;
     registers->ebp = active->Registers.ebp;
-    registers->esp = active->Registers.esp;
+    registers->userEsp = active->Registers.userEsp;
     registers->eip = active->Registers.eip;
 
     // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
-    // Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+    // Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.userEsp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
   }
 
@@ -262,6 +255,10 @@ STATUS ProcessSchedule(Registers* registers) {
 
 ProcessList* ProcessGetProcesses(){
   return processListStart;
+}
+
+Process* ProcessGetActiveProcess() {
+  return active;
 }
 
 STATUS ProcessGetCurrentProcess(BYTE* id) {
@@ -323,6 +320,32 @@ STATUS ProcessTerminate(BYTE id) {
   p->State = STATE_TERMINATING;
   return S_OK;
 }
+
+STATUS ProcessBlockForIO(BYTE id) {
+  ProcessList* node = ProcessGetProcessListNodeById(id);
+  if(node == NULL) {
+    return S_FAIL;
+  }
+  Process *p = node->Process;
+  p->State = STATE_FOREGROUND_BLOCKED;
+  Debug("Setting process %d to blocked\n", p->Id);
+  return S_OK;
+}
+
+
+STATUS ProcessWakeFromIO(BYTE id, void (*function)(), void* param) {
+  ProcessList* node = ProcessGetProcessListNodeById(id);
+  if(node == NULL) {
+    return S_FAIL;
+  }
+  Process *p = node->Process;
+  p->State = STATE_WAITING;
+  p->Registers.eip = function;
+  Debug("Setting process %d to ready from io\n", p->Id);
+  return S_OK;
+}
+
+
 int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size)
 {
    ProcessList* node = ProcessGetProcessListNodeById(id);
@@ -341,29 +364,78 @@ int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size)
 
 int ProcessReadFile(BYTE id, int fd, void* buf, int count)
 {
-  Debug("Read file\n");
+  Debug("Read file %d %d %u %d\n", id, fd, buf, count);
    ProcessList* node = ProcessGetProcessListNodeById(id);
   if(node == NULL) {
     return S_FAIL;
   }
   Process *p = node->Process;
-  // Debug(p->Files[0].Data);
-  int bytesInFile = p->Files[0].Size - (p->Files[0].CurrentLocation - p->Files[0].Data);
-  int bytesToRead = bytesInFile >= count ? count : bytesInFile;
 
-  // if(p->Files[0].CurrentLocation - p->Files[0].Data > p->Files[0].Size) {
-  if(bytesToRead <= 0) {
-    return 0;
+  if(fd == 0) {
+    Debug("Doing read from stdin\n");
+    int len = Strlen(p->StdinBuffer);
+    if(len > count) {
+      len = count;
+    }
+    Debug("%d bytes\n", len);
+    // Reading from stdin
+    Memcopy(buf, p->StdinBuffer, len);
+    Memset(p->StdinBuffer, 0, 255);
+    p->StdinPosition = 0;
+    Debug("Completed kernel mode read\n");
+    return len;
   }
-  Debug("Copying %d bytes out of %d to %u, currently at %d\n", bytesToRead, bytesInFile, buf, p->Files[0].CurrentLocation);
-  Memcopy(buf, p->Files[0].CurrentLocation, bytesToRead);
-  p->Files[0].CurrentLocation += bytesToRead;
-  Debug("Done readfile\n");
-  return bytesToRead;
-  // p->Files[0].Data = fileData;
-  // p->Files[0].CurrentLocation = fileData;
-  // // p->Files[0].Path = &name;
-  // p->Files[0].FileDescriptor = 123;
-  // Debug("Opened fd %d\n", p->Files[0].FileDescriptor);
-  // return p->Files[0].FileDescriptor;
+  else {
+    int bytesInFile = p->Files[0].Size - (p->Files[0].CurrentLocation - p->Files[0].Data);
+    int bytesToRead = bytesInFile >= count ? count : bytesInFile;
+
+    if(bytesToRead <= 0) {
+      return 0;
+    }
+
+    Debug("Copying %d bytes out of %d to %u, currently at %d\n", bytesToRead, bytesInFile, buf, p->Files[0].CurrentLocation);
+    Memcopy(buf, p->Files[0].CurrentLocation, bytesToRead);
+    p->Files[0].CurrentLocation += bytesToRead;
+    Debug("Done readfile\n");
+    return bytesToRead;
+  }
+}
+
+
+STATUS ProcessCanReadFile(Process* process, int fd, void* buf, int count) {
+  if(fd == 0) {
+    if(process->StdinBuffer[process->StdinPosition - 1] == '\n') {
+      process->StdinBuffer[process->StdinPosition] = '\0';
+      Debug("Process %d can read now: %s\n", process->Id, process->StdinBuffer);
+      return S_OK;
+    }
+  }
+  
+  return S_FAIL;
+}
+
+int ProcessAddToStdinBuffer(char charToAdd) {
+  if(!foreground) {
+    Debug("No foreground process\n");
+    return S_FAIL;
+  }
+  Debug("Added %c to buffer\n", charToAdd);
+
+  foreground->StdinBuffer[foreground->StdinPosition++] = charToAdd;
+
+  // See if this unblocked a read from stdin
+  if(foreground->State == STATE_FOREGROUND_BLOCKED) {
+    Debug("Foreground process is blocked, checking if we can unblock\n");
+    IOBlock* block = &foreground->IOBlock;
+     if(ProcessCanReadFile(foreground, block->Fd, block->Buf, block->Count) == S_OK) {
+       Debug("Read %u %u %u is now unblocked for process %u\n", block->Fd, block->Buf, block->Count, foreground->Id);
+       foreground->State = STATE_WAITING;
+
+      int bytesRead = ProcessReadFile(foreground->Id, block->Fd, block->Buf, block->Count);
+      Debug("Read %d bytes\n", bytesRead);
+      foreground->Registers.eax = bytesRead;
+     }
+  }
+
+  return S_OK;
 }
