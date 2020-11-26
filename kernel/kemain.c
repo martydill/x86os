@@ -88,7 +88,7 @@ void KeSysCallHandler(Registers* registers)
    Debug("Done syscall handler, returning to %u for stack %u\n", registers->eip, registers->esp);
 }
 
-extern void _jump_usermode();
+extern void KeSwitchToUserMode();
 
 /* Start here ... */
 int KeMain(MultibootInfo* bootInfo)
@@ -140,8 +140,8 @@ int KeMain(MultibootInfo* bootInfo)
   // ShellStart();
     
     CreateProcess(IdleLoop, "Idle00", 0, "idle");
-    CreateProcess(ShellStart, "Shell1", 255, "shell");
-    KeEnableInterrupts();
+    // CreateProcess(ShellStart, "Shell1", 255, "shell");
+    //  KeEnableInterrupts();
     // CreateProcess(ShellStart, "Shell2", 0);
     // CreateProcess(ShellStart, "Shell3", 0);
     // CreateProcess(ShellStart, "Shell4", 0);
@@ -149,18 +149,16 @@ int KeMain(MultibootInfo* bootInfo)
     // CreateProcess(ShellStart, "Shell6", 0);
     // CreateProcess(ShellStart, "Shell7", 0);
     // CreateProcess(ShellStart, "Shell8", 0);
-
-
-    IdleLoop();
+    Debug("Jumping to user mode\n");
+    // read("hello", "hello world abc");
+    read("shell", "shell");
+    KeSwitchToUserMode();
 
     return 0;
 }
 
-void IdleLoop(){
-  while(1) {
-    __asm__("hlt");
-  }
-}
+void IdleLoop() { while(1){}}
+
 volatile int xPos = 0;
 volatile int yPos = 0;
 

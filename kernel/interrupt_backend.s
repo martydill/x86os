@@ -243,4 +243,38 @@ _interrupt_handler:
 
   ; Done!
   add esp, 8
-  iret
+  iretd
+
+
+; https://stackoverflow.com/a/6892934/184630
+GLOBAL KeSwitchToUserMode
+KeSwitchToUserMode:
+     ; User mode data segment byte offset, see gdt.c
+     ; Index = 4 
+     ; So 4 * sizeof(GDTEntry) = 32 bytes = 0x23
+     ; Then, set bottom 2 bits to mark RPL for user mode
+     mov ax, 0x23
+     mov ds, ax
+ 
+     mov eax, esp
+     push 0x23
+     push eax
+     pushfd
+
+     ; Turn on IF in EFLAGS
+     pop eax
+     or eax, 0x200
+     push eax
+
+     ; User mode code segment byte offset, see gdt.c
+     ; Index = 3 
+     ; So 3 * sizeof(GDTEntry) = 24 bytes = 0x18
+     ; Then, set bottom 2 bits to mark RPL for user mode
+     push 0x1B
+     push UserModeStub 
+     iret
+
+UserModeStub:
+  ; Just a placeholder.
+  ; Once in user mode this won't actually be scheduled.
+  jmp UserModeStub 
