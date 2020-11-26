@@ -81,6 +81,10 @@ void KeSysCallHandler(Registers* registers)
    else if(registers->eax == SYSCALL_WRITE) {
      SyscallWrite(registers);
    }
+   else if(registers->eax == SYSCALL_POSIX_SPAWN) {
+     Debug("READ\n");
+    read(registers->ecx, registers->ecx);
+   }
    Debug("Done syscall handler, returning to %u for stack %u\n", registers->eip, registers->esp);
 }
 
