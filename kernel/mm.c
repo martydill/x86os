@@ -91,7 +91,7 @@ void MMInitializePageDirectory(PageDirectory* pageDirectory)
         pageDirectory->Entries[i] |= 1 << 7;
         // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
-    Memset(PhysicalMemoryToProcessMap, 0, sizeof(PhysicalMemoryToProcessMap));
+   
     for(i = 0; i < 20; ++i) {
       MMMapPageToProcess(i, 1);
     }
@@ -194,6 +194,8 @@ void MMInitializePaging()
     Debug("Initializing page directory\r\n");
     Debug("End: %d\r\n", (unsigned int)_kernelEndAddress);
     kernelPageDirectory = (PageDirectory*)((unsigned int)_kernelEndAddress & 0xFFFFF000) + 0x1000;
+
+    Memset(PhysicalMemoryToProcessMap, 0, sizeof(PhysicalMemoryToProcessMap));
 
     MMInstallPageFaultHandler();
     MMInitializePageDirectory(kernelPageDirectory);
