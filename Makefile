@@ -43,6 +43,7 @@ clean:
 	-rm -rf obj/*.o
 	-rm bin/$(KERNEL)
 	-rm boot/*.o
+	-rm -rf apps/bin apps/*.o
 
 
 
