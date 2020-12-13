@@ -1,6 +1,6 @@
-/* Use 4 MB as the base address */
-physical_load_addr = 0x800000;
-
+/* Use 64 MB as the base address */
+physical_load_addr = 0x4000000;
+ENTRY (_start)
 SECTIONS
 {
     . = physical_load_addr; _physical_load_addr = physical_load_addr;
