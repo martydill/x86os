@@ -4,37 +4,37 @@
 
 extern int main(int argc, char* argv[]);
 
-int _syscall(unsigned int sysCallNumber, unsigned int param1, unsigned int param2, unsigned int param3, unsigned int param4) {
+int _syscall(unsigned int sysCallNumber, unsigned int param1, unsigned int param2, unsigned int param3, unsigned int param4, unsigned int param5) {
  int result;
   __asm__ __volatile__("int $0x80"
   : "=a" (result)
   : "a" ((long)sysCallNumber),"b" ((long)param1),"c" ((long)param2), \
-          "d" ((long)param3),"S" (param4) : "memory");
+          "d" ((long)param3),"S" (param4), "D" (param5) : "memory");
   return result;
 }
 
 void KPrint(const char* data){
-  _syscall(SYSCALL_KPRINT, data, 0, 0, 0);
+  _syscall(SYSCALL_KPRINT, data, 0, 0, 0, 0);
 }
 
 void _exit(int code) {
-  _syscall(SYSCALL_EXIT, code, 0, 0, 0);
+  _syscall(SYSCALL_EXIT, code, 0, 0, 0, 0);
 }
 
 void Mount(const char* mountPoint, const char* destination) {
-  _syscall(SYSCALL_MOUNT, mountPoint, destination, 0, 0);
+  _syscall(SYSCALL_MOUNT, mountPoint, destination, 0, 0, 0);
 }
 
 int open(const char *pathname, int flags) {
-  return _syscall(SYSCALL_OPEN, pathname, flags, 0, 0);
+  return _syscall(SYSCALL_OPEN, pathname, flags, 0, 0, 0);
 }
 
 int read(int fd, void *buf, int count) {
-  return _syscall(SYSCALL_READ, fd, buf, count, 0);
+  return _syscall(SYSCALL_READ, fd, buf, count, 0, 0);
 }  // TODO ssize_t, size_t
 
 int write(int fd, void *buf, int count) {
-  return _syscall(SYSCALL_WRITE, fd, buf, count, 0);
+  return _syscall(SYSCALL_WRITE, fd, buf, count, 0, 0);
 }  // 
 
 int __attribute__((noreturn)) _start2(int argc, char* argv[]) {
@@ -49,5 +49,5 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
        const posix_spawn_file_actions_t *file_actions,
        const posix_spawnattr_t *restrict attrp,
        char *const argv[restrict], char *const envp[restrict]){
-  return _syscall(SYSCALL_POSIX_SPAWN, pid, path, attrp, argv);
+  return _syscall(SYSCALL_POSIX_SPAWN, pid, path, attrp, argv, envp);
 }

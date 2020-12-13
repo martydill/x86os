@@ -41,8 +41,8 @@ void KeDisableInterrupts(void)
 void KeHalt(void)
 {
     KeDisableInterrupts();
-    while(1)
-        __asm__ ("hlt");
+    while(1){}
+        // __asm__ ("hlt");
 }
 
 
@@ -61,8 +61,15 @@ void KePanic(Registers* registers)
 void ShellStart();
 void IdleLoop();
 
+DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
+  return virtualAddress - 28 * 1024 * 1024;
+};
+
+extern PageDirectory* kernelPageDirectory;
+
 void KeSysCallHandler(Registers* registers)
 {
+  DWORD syscall = registers->eax;
    Debug("Syscall handler %u %u %u %u %u %u %u %u %u\n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp, registers->eip);
    if(registers->eax == SYSCALL_EXIT) {
      SyscallExit(registers);
@@ -76,17 +83,23 @@ void KeSysCallHandler(Registers* registers)
     registers->eax = fd;
    }
    else if(registers->eax == SYSCALL_READ) {
+     Debug("read\n");
     SyscallRead(registers);
    }
    else if(registers->eax == SYSCALL_WRITE) {
      SyscallWrite(registers);
    }
    else if(registers->eax == SYSCALL_POSIX_SPAWN) {
-     Debug("READ\n");
-    read(registers->ecx, registers->ecx);
+     DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
+     DWORD argvAddress = MMVirtualAddressToPhysicalAddress(registers->esi);
+     Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress, physicalAddress, argvAddress, argvAddress);
+     int size;
+     BYTE* fileData = FloppyReadFile(physicalAddress, &size);
+     ELFParseFile(fileData, physicalAddress, argvAddress);
    }
-   Debug("Done syscall handler, returning to %u for stack %u\n", registers->eip, registers->esp);
+   Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall, registers->eip, registers->userEsp);
 }
+
 
 extern void KeSwitchToUserMode();
 
@@ -139,7 +152,7 @@ int KeMain(MultibootInfo* bootInfo)
     FSInit();
   // ShellStart();
     
-    CreateProcess(IdleLoop, "Idle00", 0, "idle");
+    //CreateProcess(IdleLoop, "Idle00", 0, "idle");
     // CreateProcess(ShellStart, "Shell1", 255, "shell");
     //  KeEnableInterrupts();
     // CreateProcess(ShellStart, "Shell2", 0);
@@ -151,7 +164,8 @@ int KeMain(MultibootInfo* bootInfo)
     // CreateProcess(ShellStart, "Shell8", 0);
     Debug("Jumping to user mode\n");
     // read("hello", "hello world abc");
-    read("shell", "shell");
+    read("cat", "cat", NULL);
+    read("shellx", "shellx", NULL);
     KeSwitchToUserMode();
 
     return 0;
