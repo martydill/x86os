@@ -1,5 +1,6 @@
 
 int main(int argc, char *argv[]) {
+  while(1) {}
   if (argc != 2) {
     write(1, "Usage: cat <filename>\n", 22);
     return 1;

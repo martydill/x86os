@@ -162,12 +162,15 @@ int KeMain(MultibootInfo* bootInfo)
     // CreateProcess(ShellStart, "Shell6", 0);
     // CreateProcess(ShellStart, "Shell7", 0);
     // CreateProcess(ShellStart, "Shell8", 0);
-    Debug("Jumping to user mode\n");
-    // read("hello", "hello world abc");
-    read("cat", "cat", NULL);
-    read("shellx", "shellx", NULL);
-    KeSwitchToUserMode();
+    int size;
+    BYTE* fileData = FloppyReadFile("cat", &size);
+    ELFParseFile(fileData, "cat", "cat");
 
+    fileData = FloppyReadFile("shellx", &size);
+    ELFParseFile(fileData, "shellx");
+
+    Debug("Jumping to user mode\n");
+    KeSwitchToUserMode();
     return 0;
 }
 

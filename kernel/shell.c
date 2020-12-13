@@ -87,7 +87,7 @@ void ProcessCommand(char* command)
     }
     else
     {
-      read(command, commandLine);
+      // read(command, commandLine);
       // KPrint("'%s' is an unknown command", command);
     } 
 
