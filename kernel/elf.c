@@ -1,7 +1,7 @@
 #include <kernel.h>
 #include <elf.h>
 
-
+int count = 0;
 STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
 {
   if(data == NULL) 
@@ -15,9 +15,8 @@ STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
   KPrint("Type: %d\n", header->e_type);
   KPrint("Entry: %u\n", header->e_entry);
 
-  void* addr = 1024 * 1024 * 8;
+  void* addr = 1024 * 1024 * 32 + (count++) * 1024 * 1024 * 4;//1024 * 1024 * 8;
 
- 
    Debug("Section Headers: %u (%u bytes, offset %u)\n", header->e_shnum, header->e_shentsize, header->e_shoff);
   for(int i = 0; i < header->e_shnum; ++i) {
     ELFSectionHeader* sectionHeader= data + header->e_shoff + (i * header->e_shentsize);
@@ -37,10 +36,12 @@ STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
     ELFProgramHeader* programHeader = data + header->e_phoff + (i * header->e_phentsize);
     Debug("\tType: %u  Address: %u\n  Offset: %u\n  Size: %u %u\n", programHeader->p_type, programHeader->p_vaddr, programHeader->p_offset, programHeader->p_memsz, programHeader->p_filesz);
     if(programHeader->p_type == 1) {
-      Memcopy(programHeader->p_vaddr, data + programHeader->p_offset, programHeader->p_filesz);
+      Debug("Loading %s at %u\n", commandLine, addr);
+      Memcopy(addr, data + programHeader->p_offset, programHeader->p_filesz);
     }
   }
 
+  Debug("Creating new process for entry %u\n", header->e_entry);
   CreateProcess(header->e_entry, processName, 255, commandLine);
   return S_OK; 
 }
