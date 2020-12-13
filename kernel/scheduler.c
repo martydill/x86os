@@ -4,6 +4,9 @@
 
 BYTE currentProcess =0;
 BYTE processCount = 0;
+BYTE nextId = 1;
+
+void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage);
 
 typedef struct ProcessList
 {
@@ -19,20 +22,21 @@ ProcessList* processListStart = NULL;
 ProcessList* processListEnd = NULL;
 STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine)
 {
-  unsigned int* stackAddress = KMalloc(1024 * 1024) + 1024 * 1024;
+  unsigned int* stackAddress = 64 * 1024 * 1024 + 128 * 1024;
   // Memset(stackAddress - 1024*1024, 0, 1024*1024);
   Process* p = KMalloc(sizeof(Process));
   Memset(p, 0, sizeof(Process));
-  p->Id = processCount;
+  p->Id = nextId++;
   p->State = STATE_PENDING;
   p->Entry = entryPoint;
   p->Priority = priority;
   p->KernelStack = stackAddress;
+  p->PageDirectory = ((unsigned int) KMallocWithTagAligned(sizeof(PageDirectory), "BASE", 4096));// & 0xFFFFF000;
+  Debug("%d Stack address %u contains value %u\n", p->Id, stackAddress, *stackAddress);
 
-  Debug("Stack address %u contains value %u\n", stackAddress, *stackAddress);
+  MMInitializePageDirectory(p->PageDirectory);
+  MMMap(p->PageDirectory, 16, 7 + p->Id);
 
-  MMInitializePageDirectory(&p->PageDirectory);
-  // MMInitializePageTables(&p->PageDirectory);
   Debug("Commandline: %s\n", commandLine);
   Strcpy(&p->Name, name, Strlen(name));
   Strcpy(&p->CommandLine, commandLine, Strlen(commandLine));
@@ -146,8 +150,8 @@ STATUS ProcessSchedule(Registers* registers) {
       active = NULL;
     }
     else {
-      // Debug("Switching from %s\n", active->Name);
-      // Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+      Debug("Switching from %s\n", active->Name);
+      Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.esp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
       active->Registers.eax = registers->eax;
       active->Registers.ebx = registers->ebx;
       active->Registers.ecx = registers->ecx;
@@ -246,11 +250,12 @@ STATUS ProcessSchedule(Registers* registers) {
     registers->userEsp = active->Registers.userEsp;
     registers->eip = active->Registers.eip;
 
-    // Debug("Switching to %s %d\n", active->Name, active->CpuTicks);
-    // Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.userEsp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+    Debug("Switching to name: %s id: %d\n", active->Name, active->Id);
+    Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.userEsp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
-  }
 
+    MMSetPageDirectory(active->PageDirectory);
+  }
 }
 
 ProcessList* ProcessGetProcesses(){
@@ -379,7 +384,8 @@ int ProcessReadFile(BYTE id, int fd, void* buf, int count)
     }
     Debug("%d bytes\n", len);
     // Reading from stdin
-    Memcopy(buf, p->StdinBuffer, len);
+    char* addr = buf - (28 * 1024 * 1024);
+    Memcopy(addr, p->StdinBuffer, len);
     Memset(p->StdinBuffer, 0, 255);
     p->StdinPosition = 0;
     Debug("Completed kernel mode read\n");

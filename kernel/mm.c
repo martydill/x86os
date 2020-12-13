@@ -2,6 +2,7 @@
 #include <kernel.h>
 #include <interrupt.h>
 #include <mm.h>
+#include <process.h>
 
 /* Kernel is loaded at 0x101000, we need to be above that ... */
 #define MEM_FILL_CHAR	'X'
@@ -14,6 +15,7 @@ unsigned int BaseMallocAddress;// = kernelPageDirectory
 
 // 4MB page -> Process ID map
 WORD PhysicalMemoryToProcessMap[NUM_PAGE_DIRECTORY_ENTRIES];
+
 
 void* KMallocWithTag(unsigned int numBytes, char* tag)
 {
@@ -30,6 +32,28 @@ void* KMallocWithTag(unsigned int numBytes, char* tag)
 
     Memset(pointer, MEM_FILL_CHAR, numBytes);
     counter += numBytes;
+
+    return pointer;
+}
+
+void* KMallocWithTagAligned(unsigned int numBytes, char* tag, int alignTo)
+{
+    void* pointer = NULL;
+    Assert(tag != NULL);
+
+    if(counter == 0)
+    {
+        Debug("Setting counter to %d\n", BaseMallocAddress);
+        counter = BaseMallocAddress;
+    }
+
+    pointer = (void*)counter;
+
+    int diff = alignTo - (DWORD)pointer % alignTo;
+    pointer += diff;
+
+    Memset(pointer, MEM_FILL_CHAR, numBytes);
+    counter += numBytes + diff;
 
     return pointer;
 }
@@ -58,7 +82,7 @@ extern char _physical_load_addr[];
 
 PageDirectory* kernelPageDirectory;
 
-STATUS MMMapPageToProcess(WORD page, WORD process) {
+STATUS MMMapPageToProcess(PageDirectory* pd, WORD page, WORD process) {
 
   if(page >= NUM_PAGE_DIRECTORY_ENTRIES) {
     return S_FAIL;
@@ -67,13 +91,47 @@ STATUS MMMapPageToProcess(WORD page, WORD process) {
   // Keep track of what process owns it
   PhysicalMemoryToProcessMap[page] = process;
 
-  Debug("Marking page %d as present\n", page);
+  Debug("Marking page %d as present fro %u\n", page, pd);
   // Mark as present
-  kernelPageDirectory->Entries[page] |= 1 << 0; 
-  // asm volatile("invlpg  (%0)" ::"r"(kernelPageDirectory->Entries): "memory");
+  pd->Entries[page] |= 1 << 0; 
+  asm volatile("invlpg  (%0)" ::"r"(pd->Entries[page]): "memory");
   return S_OK;
 }
 
+void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage)
+{
+  int pageSize = 1024 * 1024 * 4;
+  Debug("Mapping %d-%d to %d-%d\n", virtualPage * pageSize, (virtualPage + 1) * pageSize, physicalPage * pageSize, (physicalPage +1) * pageSize);
+    // Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory, pageDirectory->Entries);
+    //set each entry to not present
+    // unsigned int i = 0;
+    // for(i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i)
+    // {
+        pageDirectory->Entries[virtualPage] = (physicalPage * 1024 * 1024 * 4);// | (1 << 3) | (1 << 7);
+        //attribute: supervisor level, read/write, not present.
+        // pageDirectory->Entries[i] = 0;
+        // pageDirectory->Entries[i] |= 1;
+        pageDirectory->Entries[virtualPage] |= 1 << 0;
+        pageDirectory->Entries[virtualPage] |= 1 << 1;
+        pageDirectory->Entries[virtualPage] |= 1 << 2;
+        pageDirectory->Entries[virtualPage] |= 1 << 7;
+        // Debug("%u %u\n", pageDirectory->Entries[i], i);
+    // }
+   
+    // for(i = 0; i < 8; ++i) {
+      MMMapPageToProcess(pageDirectory, virtualPage, 1);
+
+         kernelPageDirectory->Entries[physicalPage] = (physicalPage * 1024 * 1024 * 4);// | (1 << 3) | (1 << 7);
+        //attribute: supervisor level, read/write, not present.
+        // pageDirectory->Entries[i] = 0;
+        // pageDirectory->Entries[i] |= 1;
+        kernelPageDirectory->Entries[physicalPage] |= 1 << 0;
+        kernelPageDirectory->Entries[physicalPage] |= 1 << 1;
+        kernelPageDirectory->Entries[physicalPage] |= 1 << 2;
+        kernelPageDirectory->Entries[physicalPage] |= 1 << 7;
+      MMMapPageToProcess(kernelPageDirectory, physicalPage, 1);
+    //}
+}
 void MMInitializePageDirectory(PageDirectory* pageDirectory)
 {
     Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory, pageDirectory->Entries);
@@ -92,8 +150,8 @@ void MMInitializePageDirectory(PageDirectory* pageDirectory)
         // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
    
-    for(i = 0; i < 20; ++i) {
-      MMMapPageToProcess(i, 1);
+    for(i = 0; i <= 10; ++i) {
+      MMMapPageToProcess(pageDirectory, i, 1);
     }
 }
 
@@ -119,6 +177,19 @@ void MMInitializePageTables(PageDirectory* pageDirectory)
     }
 }
 
+void MMSetPageDirectory(PageDirectory* pageDirectory) {
+   Debug("Switching to page directory at %u\n", pageDirectory);
+    asm volatile("mov %0, %%cr3":: "b"(pageDirectory)); 
+
+     Debug("Enabling paging\n");
+    //reads cr0, switches the "paging enable" bit, and writes it back.
+    unsigned int cr0;
+    asm volatile("mov %%cr0, %0": "=b"(cr0));
+    cr0 |= 0x80000000;
+    asm volatile("mov %0, %%cr0":: "b"(cr0));
+
+}
+
 void MMEnablePaging(PageDirectory* pageDirectory)
 {
     // Debug("Enabling large pages\n");
@@ -138,14 +209,10 @@ void MMEnablePaging(PageDirectory* pageDirectory)
     cr4 |= 0x00000010;
     asm volatile("mov %0, %%cr4":: "b"(cr4));
 
-    Debug("Enabling paging\n");
-    asm volatile("mov %0, %%cr3":: "b"(pageDirectory));
-    //reads cr0, switches the "paging enable" bit, and writes it back.
-    unsigned int cr0;
-    asm volatile("mov %%cr0, %0": "=b"(cr0));
-    cr0 |= 0x80000000;
-    asm volatile("mov %0, %%cr0":: "b"(cr0));
+    MMSetPageDirectory(pageDirectory);
+    // asm volatile("mov %0, %%cr3":: "b"(pageDirectory));
 
+   
     Debug("Done\n");
 
 }
@@ -156,7 +223,7 @@ void MMPageFaultHandler(Registers* registers)
     unsigned int cr2;
     asm volatile("mov %%cr2, %0": "=b"(cr2));
 
-    Debug("Caught page fault\r\n");
+    Debug("Caught page fault for eip %u\r\n", registers->eip);
     if(code & (1 << 0))
         Debug("Protection violation\r\n");
     else
@@ -178,7 +245,17 @@ void MMPageFaultHandler(Registers* registers)
       Debug("Not present, mapping\n");
       const unsigned int page = cr2 / (1024 * 1024 * 4);
       Debug("Page %u\n", page);
-      MMMapPageToProcess(page, 1);
+
+      if(code & (1 << 2)) {
+        Process* p = ProcessGetActiveProcess();
+        MMMapPageToProcess(&p->PageDirectory, page, 1);
+        // MMMapPageToProcess(kernelPageDirectory, page, 1);
+        // asm volatile("mov %0, %%cr3":: "b"(&p->PageDirectory)); 
+
+      } else {
+        Debug("Mapping for kernel page directory %u\n", kernelPageDirectory);
+        MMMapPageToProcess(kernelPageDirectory, page, 1);
+      }
     }
 }
 
