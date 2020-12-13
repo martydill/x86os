@@ -11,7 +11,7 @@
 #define LOW_ADDRESS 0
 #define HIGH_ADDRESS 0xFFFFFFFF
 
-#define NUM_GDT_ENTRIES		3
+#define NUM_GDT_ENTRIES		6
 
 struct GDTEntry_S
 {

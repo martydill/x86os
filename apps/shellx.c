@@ -8,10 +8,9 @@ int main(int argc, char* argv[])
     char buf[255];
     int bytes = read(0, buf, 255);
     if(bytes > 0) {
-      buf[bytes] = 0;
-      // write(1, buf, bytes);
+      buf[bytes - 1] = 0;
       pid_t pid;
-      posix_spawn(&pid, buf, 0, 0, 0, 0);
+      posix_spawn(&pid, "hello", 0, 0, buf, 0);
     }
   }
 }

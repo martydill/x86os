@@ -66,7 +66,7 @@ typedef struct Process_S
     DWORD CpuTicks;
     char Name[32];
     char CommandLine[255];
-    PageDirectory PageDirectory;
+    PageDirectory* PageDirectory;
     File Files[MAX_FILES_PER_PROCESS];
     char StdinBuffer[1024];
     int StdinPosition;

@@ -278,3 +278,11 @@ UserModeStub:
   ; Just a placeholder.
   ; Once in user mode this won't actually be scheduled.
   jmp UserModeStub 
+
+
+; https://wiki.osdev.org/Getting_to_Ring_3
+GLOBAL FlushTSS
+FlushTSS:
+   mov ax, 0x2B
+   ltr ax
+   ret

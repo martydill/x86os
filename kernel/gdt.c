@@ -6,6 +6,7 @@
 
 #include <kernel.h>
 #include <gdt.h>
+#include <tss.h>
 
 /* GDT data structures */
 GDTEntry GDT[NUM_GDT_ENTRIES];
@@ -51,6 +52,7 @@ STATUS LoadGdt()
 
     return S_OK;
 }
+extern TSS GlobalTSS;
 
 /* Initializes the GDT */
 void InitializeGDT(void)
@@ -75,6 +77,17 @@ void InitializeGDT(void)
     gdtResult = SetGdtEntry(2, LOW_ADDRESS, HIGH_ADDRESS, 0x92, 0xCF);
     Assert(gdtResult == S_OK);
 
+    /* User-mode Code segment */
+    gdtResult = SetGdtEntry(3, LOW_ADDRESS, HIGH_ADDRESS, 0xFA, 0xCF);
+    Assert(gdtResult == S_OK);
+
+    /* User-mode Data segment */
+    gdtResult = SetGdtEntry(4, LOW_ADDRESS, HIGH_ADDRESS, 0xF2, 0xCF);
+    Assert(gdtResult == S_OK);
+
+    SetGdtEntry(5, &GlobalTSS, &GlobalTSS + sizeof(TSS) - 1, 0x89, 0x00);
+    LoadTSS(&GDT[5]);
     LoadGdt();
+    FlushTSS();
     return;
 }
