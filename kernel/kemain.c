@@ -150,21 +150,10 @@ int KeMain(MultibootInfo* bootInfo)
     KeDisableInterrupts();
     KPrint("Initializing VFS\n");
     FSInit();
-  // ShellStart();
-    
-    //CreateProcess(IdleLoop, "Idle00", 0, "idle");
-    // CreateProcess(ShellStart, "Shell1", 255, "shell");
-    //  KeEnableInterrupts();
-    // CreateProcess(ShellStart, "Shell2", 0);
-    // CreateProcess(ShellStart, "Shell3", 0);
-    // CreateProcess(ShellStart, "Shell4", 0);
-    // CreateProcess(ShellStart, "Shell5", 0);
-    // CreateProcess(ShellStart, "Shell6", 0);
-    // CreateProcess(ShellStart, "Shell7", 0);
-    // CreateProcess(ShellStart, "Shell8", 0);
+
     int size;
-    BYTE* fileData = FloppyReadFile("cat", &size);
-    ELFParseFile(fileData, "cat", "cat");
+    BYTE* fileData = FloppyReadFile("idle", &size);
+    ELFParseFile(fileData, "idle", "idle");
 
     fileData = FloppyReadFile("shellx", &size);
     ELFParseFile(fileData, "shellx");
