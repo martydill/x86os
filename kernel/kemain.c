@@ -52,7 +52,7 @@ void KePanic(Registers* registers)
     ConMoveCursor(0,20);
     KPrint("Kernel panic, interrupt #%d\n", registers->interruptNumber);
     KPrint("EAX: %u    EBX: %u   ECX: %u   EDX: %u\n", registers->eax, registers->ebx, registers->ecx, registers->edx);
-    KPrint("EDI: %u    ESI: %u   ESP: %u   EIP: %u\n", registers->edi, registers->esi, registers->esp, registers->eip);
+    KPrint("EDI: %u    ESI: %u   ESP: %u   EIP: %u\n", registers->edi, registers->esi, registers->userEsp, registers->eip);
     KPrint("Done dumping\n");
 
     KeHalt();
@@ -70,7 +70,7 @@ extern PageDirectory* kernelPageDirectory;
 void KeSysCallHandler(Registers* registers)
 {
   DWORD syscall = registers->eax;
-   Debug("Syscall handler %u %u %u %u %u %u %u %u %u\n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->esp, registers->eip);
+   Debug("Syscall handler %u %u %u %u %u %u %u %u %u\n",  registers->eax, registers->ebx, registers->ecx, registers->edx, registers->esi, registers->edi, registers->ebp, registers->userEsp, registers->eip);
    if(registers->eax == SYSCALL_EXIT) {
      SyscallExit(registers);
    }

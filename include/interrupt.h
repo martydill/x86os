@@ -77,7 +77,7 @@ typedef struct
     unsigned int edi;
     unsigned int esi;
     unsigned int ebp;
-    unsigned int esp;
+    unsigned int unused;
     unsigned int ebx;
     unsigned int edx;
     unsigned int ecx;
