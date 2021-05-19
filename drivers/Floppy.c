@@ -402,32 +402,34 @@ BYTE* FloppyReadFile(char* name, int* size) //todo get size
         FloppyReadSector(dir, buf);
         FATDirectoryEntry* e = FATReadDirectory(buf);
         while(e != NULL) {
-          KPrint("  %s%s", e->name, e->attributes & FAT_ATTR_DIRECTORY ? "/" : "");
-          KPrint("     ");
-          if(e->attributes & FAT_ATTR_READ_ONLY)
-              KPrint("Read-only ");
-          if(e->attributes & FAT_ATTR_HIDDEN)
-              KPrint("Hidden ");
-          if(e->attributes & FAT_ATTR_SYSTEM)
-              KPrint("System ");
-          if(e->attributes & FAT_ATTR_VOLUME_ID)
-              KPrint("Volume id ");
-          // // KPrint(" %d sector ", FATSectorForCluster(&s, e->firstClusterLow));
-          KPrint(" %d cluster ", e->firstClusterLow);
-          KPrint("  %d B", e->size);
+          // KPrint("  %s%s", e->name, e->attributes & FAT_ATTR_DIRECTORY ? "/" : "");
+          // KPrint("     ");
+          // if(e->attributes & FAT_ATTR_READ_ONLY)
+          //     KPrint("Read-only ");
+          // if(e->attributes & FAT_ATTR_HIDDEN)
+          //     KPrint("Hidden ");
+          // if(e->attributes & FAT_ATTR_SYSTEM)
+          //     KPrint("System ");
+          // if(e->attributes & FAT_ATTR_VOLUME_ID)
+          //     KPrint("Volume id ");
+          // // // KPrint(" %d sector ", FATSectorForCluster(&s, e->firstClusterLow));
+          // KPrint(" %d cluster ", e->firstClusterLow);
+          // KPrint("  %d B", e->size);
 
-          KPrint("\n");
+          // KPrint("\n");
 
           if(!Strcmp(e->name, name)) {
+            Debug("Found cluster %d %s\n", e->firstClusterLow, name);
             clusterToFetch = e->firstClusterLow;
             *size = e->size;
+            break;
           }
 
           e = e->next;
         }
         for(i = 1; i < 10; ++i)
         {
-          Debug("Reading sector %d\n", i);
+          Debug("Reading sector %d to %u\n", i, fat + (i - 1) * 512);
           FloppyReadSector(i, fat + (i - 1) * 512);
         }
 
