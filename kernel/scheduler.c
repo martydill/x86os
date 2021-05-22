@@ -175,17 +175,16 @@ STATUS ProcessSchedule(Registers* registers) {
   //   active = &pr1;
   // }
   if(active) {
-    // node = ProcessGetProcessListNodeById(active->Id);
-    // if(node == NULL) {
-    //   return S_FAIL;
-    // }
-    // Debug("Current: %s %u %s\n", active->Name, active->Id, node->Process->Name);
-    if(node->Next && node->Next->Process->State != STATE_FOREGROUND_BLOCKED) {
-      // Debug("Switching to next process %u %s\n", node->Next, node->Next->Process->Name);
-      active = node->Next->Process;
+    while(node) {
+      node = node->Next;
+      if(node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED) {
+        Debug("Switching to next process %s %u\n", node->Process->Name, node->Process->Id);
+        active = node->Process;
+        break;
+      }
     }
-    else {
-      // Debug("Switching to first process %s\n", processListStart->Process->Name);
+    if(node == NULL) {
+      Debug("Switching to first process %s\n", processListStart->Process->Name);
       active = processListStart->Process;
     }
   }
