@@ -15,7 +15,7 @@ unsigned int BaseMallocAddress;// = kernelPageDirectory
 
 // 4MB page -> Process ID map
 WORD PhysicalMemoryToProcessMap[NUM_PAGE_DIRECTORY_ENTRIES];
-
+PageDirectory* CurrentPageDirectory = NULL;
 
 void* KMallocWithTag(unsigned int numBytes, char* tag)
 {
@@ -91,24 +91,24 @@ STATUS MMMapPageToProcess(PageDirectory* pd, WORD page, WORD process) {
   // Keep track of what process owns it
   PhysicalMemoryToProcessMap[page] = process;
 
-  Debug("Marking page %d as present fro %u\n", page, pd);
+  // Debug("Marking page %d as present for page directory %u and process %u\n", page, pd, process);
   // Mark as present
   pd->Entries[page] |= 1 << 0; 
   asm volatile("invlpg  (%0)" ::"r"(pd->Entries[page]): "memory");
   return S_OK;
 }
 
-void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage)
+void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage, int processId)
 {
   int pageSize = 1024 * 1024 * 4;
-  Debug("Mapping %d-%d to %d-%d\n", virtualPage * pageSize, (virtualPage + 1) * pageSize, physicalPage * pageSize, (physicalPage +1) * pageSize);
+  Debug("Mapping %d-%d to %d-%d for process %d\n", virtualPage * pageSize, (virtualPage + 1) * pageSize, physicalPage * pageSize, (physicalPage +1) * pageSize, processId);
     // Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory, pageDirectory->Entries);
     //set each entry to not present
     // unsigned int i = 0;
     // for(i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i)
     // {
         pageDirectory->Entries[virtualPage] = (physicalPage * 1024 * 1024 * 4);// | (1 << 3) | (1 << 7);
-        //attribute: supervisor level, read/write, not present.
+      //attribute: supervisor level, read/write, not present.
         // pageDirectory->Entries[i] = 0;
         // pageDirectory->Entries[i] |= 1;
         pageDirectory->Entries[virtualPage] |= 1 << 0;
@@ -119,7 +119,7 @@ void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage)
     // }
    
     // for(i = 0; i < 8; ++i) {
-      MMMapPageToProcess(pageDirectory, virtualPage, 1);
+      MMMapPageToProcess(pageDirectory, virtualPage, processId);
 
          kernelPageDirectory->Entries[physicalPage] = (physicalPage * 1024 * 1024 * 4);// | (1 << 3) | (1 << 7);
         //attribute: supervisor level, read/write, not present.
@@ -129,9 +129,10 @@ void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage)
         kernelPageDirectory->Entries[physicalPage] |= 1 << 1;
         kernelPageDirectory->Entries[physicalPage] |= 1 << 2;
         kernelPageDirectory->Entries[physicalPage] |= 1 << 7;
-      MMMapPageToProcess(kernelPageDirectory, physicalPage, 1);
+      MMMapPageToProcess(kernelPageDirectory, physicalPage, 0);
     //}
 }
+// int count = 0
 void MMInitializePageDirectory(PageDirectory* pageDirectory)
 {
     Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory, pageDirectory->Entries);
@@ -147,12 +148,25 @@ void MMInitializePageDirectory(PageDirectory* pageDirectory)
         pageDirectory->Entries[i] |= 1 << 1;
         pageDirectory->Entries[i] |= 1 << 2;
         pageDirectory->Entries[i] |= 1 << 7;
+
+        MMMapPageToProcess(pageDirectory, i, 0);
+        
+        // Map first 16 * 4MB pages to kernel space
+        if(i < 16) {
+          // Mark as present
+          pageDirectory->Entries[i] |= 1 << 0;
+          MMMapPageToProcess(kernelPageDirectory, i, 0);
+        }
         // Debug("%u %u\n", pageDirectory->Entries[i], i);
     }
    
-    for(i = 0; i <= 10; ++i) {
-      MMMapPageToProcess(pageDirectory, i, 1);
-    }
+    // for(i = 0; i <= 11; ++i) {
+    //   MMMapPageToProcess(pageDirectory, i, 1);
+    // }
+  // Map all 16 * 4mb kernel pages to the process
+    //     for(int i = 0; i < 16; ++i) {
+    //   MMMapPageToProcess(pageDirectory, i, 0);
+    // }
 }
 
 void MMInitializePageTables(PageDirectory* pageDirectory)
@@ -178,15 +192,14 @@ void MMInitializePageTables(PageDirectory* pageDirectory)
 }
 
 void MMSetPageDirectory(PageDirectory* pageDirectory) {
+  if(pageDirectory == CurrentPageDirectory) {
+    return;
+  }
    Debug("Switching to page directory at %u\n", pageDirectory);
-    asm volatile("mov %0, %%cr3":: "b"(pageDirectory)); 
+    asm volatile("mov %0, %%cr3":: "r"(pageDirectory)); 
 
-     Debug("Enabling paging\n");
-    //reads cr0, switches the "paging enable" bit, and writes it back.
-    unsigned int cr0;
-    asm volatile("mov %%cr0, %0": "=b"(cr0));
-    cr0 |= 0x80000000;
-    asm volatile("mov %0, %%cr0":: "b"(cr0));
+  CurrentPageDirectory = pageDirectory;
+  Debug("Done switch\n");
 
 }
 
@@ -204,6 +217,8 @@ void MMEnablePaging(PageDirectory* pageDirectory)
     // or eax, 0x00000010
     //mov cr4, eax
 
+
+
     unsigned int cr4;
     asm volatile("mov %%cr4, %0": "=b"(cr4));
     cr4 |= 0x00000010;
@@ -213,6 +228,13 @@ void MMEnablePaging(PageDirectory* pageDirectory)
     // asm volatile("mov %0, %%cr3":: "b"(pageDirectory));
 
    
+       Debug("Enabling paging\n");
+    //reads cr0, switches the "paging enable" bit, and writes it back.
+    unsigned int cr0;
+    asm volatile("mov %%cr0, %0": "=b"(cr0));
+    cr0 |= 0x80000000;
+    asm volatile("mov %0, %%cr0":: "b"(cr0));
+
     Debug("Done\n");
 
 }
@@ -248,6 +270,7 @@ void MMPageFaultHandler(Registers* registers)
 
       if(code & (1 << 2)) {
         Process* p = ProcessGetActiveProcess();
+        Debug("Mapping for user page directory %u\n", &p->PageDirectory);
         MMMapPageToProcess(&p->PageDirectory, page, 1);
         // MMMapPageToProcess(kernelPageDirectory, page, 1);
         // asm volatile("mov %0, %%cr3":: "b"(&p->PageDirectory)); 
@@ -257,6 +280,7 @@ void MMPageFaultHandler(Registers* registers)
         MMMapPageToProcess(kernelPageDirectory, page, 1);
       }
     }
+    
 }
 
 void MMInstallPageFaultHandler()
@@ -276,6 +300,9 @@ void MMInitializePaging()
 
     MMInstallPageFaultHandler();
     MMInitializePageDirectory(kernelPageDirectory);
+    for(int i = 0; i < 16; ++i) {
+      MMMapPageToProcess(kernelPageDirectory, i, 0);
+    }
     // MMInitializePageTables(kernelPageDirectory);
     MMEnablePaging(kernelPageDirectory);
     

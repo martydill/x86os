@@ -69,7 +69,7 @@ int SyscallRead(Registers* registers) {
     registers->eax = bytesRead;
   }
   else {
-    Debug("Can't read, blocking %d\n", p->Id);
+    Debug("Can't read, blocking %d at eip %u\n", p->Id, registers->eip);
     p->State = STATE_FOREGROUND_BLOCKED;
     p->IOBlock.Fd = fd;
     p->IOBlock.Buf = buf;

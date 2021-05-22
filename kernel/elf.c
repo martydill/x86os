@@ -15,8 +15,9 @@ STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
   KPrint("Type: %d\n", header->e_type);
   KPrint("Entry: %u\n", header->e_entry);
 
-  void* addr = 1024 * 1024 * 32 + (count++) * 1024 * 1024 * 4;//1024 * 1024 * 8;
-
+  void* addr = 1024 * 1024 * 64 + count * 1024 * 1024 * 4;//1024 * 1024 * 8;
+  Debug("For physical address %u and data located at %c %c %c %c\n", addr, data[0], data[1], data[2], data[3]);
+  count++;
    Debug("Section Headers: %u (%u bytes, offset %u)\n", header->e_shnum, header->e_shentsize, header->e_shoff);
   for(int i = 0; i < header->e_shnum; ++i) {
     ELFSectionHeader* sectionHeader= data + header->e_shoff + (i * header->e_shentsize);

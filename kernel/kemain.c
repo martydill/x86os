@@ -62,7 +62,13 @@ void ShellStart();
 void IdleLoop();
 
 DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
-  return virtualAddress - 28 * 1024 * 1024;
+  BYTE processId;
+  if(ProcessGetCurrentProcess(&processId) == S_OK) {
+    DWORD phys = virtualAddress + (processId - 1) * 4 * 1024 * 1024;
+    Debug("Virt %u = phys %u for process %d\n", virtualAddress, phys, processId);
+    return phys;
+  }
+  KePanic("Cannot convert");
 };
 
 extern PageDirectory* kernelPageDirectory;
@@ -95,6 +101,7 @@ void KeSysCallHandler(Registers* registers)
      Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress, physicalAddress, argvAddress, argvAddress);
      int size;
      BYTE* fileData = FloppyReadFile(physicalAddress, &size);
+     Debug("Read %d bytes\n", size);
      ELFParseFile(fileData, physicalAddress, argvAddress);
    }
    Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall, registers->eip, registers->userEsp);
@@ -156,7 +163,7 @@ int KeMain(MultibootInfo* bootInfo)
     ELFParseFile(fileData, "idle", "idle");
 
     fileData = FloppyReadFile("shellx", &size);
-    ELFParseFile(fileData, "shellx");
+    ELFParseFile(fileData, "shellx", "shellx");
 
     Debug("Jumping to user mode\n");
     KeSwitchToUserMode();
