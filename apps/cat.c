@@ -12,8 +12,8 @@ int main(int argc, char* argv[]) {
   }
 
   while (1) {
-    char buf[32];
-    int nbytes = read(fd, buf, 32);
+    char buf[256];
+    int nbytes = read(fd, buf, sizeof(buf));
     if (nbytes <= 0) {
       return 0;
     }
