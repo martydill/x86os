@@ -111,6 +111,7 @@ void KeyboardHandler(Registers* registers) {
     if (c == 8) {
       kbBuffer[--endPos] = '\0';
       ConBackspace();
+      ProcessAddToStdinBuffer(c);
     } else {
       AddKeyToBuffer(c);
       Debug(kbBuffer);

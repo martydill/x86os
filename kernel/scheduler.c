@@ -465,7 +465,14 @@ int ProcessAddToStdinBuffer(char charToAdd) {
   }
   Debug("Added %c to buffer\n", charToAdd);
 
-  foreground->StdinBuffer[foreground->StdinPosition++] = charToAdd;
+  if(charToAdd == 8) {
+    // backspace
+    foreground->StdinBuffer[--foreground->StdinPosition] = 0;
+  }
+  else {
+    // other
+    foreground->StdinBuffer[foreground->StdinPosition++] = charToAdd;
+  }
 
   // See if this unblocked a read from stdin
   if (foreground->State == STATE_FOREGROUND_BLOCKED) {
