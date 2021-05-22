@@ -26,7 +26,7 @@ void* KMallocWithTag(unsigned int numBytes, char* tag) {
   }
 
   pointer = (void*)counter;
-
+  Debug("Allocated %u bytes at %u\n", numBytes, pointer);
   Memset(pointer, MEM_FILL_CHAR, numBytes);
   counter += numBytes;
 

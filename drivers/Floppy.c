@@ -375,8 +375,8 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get size
       Debug("Reading sector %d to %u\n", i, fat + (i - 1) * 512);
       FloppyReadSector(i, fat + (i - 1) * 512);
     }
-
-    BYTE* foo = KMalloc(size);
+    Debug("Allocating %u\n", *size);
+    BYTE* foo = KMalloc(*size);
 
     FATReadFile(foo, &s, fat, clusterToFetch);
     return foo;
