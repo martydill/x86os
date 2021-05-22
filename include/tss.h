@@ -5,8 +5,7 @@
 #include <gdt.h>
 
 // Based on https://www.sandpile.org/x86/tss.htm
-struct TSS_S
-{
+struct TSS_S {
   DWORD Link;
   DWORD ESP0;
   DWORD SS0;
@@ -33,7 +32,7 @@ struct TSS_S
   DWORD GS;
   DWORD LDTR;
   DWORD IOPB;
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 typedef struct TSS_S TSS;
 

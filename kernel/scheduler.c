@@ -2,14 +2,14 @@
 #include <process.h>
 #include <mm.h>
 
-BYTE currentProcess =0;
+BYTE currentProcess = 0;
 BYTE processCount = 0;
 BYTE nextId = 1;
 
-void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage, int processId);
+void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage,
+           int processId);
 
-typedef struct ProcessList
-{
+typedef struct ProcessList {
   struct ProcessList* Next;
   struct ProcessList* Prev;
   Process* Process;
@@ -22,8 +22,8 @@ ProcessList* processListStart = NULL;
 ProcessList* processListEnd = NULL;
 Process* active = NULL;
 
-DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine)
-{
+DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
+                    char* commandLine) {
   unsigned int* stackAddress = 64 * 1024 * 1024 + 128 * 1024;
   // Memset(stackAddress - 1024*1024, 0, 1024*1024);
   Process* p = KMalloc(sizeof(Process));
@@ -33,13 +33,14 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLi
   p->Entry = entryPoint;
   p->Priority = priority;
   p->KernelStack = stackAddress;
-  p->PageDirectory = ((unsigned int) KMallocWithTagAligned(sizeof(PageDirectory), "BASE", 4096));// & 0xFFFFF000;
+  p->PageDirectory = ((unsigned int)KMallocWithTagAligned(
+      sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
-  
+
   Debug("Process id %d\n", p->Id);
 
   MMInitializePageDirectory(p->PageDirectory);
-  MMMap(p->PageDirectory, 16, 16 + (p->Id - 1 ), p->Id);//, 7 + p->Id);
+  MMMap(p->PageDirectory, 16, 16 + (p->Id - 1), p->Id); //, 7 + p->Id);
   // MMMap(p->PageDirectory, 17, 1 + p->Id);
   // MMMap(p->PageDirectory, 17, 8 + p->Id);
   // MMMap(p->PageDirectory, 18, 9 + p->Id);
@@ -49,12 +50,12 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLi
   Strcpy(&p->Name, name, Strlen(name));
   Strcpy(&p->CommandLine, commandLine, Strlen(commandLine));
 
-  if(processListStart->Process == NULL) {
-    Debug("Updating existing process list node %u %u %u\n", p, processListStart, processListStart->Next);
+  if (processListStart->Process == NULL) {
+    Debug("Updating existing process list node %u %u %u\n", p, processListStart,
+          processListStart->Next);
     processListStart->Process = p;
     ++processCount;
-  }
-  else {
+  } else {
     Debug("Creating new process list node\n");
     Debug("Old end was %d\n", processListEnd->Process->Id);
     ProcessList* next = KMalloc(sizeof(ProcessList));
@@ -64,23 +65,21 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLi
     next->Process = p;
     processListEnd = next;
     ++processCount;
-  
+
     Debug("New end is %d\n", processListEnd->Process->Id);
-    Debug("Created %u %u %u %u %u %s\n", entryPoint, p, next, processListStart, processListEnd, name);
+    Debug("Created %u %u %u %u %u %s\n", entryPoint, p, next, processListStart,
+          processListEnd, name);
   }
 
   // if(priority == PRIORITY_FOREGROUND) {
-    foreground = p;
+  foreground = p;
   // }
   return p->Id;
 }
 
-
-
 DWORD LastTicks;
 
-STATUS ProcessInit()
-{
+STATUS ProcessInit() {
   processListStart = KMalloc(sizeof(ProcessList));
   processListStart->Next = NULL;
   processListStart->Prev = NULL;
@@ -91,11 +90,9 @@ STATUS ProcessInit()
   return S_OK;
 }
 
-
-
 ProcessList* ProcessGetProcessListNodeById(BYTE id) {
   // Debug("Searching for process %d\n", id);
-  ProcessList *ps = processListStart;
+  ProcessList* ps = processListStart;
   do {
     // Debug("Checking %d\n", ps->Process ? ps->Process->Id : 0);
     if (ps->Process && ps->Process->Id == id) {
@@ -111,61 +108,64 @@ ProcessList* ProcessGetProcessListNodeById(BYTE id) {
 void DumpProcesses() {
   int count = 0;
   ProcessList* node = processListStart;
-  do 
-  {
-    // Debug("%d:  %s Self: %u  Next: %u Prev: %u  eip: %u  esp: %u  edx%u\n", count, node->Process->Name, node, node->Next, node->Prev, node->Process->Registers.eip, node->Process->Registers.userEsp, node->Process->Registers.edx);
+  do {
+    // Debug("%d:  %s Self: %u  Next: %u Prev: %u  eip: %u  esp: %u  edx%u\n",
+    // count, node->Process->Name, node, node->Next, node->Prev,
+    // node->Process->Registers.eip, node->Process->Registers.userEsp,
+    // node->Process->Registers.edx);
     node = node->Next;
     count++;
-  }while(node != NULL);
+  } while (node != NULL);
 }
 
 STATUS ProcessSchedule(Registers* registers) {
 
   ProcessList* node;
   // Debug("Schedule\n");
-  if(processListStart->Process == NULL) {
+  if (processListStart->Process == NULL) {
     Debug("No processes yet\n");
     return S_FAIL;
   }
 
   DumpProcesses();
-  if(active) {
+  if (active) {
     node = ProcessGetProcessListNodeById(active->Id);
-    if(node == NULL) {
+    if (node == NULL) {
       return S_FAIL;
     }
   }
 
   DWORD currentTicks = TimerGetTicks();
-  if(active) {
-    if(active->State == STATE_TERMINATING) {
+  if (active) {
+    if (active->State == STATE_TERMINATING) {
       Debug("%s %d died\n", active->Name, active->CpuTicks);
       Debug("ParentId was %d\n", active->ParentId);
-      if(active->ParentId != 0) {
+      if (active->ParentId != 0) {
         ProcessList* node = ProcessGetProcessListNodeById(active->ParentId);
         Debug("waiting on %d\n", node->Process->WaitpidBlock.id);
-        if(node && node->Process->WaitpidBlock.id == active->Id) {
+        if (node && node->Process->WaitpidBlock.id == active->Id) {
           node->Process->WaitpidBlock.id = 0;
           node->Process->State = STATE_WAITING;
-          Debug("%s %d waitpid is unblocked\n", node->Process->Name, node->Process->Id);
+          Debug("%s %d waitpid is unblocked\n", node->Process->Name,
+                node->Process->Id);
         }
       }
 
       processCount--;
-      
-      if(node->Next) {
+
+      if (node->Next) {
         node->Next->Prev = node->Prev;
       }
-      if(node->Prev) {
+      if (node->Prev) {
         node->Prev->Next = node->Next;
         processListEnd = node->Prev;
 
-        if(processListEnd == node) {
+        if (processListEnd == node) {
           processListEnd = node->Prev;
         }
       }
       Debug("Removed from list\n");
-      if(active == foreground) {
+      if (active == foreground) {
         // foreground = NULL;
         Debug("This was the foreground process, will find a new one\n");
         // TODO switch to parent
@@ -174,11 +174,13 @@ STATUS ProcessSchedule(Registers* registers) {
       }
       active = NULL;
 
-    }
-    else {
+    } else {
       // todo don't switch to idle if we are still running
       Debug("Switching from %s %d\n", active->Name, active->State);
-      Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.userEsp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+      Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
+            active->Registers.userEsp, active->Registers.eip,
+            active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
+            active->Registers.edx);
       active->Registers.eax = registers->eax;
       active->Registers.ebx = registers->ebx;
       active->Registers.ecx = registers->ecx;
@@ -201,26 +203,30 @@ STATUS ProcessSchedule(Registers* registers) {
   // else {
   //   active = &pr1;
   // }
-  if(active) {
-    while(node) {
+  if (active) {
+    while (node) {
       node = node->Next;
-      if(node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED && node->Process->State != STATE_WAIT_BLOCKED) {
-        Debug("Switching to next process %s %u\n", node->Process->Name, node->Process->Id);
+      if (node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED &&
+          node->Process->State != STATE_WAIT_BLOCKED) {
+        Debug("Switching to next process %s %u\n", node->Process->Name,
+              node->Process->Id);
         active = node->Process;
         break;
-      }
-      else if(node != NULL && (node->Process->State == STATE_FOREGROUND_BLOCKED || node->Process->State == STATE_WAIT_BLOCKED)) {
+      } else if (node != NULL &&
+                 (node->Process->State == STATE_FOREGROUND_BLOCKED ||
+                  node->Process->State == STATE_WAIT_BLOCKED)) {
         Debug("Next process %s is blocked \n", node->Process->Name);
       }
     }
-    if(node == NULL) {
+    if (node == NULL) {
       Debug("Switching to first process %s\n", processListStart->Process->Name);
       active = processListStart->Process;
     }
   }
-  
+
   else {
-      Debug("Switching to real first process %s\n", processListStart->Process->Name);
+    Debug("Switching to real first process %s\n",
+          processListStart->Process->Name);
     active = processListStart->Process;
   }
 
@@ -238,22 +244,23 @@ STATUS ProcessSchedule(Registers* registers) {
   //   // Debug("Switch to process %d\n", currentProcess);
   // }
 
-  if(active) {
-    Debug("Switching to process %s %u %u\n", active->Name, active->Entry, active->State);
+  if (active) {
+    Debug("Switching to process %s %u %u\n", active->Name, active->Entry,
+          active->State);
     if (active->State == STATE_PENDING) {
       // Debug("Making process running");
       Debug("Command line: %s\n", active->CommandLine);
       BYTE argcCounter = 1;
       char* c = active->CommandLine;
-      while(*c) {
-        if(*c++ == ' ') {
+      while (*c) {
+        if (*c++ == ' ') {
           argcCounter++;
         }
       }
-    char**p = KMalloc(argcCounter * sizeof(char*));
-    char* tok = strtok(active->CommandLine, ' ');
-    int cur = 0;
-    while(tok) {
+      char** p = KMalloc(argcCounter * sizeof(char*));
+      char* tok = strtok(active->CommandLine, ' ');
+      int cur = 0;
+      while (tok) {
         Debug("Found token %s\n", tok);
         p[cur] = KMalloc(Strlen(tok) + 1);
         Strcpy(p[cur], tok, Strlen(tok) + 1);
@@ -267,10 +274,11 @@ STATUS ProcessSchedule(Registers* registers) {
       active->Registers.userEsp = active->KernelStack;
       active->Registers.eax = argcCounter;
       active->Registers.ebx = p;
-      Debug("Stack is %u\n, count is %d\n", active->Registers.userEsp, argcCounter);
+      Debug("Stack is %u\n, count is %d\n", active->Registers.userEsp,
+            argcCounter);
     }
     registers->eax = active->Registers.eax;
-    registers->ebx= active->Registers.ebx;
+    registers->ebx = active->Registers.ebx;
     registers->ecx = active->Registers.ecx;
     registers->edx = active->Registers.edx;
     registers->edi = active->Registers.edi;
@@ -280,26 +288,25 @@ STATUS ProcessSchedule(Registers* registers) {
     registers->eip = active->Registers.eip;
 
     Debug("Switching to name: %s id: %d\n", active->Name, active->Id);
-    Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n", active->Registers.userEsp, active->Registers.eip, active->Registers.eax, active->Registers.ebx, active->Registers.ecx, active->Registers.edx);
+    Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
+          active->Registers.userEsp, active->Registers.eip,
+          active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
+          active->Registers.edx);
     LastTicks = currentTicks;
 
     MMSetPageDirectory(active->PageDirectory);
   }
 }
 
-ProcessList* ProcessGetProcesses(){
-  return processListStart;
-}
+ProcessList* ProcessGetProcesses() { return processListStart; }
 
-Process* ProcessGetActiveProcess() {
-  return active;
-}
+Process* ProcessGetActiveProcess() { return active; }
 
 STATUS ProcessGetCurrentProcess(BYTE* id) {
-  if(id == NULL) {
+  if (id == NULL) {
     return S_FAIL;
   }
-  if(active == NULL) {
+  if (active == NULL) {
     return S_FAIL;
   }
 
@@ -308,34 +315,32 @@ STATUS ProcessGetCurrentProcess(BYTE* id) {
 }
 
 STATUS ProcessGetForegroundProcessId(BYTE* id) {
-  if(id == NULL) {
+  if (id == NULL) {
     return S_FAIL;
   }
-  if(foreground == NULL) {
+  if (foreground == NULL) {
     return S_FAIL;
-  } 
+  }
   *id = foreground->Id;
   return S_OK;
 }
 
-
-
 STATUS ProcessSetForegroundProcessId(BYTE id) {
-  if(foreground == NULL) {
+  if (foreground == NULL) {
     return S_FAIL;
-  } 
-  if(foreground->Id == id) {
+  }
+  if (foreground->Id == id) {
     return S_FAIL;
   }
 
   ProcessList* node = ProcessGetProcessListNodeById(id);
-  if(node == NULL) {
+  if (node == NULL) {
     return S_FAIL;
   }
 
   Process* p = node->Process;
   Debug("Activating process %s\n", p->Name);
- 
+
   return S_OK;
 }
 
@@ -345,10 +350,10 @@ STATUS ProcessTerminate(BYTE id) {
     return S_FAIL;
   }
   node = ProcessGetProcessListNodeById(id);
-  if(node == NULL) {
+  if (node == NULL) {
     return S_FAIL;
   }
-  Process *p = node->Process;
+  Process* p = node->Process;
 
   Debug("Terminating process %s\n", p->Name);
   p->State = STATE_TERMINATING;
@@ -357,58 +362,55 @@ STATUS ProcessTerminate(BYTE id) {
 
 STATUS ProcessBlockForIO(BYTE id) {
   ProcessList* node = ProcessGetProcessListNodeById(id);
-  if(node == NULL) {
+  if (node == NULL) {
     return S_FAIL;
   }
-  Process *p = node->Process;
+  Process* p = node->Process;
   p->State = STATE_FOREGROUND_BLOCKED;
   Debug("Setting process %d to blocked\n", p->Id);
   return S_OK;
 }
 
-
 STATUS ProcessWakeFromIO(BYTE id, void (*function)(), void* param) {
   ProcessList* node = ProcessGetProcessListNodeById(id);
-  if(node == NULL) {
+  if (node == NULL) {
     return S_FAIL;
   }
-  Process *p = node->Process;
+  Process* p = node->Process;
   p->State = STATE_WAITING;
   p->Registers.eip = function;
   Debug("Setting process %d to ready from io\n", p->Id);
   return S_OK;
 }
 
-
-int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size)
-{
-   ProcessList* node = ProcessGetProcessListNodeById(id);
-  if(node == NULL) {
+int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size) {
+  ProcessList* node = ProcessGetProcessListNodeById(id);
+  if (node == NULL) {
     return S_FAIL;
   }
-  Process *p = node->Process;
+  Process* p = node->Process;
   p->Files[0].Data = fileData;
   p->Files[0].CurrentLocation = fileData;
   // p->Files[0].Path = &name;
   p->Files[0].FileDescriptor = 123;
   p->Files[0].Size = size;
-  Debug("Opened fd %d with size %u at location %u\n", p->Files[0].FileDescriptor, size, fileData);
+  Debug("Opened fd %d with size %u at location %u\n",
+        p->Files[0].FileDescriptor, size, fileData);
   return p->Files[0].FileDescriptor;
 }
 
-int ProcessReadFile(BYTE id, int fd, void* buf, int count)
-{
+int ProcessReadFile(BYTE id, int fd, void* buf, int count) {
   Debug("Read file %d %d %u %d\n", id, fd, buf, count);
-   ProcessList* node = ProcessGetProcessListNodeById(id);
-  if(node == NULL) {
+  ProcessList* node = ProcessGetProcessListNodeById(id);
+  if (node == NULL) {
     return S_FAIL;
   }
-  Process *p = node->Process;
+  Process* p = node->Process;
 
-  if(fd == 0) {
+  if (fd == 0) {
     Debug("Doing read from stdin\n");
     int len = Strlen(p->StdinBuffer);
-    if(len > count) {
+    if (len > count) {
       len = count;
     }
     Debug("%d bytes\n", len);
@@ -424,16 +426,17 @@ int ProcessReadFile(BYTE id, int fd, void* buf, int count)
     p->StdinPosition = 0;
     Debug("Completed kernel mode read\n");
     return len;
-  }
-  else {
-    int bytesInFile = p->Files[0].Size - (p->Files[0].CurrentLocation - p->Files[0].Data);
+  } else {
+    int bytesInFile =
+        p->Files[0].Size - (p->Files[0].CurrentLocation - p->Files[0].Data);
     int bytesToRead = bytesInFile >= count ? count : bytesInFile;
 
-    if(bytesToRead <= 0) {
+    if (bytesToRead <= 0) {
       return 0;
     }
 
-    Debug("Copying %d bytes out of %d to %u, currently at %d\n", bytesToRead, bytesInFile, buf, p->Files[0].CurrentLocation);
+    Debug("Copying %d bytes out of %d to %u, currently at %d\n", bytesToRead,
+          bytesInFile, buf, p->Files[0].CurrentLocation);
     Memcopy(buf, p->Files[0].CurrentLocation, bytesToRead);
     p->Files[0].CurrentLocation += bytesToRead;
     Debug("Done readfile\n");
@@ -441,24 +444,22 @@ int ProcessReadFile(BYTE id, int fd, void* buf, int count)
   }
 }
 
-
 STATUS ProcessCanReadFile(Process* process, int fd, void* buf, int count) {
-  if(fd == 0) {
-    if(process->StdinBuffer[process->StdinPosition - 1] == '\n') {
+  if (fd == 0) {
+    if (process->StdinBuffer[process->StdinPosition - 1] == '\n') {
       process->StdinBuffer[process->StdinPosition] = '\0';
       Debug("Process %d can read now: %s\n", process->Id, process->StdinBuffer);
       return S_OK;
     }
-  }
-  else {
+  } else {
     // todo fetch fd, see if we can read
     return S_OK;
-  } 
+  }
   return S_FAIL;
 }
 
 int ProcessAddToStdinBuffer(char charToAdd) {
-  if(!foreground) {
+  if (!foreground) {
     Debug("No foreground process\n");
     return S_FAIL;
   }
@@ -467,18 +468,21 @@ int ProcessAddToStdinBuffer(char charToAdd) {
   foreground->StdinBuffer[foreground->StdinPosition++] = charToAdd;
 
   // See if this unblocked a read from stdin
-  if(foreground->State == STATE_FOREGROUND_BLOCKED) {
+  if (foreground->State == STATE_FOREGROUND_BLOCKED) {
     Debug("Foreground process is blocked, checking if we can unblock\n");
     IOBlock* block = &foreground->IOBlock;
-     if(ProcessCanReadFile(foreground, block->Fd, block->Buf, block->Count) == S_OK) {
-       Debug("Read %u %u %u is now unblocked for process %u\n", block->Fd, block->Buf, block->Count, foreground->Id);
-       Debug("Returning to eip %u\n", foreground->Registers.eip);
-       foreground->State = STATE_WAITING;
-    
-      int bytesRead = ProcessReadFile(foreground->Id, block->Fd, block->Buf, block->Count);
+    if (ProcessCanReadFile(foreground, block->Fd, block->Buf, block->Count) ==
+        S_OK) {
+      Debug("Read %u %u %u is now unblocked for process %u\n", block->Fd,
+            block->Buf, block->Count, foreground->Id);
+      Debug("Returning to eip %u\n", foreground->Registers.eip);
+      foreground->State = STATE_WAITING;
+
+      int bytesRead =
+          ProcessReadFile(foreground->Id, block->Fd, block->Buf, block->Count);
       Debug("Read %d bytes\n", bytesRead);
       foreground->Registers.eax = bytesRead;
-     }
+    }
   }
 
   return S_OK;

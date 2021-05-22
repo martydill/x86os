@@ -1,7 +1,6 @@
 
-#ifndef PCI_H 
+#ifndef PCI_H
 #define PCI_H
-
 
 DWORD PciReadConfigByte(BYTE bus, BYTE device, BYTE function, BYTE reg);
 STATUS PciInit(void);

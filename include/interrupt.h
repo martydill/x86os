@@ -2,34 +2,29 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-
 /* Note: Interrupts clear IF bit of EFLAGS. Traps don't. */
-#define RING_0_TRAP			0x8f
-#define RING_0_INTERRUPT	0x8e
-#define RING_3_TRAP			0xef
-#define RING_3_INTERRUPT	0xee
-
+#define RING_0_TRAP 0x8f
+#define RING_0_INTERRUPT 0x8e
+#define RING_3_TRAP 0xef
+#define RING_3_INTERRUPT 0xee
 
 /* Entry in IDT table */
-struct IDTEntry_S
-{
-    WORD Low;
-    WORD Selector;
-    BYTE Unused;
-    BYTE AccessMode;
-    WORD High;
+struct IDTEntry_S {
+  WORD Low;
+  WORD Selector;
+  BYTE Unused;
+  BYTE AccessMode;
+  WORD High;
 } __attribute__((packed));
 
 typedef struct IDTEntry_S IDTEntry;
 
-
 /* Magic pointer to IDT table */
 /* fixme: merge idt and gdt pointers */
-struct IDTPointer_S
-{
-    WORD Limit;
-    DWORD Base;
-} __attribute__ ((packed));
+struct IDTPointer_S {
+  WORD Limit;
+  DWORD Base;
+} __attribute__((packed));
 
 typedef struct IDTPointer_S IDTPointer;
 
@@ -67,43 +62,43 @@ extern void _reservedexceptionhandler();
 
 /*defines what the stack looks like after an ISR was running */
 /* Must match order in Interrupt.s */
-typedef struct
-{
-    unsigned int gs;
-    unsigned int fs;
-    unsigned int es;
-    unsigned int ds;
+typedef struct {
+  unsigned int gs;
+  unsigned int fs;
+  unsigned int es;
+  unsigned int ds;
 
-    unsigned int edi;
-    unsigned int esi;
-    unsigned int ebp;
-    unsigned int unused;
-    unsigned int ebx;
-    unsigned int edx;
-    unsigned int ecx;
-    unsigned int eax;
+  unsigned int edi;
+  unsigned int esi;
+  unsigned int ebp;
+  unsigned int unused;
+  unsigned int ebx;
+  unsigned int edx;
+  unsigned int ecx;
+  unsigned int eax;
 
-    unsigned int interruptNumber;
-    unsigned int errorCode;
+  unsigned int interruptNumber;
+  unsigned int errorCode;
 
-    unsigned int eip;
-    unsigned int cs;
-    unsigned int flags;
-    unsigned int userEsp;
-    unsigned int ss;
+  unsigned int eip;
+  unsigned int cs;
+  unsigned int flags;
+  unsigned int userEsp;
+  unsigned int ss;
 } __attribute__((packed)) Registers;
 
 void InitializeIDT(void);
 
-typedef void(*InterruptHandler) (Registers* registers);
+typedef void (*InterruptHandler)(Registers* registers);
 
 STATUS InstallIrqHandler(unsigned int irq, InterruptHandler handler);
 STATUS RemoveIrqHandler(unsigned int irq);
 
-STATUS InstallInterruptHandler(unsigned int interrupt, InterruptHandler handler);
+STATUS InstallInterruptHandler(unsigned int interrupt,
+                               InterruptHandler handler);
 STATUS RemoveInterruptHandler(unsigned int interrupt);
 
-#define SECOND_PIC_IRQ		8
-#define MAX_INTERRUPT		32
+#define SECOND_PIC_IRQ 8
+#define MAX_INTERRUPT 32
 
 #endif

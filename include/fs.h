@@ -10,7 +10,6 @@ typedef struct {
   Device* Device;
 } Filesystem;
 
-
 STATUS FSInit();
 
 #endif

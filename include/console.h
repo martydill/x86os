@@ -1,29 +1,25 @@
 
 /*
-* Console.h
-* Include file for the console mode text driver
-*/
+ * Console.h
+ * Include file for the console mode text driver
+ */
 
 #ifndef DRV_CONSOLE_H
 #define DRV_CONSOLE_H
 
 #include <kernel.h>
 
-#define CONSOLE_WIDTH	80
-#define CONSOLE_HEIGHT	25
-#define CONSOLE_BASE		0xb8000
-#define CONSOLE_SIZE 		(CONSOLE_WIDTH * CONSOLE_HEIGHT * 2)
-#define NUM_CONSOLES	8
+#define CONSOLE_WIDTH 80
+#define CONSOLE_HEIGHT 25
+#define CONSOLE_BASE 0xb8000
+#define CONSOLE_SIZE (CONSOLE_WIDTH * CONSOLE_HEIGHT * 2)
+#define NUM_CONSOLES 8
 
-
-typedef struct
-{
-    unsigned char* buffer;		/* Location of buffer in video memory */
-    WORD cursorX, cursorY; 	/* Coordinates of cursor */
-    BYTE color;
+typedef struct {
+  unsigned char* buffer; /* Location of buffer in video memory */
+  WORD cursorX, cursorY; /* Coordinates of cursor */
+  BYTE color;
 } Console;
-
-
 
 STATUS ConInit(void);
 STATUS ConActivateConsole(BYTE number);

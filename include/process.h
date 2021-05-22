@@ -10,13 +10,13 @@
 
 #define STATE_PENDING 0
 #define STATE_WAITING 1
-#define STATE_RUNNING 2 
-#define STATE_TERMINATING  3
+#define STATE_RUNNING 2
+#define STATE_TERMINATING 3
 #define STATE_FOREGROUND_BLOCKED 4
 #define STATE_WAIT_BLOCKED 5
 
 #define PRIORITY_FOREGROUND 255
-#define PRIORITY_BACKGROUND  0
+#define PRIORITY_BACKGROUND 0
 
 // typedef struct Registers
 // {
@@ -33,8 +33,7 @@
 
 #define MAX_FILES_PER_PROCESS 255
 
-typedef struct File_S
-{
+typedef struct File_S {
   int FileDescriptor;
   int Flags;
   char Path[255];
@@ -44,48 +43,46 @@ typedef struct File_S
   int Size;
 } File;
 
-typedef struct IOBlock_S
-{
+typedef struct IOBlock_S {
   int Fd;
   void* Buf;
   int Count;
 } IOBlock;
 
-typedef struct WaitpidBlock_S
-{
+typedef struct WaitpidBlock_S {
   DWORD id;
-  int Status;  
+  int Status;
 } WaitpidBlock;
 
-typedef struct Process_S
-{
-    BYTE Priority;
-    BYTE State;
-    DWORD Id;
+typedef struct Process_S {
+  BYTE Priority;
+  BYTE State;
+  DWORD Id;
 
-    DWORD Esp;
-    DWORD SS;
-    DWORD KernelStack;
-    DWORD UserStack;
+  DWORD Esp;
+  DWORD SS;
+  DWORD KernelStack;
+  DWORD UserStack;
 
-    Registers Registers;
+  Registers Registers;
 
-    DWORD Entry;
-    DWORD CpuTicks;
-    char Name[32];
-    char CommandLine[255];
-    PageDirectory* PageDirectory;
-    File Files[MAX_FILES_PER_PROCESS];
-    char StdinBuffer[1024];
-    int StdinPosition;
-    IOBlock IOBlock;
-    WaitpidBlock WaitpidBlock;
-    DWORD ParentId;
+  DWORD Entry;
+  DWORD CpuTicks;
+  char Name[32];
+  char CommandLine[255];
+  PageDirectory* PageDirectory;
+  File Files[MAX_FILES_PER_PROCESS];
+  char StdinBuffer[1024];
+  int StdinPosition;
+  IOBlock IOBlock;
+  WaitpidBlock WaitpidBlock;
+  DWORD ParentId;
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
-DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine);
+DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
+                    char* commandLine);
 STATUS ProcessGetCurrentProcess(BYTE* id);
 STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);

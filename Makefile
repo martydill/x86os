@@ -46,4 +46,5 @@ clean:
 	-rm -rf apps/bin apps/*.o
 
 
-
+format:
+	find ./ -name *.c -o -name *.h | xargs clang-format -i
