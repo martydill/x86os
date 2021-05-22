@@ -9,6 +9,7 @@
 #define SYSCALL_READ        0x04
 #define SYSCALL_WRITE       0x05
 #define SYSCALL_POSIX_SPAWN 0x06
+#define SYSCALL_WAITPID     0x07
 
 typedef int pid_t;
 

@@ -116,8 +116,6 @@ STATUS GetShortName(unsigned char* dest, unsigned char* name)
 
 FATDirectoryEntry* FATReadDirectory(unsigned char* directorySector)
 {
-    KPrint("Contents of directory /\n");
-
     FATDirectoryEntry* head = NULL;
     FATDirectoryEntry* e = NULL;
     FATDirectoryEntry* current= NULL;

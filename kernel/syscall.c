@@ -95,3 +95,15 @@ int SyscallWrite(Registers* registers) {
     Debug("Writing '%s'\n", writeBuf);
   }
 }  // TODO ssize_t, size_t
+
+
+int SyscallWaitpid(Registers* registers) {
+  int pid = registers->ebx;
+
+  Debug("SyscallWaitpid! %u\n", pid);
+
+  Process* p = ProcessGetActiveProcess();
+  p->State = STATE_WAIT_BLOCKED;
+  p->WaitpidBlock.id = pid;
+  ProcessSchedule(registers);
+}  // TODO ssize_t, size_t

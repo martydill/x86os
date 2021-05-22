@@ -96,13 +96,19 @@ void KeSysCallHandler(Registers* registers)
      SyscallWrite(registers);
    }
    else if(registers->eax == SYSCALL_POSIX_SPAWN) {
+     DWORD pidPhysicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
      DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
      DWORD argvAddress = MMVirtualAddressToPhysicalAddress(registers->esi);
      Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress, physicalAddress, argvAddress, argvAddress);
      int size;
      BYTE* fileData = FloppyReadFile(physicalAddress, &size);
      Debug("Read %d bytes\n", size);
-     ELFParseFile(fileData, physicalAddress, argvAddress);
+     DWORD childProcessId = ELFParseFile(fileData, physicalAddress, argvAddress);
+     Debug("Started process %d, writing id to %u\n", childProcessId, pidPhysicalAddress);
+     *(DWORD*)pidPhysicalAddress = childProcessId;
+   }
+   else if(registers->eax == SYSCALL_WAITPID) {
+     SyscallWaitpid(registers);
    }
    Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall, registers->eip, registers->userEsp);
 }

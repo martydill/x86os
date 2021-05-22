@@ -2,7 +2,7 @@
 #include <elf.h>
 
 int count = 0;
-STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
+DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine)
 {
   if(data == NULL) 
   {
@@ -10,10 +10,10 @@ STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
   }
 
   ELFHeader* header = (ELFHeader*)data;
-  KPrint("Running %s\n", processName);
-  KPrint("Ident: %s\n", header->e_ident);
-  KPrint("Type: %d\n", header->e_type);
-  KPrint("Entry: %u\n", header->e_entry);
+  Debug("Running %s\n", processName);
+  Debug("Ident: %s\n", header->e_ident);
+  Debug("Type: %d\n", header->e_type);
+  Debug("Entry: %u\n", header->e_entry);
 
   void* addr = 1024 * 1024 * 64 + count * 1024 * 1024 * 4;//1024 * 1024 * 8;
   Debug("For physical address %u and data located at %c %c %c %c\n", addr, data[0], data[1], data[2], data[3]);
@@ -43,7 +43,6 @@ STATUS ELFParseFile(BYTE* data, char* processName, char* commandLine)
   }
 
   Debug("Creating new process for entry %u\n", header->e_entry);
-  CreateProcess(header->e_entry, processName, 255, commandLine);
-  return S_OK; 
+  return CreateProcess(header->e_entry, processName, 255, commandLine);
 }
 

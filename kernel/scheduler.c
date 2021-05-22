@@ -20,7 +20,9 @@ typedef struct ProcessList
 Process* foreground = NULL;
 ProcessList* processListStart = NULL;
 ProcessList* processListEnd = NULL;
-STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine)
+Process* active = NULL;
+
+DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine)
 {
   unsigned int* stackAddress = 64 * 1024 * 1024 + 128 * 1024;
   // Memset(stackAddress - 1024*1024, 0, 1024*1024);
@@ -32,6 +34,8 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandL
   p->Priority = priority;
   p->KernelStack = stackAddress;
   p->PageDirectory = ((unsigned int) KMallocWithTagAligned(sizeof(PageDirectory), "BASE", 4096));// & 0xFFFFF000;
+  p->ParentId = active != NULL ? active->Id : 0;
+  
   Debug("Process id %d\n", p->Id);
 
   MMInitializePageDirectory(p->PageDirectory);
@@ -68,12 +72,10 @@ STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandL
   // if(priority == PRIORITY_FOREGROUND) {
     foreground = p;
   // }
-
-  int counter = 0;
+  return p->Id;
 }
 
 
-Process* active = NULL; //&pr1;
 
 DWORD LastTicks;
 
@@ -138,6 +140,17 @@ STATUS ProcessSchedule(Registers* registers) {
   if(active) {
     if(active->State == STATE_TERMINATING) {
       Debug("%s %d died\n", active->Name, active->CpuTicks);
+      Debug("ParentId was %d\n", active->ParentId);
+      if(active->ParentId != 0) {
+        ProcessList* node = ProcessGetProcessListNodeById(active->ParentId);
+        Debug("waiting on %d\n", node->Process->WaitpidBlock.id);
+        if(node && node->Process->WaitpidBlock.id == active->Id) {
+          node->Process->WaitpidBlock.id = 0;
+          node->Process->State = STATE_WAITING;
+          Debug("%s %d waitpid is unblocked\n", node->Process->Name, node->Process->Id);
+        }
+      }
+
       processCount--;
       
       if(node->Next) {
@@ -191,12 +204,12 @@ STATUS ProcessSchedule(Registers* registers) {
   if(active) {
     while(node) {
       node = node->Next;
-      if(node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED) {
+      if(node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED && node->Process->State != STATE_WAIT_BLOCKED) {
         Debug("Switching to next process %s %u\n", node->Process->Name, node->Process->Id);
         active = node->Process;
         break;
       }
-      else if(node != NULL && node->Process->State == STATE_FOREGROUND_BLOCKED) {
+      else if(node != NULL && (node->Process->State == STATE_FOREGROUND_BLOCKED || node->Process->State == STATE_WAIT_BLOCKED)) {
         Debug("Next process %s is blocked \n", node->Process->Name);
       }
     }

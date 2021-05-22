@@ -51,3 +51,9 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
        char *const argv[restrict], char *const envp[restrict]){
   return _syscall(SYSCALL_POSIX_SPAWN, pid, path, attrp, argv, envp);
 }
+
+
+pid_t waitpid(pid_t pid, int *status_ptr, int options)
+{
+  return _syscall(SYSCALL_WAITPID, pid, status_ptr, options, 0, 0); 
+}

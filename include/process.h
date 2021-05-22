@@ -13,6 +13,8 @@
 #define STATE_RUNNING 2 
 #define STATE_TERMINATING  3
 #define STATE_FOREGROUND_BLOCKED 4
+#define STATE_WAIT_BLOCKED 5
+
 #define PRIORITY_FOREGROUND 255
 #define PRIORITY_BACKGROUND  0
 
@@ -49,6 +51,12 @@ typedef struct IOBlock_S
   int Count;
 } IOBlock;
 
+typedef struct WaitpidBlock_S
+{
+  DWORD id;
+  int Status;  
+} WaitpidBlock;
+
 typedef struct Process_S
 {
     BYTE Priority;
@@ -71,11 +79,13 @@ typedef struct Process_S
     char StdinBuffer[1024];
     int StdinPosition;
     IOBlock IOBlock;
+    WaitpidBlock WaitpidBlock;
+    DWORD ParentId;
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
-STATUS CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine);
+DWORD CreateProcess(void* entryPoint, char* name, BYTE priority, char* commandLine);
 STATUS ProcessGetCurrentProcess(BYTE* id);
 STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);

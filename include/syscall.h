@@ -10,5 +10,6 @@ void SyscallExit(int code);
 void SyscallMount(const char* mountPoint, const char* destination);
 int SyscallOpen(const char *pathname, int flags);
 int SyscallRead(Registers* registers); // TODO ssize_t, size_t
+int SyscallWaitpid(Registers* registers); // TODO ssize_t, size_t
 
 #endif
