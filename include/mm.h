@@ -8,6 +8,8 @@
 void* KMallocWithTag(unsigned int numBytes, char* tag);
 void* KMalloc(unsigned int numBytes);
 void KFree(void* pointer);
+typedef struct Process_S Process;
+void* KMallocInProcess(Process* p, unsigned int numBytes);
 
 typedef struct {
   unsigned int Entries[NUM_PAGE_DIRECTORY_ENTRIES]

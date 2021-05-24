@@ -77,6 +77,7 @@ typedef struct Process_S {
   IOBlock IOBlock;
   WaitpidBlock WaitpidBlock;
   DWORD ParentId;
+  void* CurrentMemPtr;
 } Process;
 
 STATUS ProcessSchedule(Registers* registers);

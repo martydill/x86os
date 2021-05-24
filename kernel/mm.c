@@ -57,6 +57,12 @@ void* KMalloc(unsigned int numBytes) {
   return KMallocWithTag(numBytes, "BASE");
 }
 
+void* KMallocInProcess(Process* p, unsigned int numBytes) {
+  void* pointer = p->CurrentMemPtr;
+  p->CurrentMemPtr += numBytes;
+  return pointer;
+}
+
 // fixme - actually free
 void KFree(void* pointer) {
   if (pointer == NULL)

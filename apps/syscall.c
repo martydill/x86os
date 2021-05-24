@@ -55,3 +55,17 @@ int posix_spawn(pid_t* restrict pid, const char* restrict path,
 pid_t waitpid(pid_t pid, int* status_ptr, int options) {
   return _syscall(SYSCALL_WAITPID, pid, status_ptr, options, 0, 0);
 }
+
+DIR *opendir(const char *name){
+  return _syscall(SYSCALL_OPENDIR, name, 0, 0, 0, 0);
+}
+
+struct dirent *readdir(DIR *dirp) {
+  if(dirp->Current >= dirp->Count) {
+    return NULL;
+  }
+
+  struct dirent* d = &dirp->dirents[dirp->Current];
+  dirp->Current++;
+  return d;
+}

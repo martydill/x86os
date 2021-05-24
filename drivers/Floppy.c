@@ -5,7 +5,7 @@
  * References:
  *  http://www.isdaman.com/alsos/hardware/fdc/floppy.htm
  */
-
+#include <kernel_shared.h>
 #include <kernel.h>
 #include <floppy.h>
 #include <io.h>
@@ -35,7 +35,7 @@ enum FloppyRegisters {
   MSR = 0x3f4,
   DATARATE = 0x3f4,
   DATA = 0x3f5,
-  DIR = 0x3f7,
+  DIRR = 0x3f7,
   CCR = 0x3f7
 };
 
@@ -196,7 +196,7 @@ void GetDriveStatus(FloppyDrive* drive) {
 }
 
 BOOL DiskChanged() {
-  BYTE b = IoReadPortByte(DIR);
+  BYTE b = IoReadPortByte(DIRR);
   if (b & CHAN)
     return TRUE;
 
@@ -329,7 +329,32 @@ STATUS FloppyReadSector(int sector, char* buffer) {
 
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
-BYTE* FloppyReadFile(char* name, int* size) // todo get size
+void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
+  Debug("Start of read directory\n");
+  int i;
+  BYTE buf[512];
+  FloppyReadSector(0, buf);
+  BYTE fat[512 * 9];
+  WORD sector;
+
+  WORD clusterToFetch = 0;
+
+  if (dir != 0) {
+    Debug("Reading sector\n");
+    FloppyReadSector(dir, buf);
+    FATDirectoryEntry* e = FATReadDirectory(buf);
+    i = 0;
+    while (e != NULL) {
+      Strcpy(dirimpl->dirents[i].d_name, e->name, Strlen(e->name));
+       e = e->next;
+       ++i;
+    }
+  }
+  dirimpl->Count = i;
+  return 0;
+}
+
+BYTE* FloppyReadFile(char* name, int* size) // todo get siz
 {
   Debug("Start of read\n");
   int i;

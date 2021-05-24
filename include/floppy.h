@@ -25,4 +25,6 @@ STATUS FloppyDisableMotor(void);
 
 BYTE* FloppyReadFile(char* name, int* size);
 
+void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl);
+
 #endif

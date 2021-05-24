@@ -3,7 +3,7 @@
  * KeMain.c
  * Kernel entry point
  */
-
+#include "kernel_shared.h"
 #include <kernel.h>
 #include <boot.h>
 #include <console.h>
@@ -104,6 +104,17 @@ void KeSysCallHandler(Registers* registers) {
     *(DWORD*)pidPhysicalAddress = childProcessId;
   } else if (registers->eax == SYSCALL_WAITPID) {
     SyscallWaitpid(registers);
+  }
+  else if(registers->eax == SYSCALL_OPENDIR) {
+    const char* dirName = (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
+    Debug("SYSCALL_OPENDIR %s\n", dirName);
+    Process* active = ProcessGetActiveProcess();
+    struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+    FloppyReadDirectory(dirName, dir);
+    registers->eax = dir;
+  }
+  else if(registers->eax == SYSCALL_READDIR) {
+    Debug("SYSCALL_READDIR %d\n", registers->ebx);
   }
   Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall,
         registers->eip, registers->userEsp);
