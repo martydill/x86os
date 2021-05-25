@@ -112,6 +112,7 @@ void KeSysCallHandler(Registers* registers) {
     struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
     FloppyReadDirectory(dirName, dir);
     registers->eax = dir;
+    Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
   }
   else if(registers->eax == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);

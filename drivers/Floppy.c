@@ -345,12 +345,14 @@ void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
     FATDirectoryEntry* e = FATReadDirectory(buf);
     i = 0;
     while (e != NULL) {
+      Debug("Found %s\n", e->name);
       Strcpy(dirimpl->dirents[i].d_name, e->name, Strlen(e->name));
        e = e->next;
        ++i;
     }
   }
   dirimpl->Count = i;
+  dirimpl->Current = 0;
   return 0;
 }
 

@@ -36,8 +36,8 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
   p->PageDirectory = ((unsigned int)KMallocWithTagAligned(
       sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
-  p->CurrentMemPtr = stackAddress + 1024 * 1024;
-  
+  p->CurrentMemPtr = stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * p->Id - 1);
+
   Debug("Process id %d\n", p->Id);
 
   MMInitializePageDirectory(p->PageDirectory);
