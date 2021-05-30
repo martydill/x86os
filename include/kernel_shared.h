@@ -14,7 +14,8 @@
 #define SYSCALL_WAITPID 0x07
 #define SYSCALL_OPENDIR 0x08
 #define SYSCALL_READDIR 0x09
-#define SYSCALL_SLEEP 0x0A
+#define SYSCALL_CLOSEDIR 0x0A
+#define SYSCALL_SLEEP 0x0B
 
 typedef int pid_t;
 typedef unsigned int ino_t;

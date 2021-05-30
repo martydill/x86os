@@ -117,6 +117,10 @@ void KeSysCallHandler(Registers* registers) {
   else if(registers->eax == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);
   }
+  else if(registers->eax == SYSCALL_CLOSEDIR) {
+    Debug("SYSCALL_CLOSEDIR %d\n", registers->ebx);
+    // TODO implement this
+  }
   else if(registers->eax == SYSCALL_SLEEP) {
     Debug("SYSCALL_SLEEP %u\n", registers->ebx);
     Process* active = ProcessGetActiveProcess();

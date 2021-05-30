@@ -22,4 +22,5 @@ int main(int argc, char* argv[]) {
   }
   while(d != NULL);
 
+  closedir(dir);
 }
