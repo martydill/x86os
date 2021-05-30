@@ -75,20 +75,20 @@ void KeSysCallHandler(Registers* registers) {
   Debug("Syscall handler %u %u %u %u %u %u %u %u %u\n", registers->eax,
         registers->ebx, registers->ecx, registers->edx, registers->esi,
         registers->edi, registers->ebp, registers->userEsp, registers->eip);
-  if (registers->eax == SYSCALL_EXIT) {
+  if (syscall == SYSCALL_EXIT) {
     SyscallExit(registers);
-  } else if (registers->eax == SYSCALL_KPRINT) {
+  } else if (syscall == SYSCALL_KPRINT) {
     SyscallKPrint(registers->ebx);
     registers->eax = 0;
-  } else if (registers->eax == SYSCALL_OPEN) {
+  } else if (syscall == SYSCALL_OPEN) {
     int fd = SyscallOpen(registers->ebx, registers->ecx);
     registers->eax = fd;
-  } else if (registers->eax == SYSCALL_READ) {
+  } else if (syscall == SYSCALL_READ) {
     Debug("read\n");
     SyscallRead(registers);
-  } else if (registers->eax == SYSCALL_WRITE) {
+  } else if (syscall == SYSCALL_WRITE) {
     SyscallWrite(registers);
-  } else if (registers->eax == SYSCALL_POSIX_SPAWN) {
+  } else if (syscall == SYSCALL_POSIX_SPAWN) {
     DWORD pidPhysicalAddress =
         MMVirtualAddressToPhysicalAddress(registers->ebx);
     DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
@@ -102,10 +102,10 @@ void KeSysCallHandler(Registers* registers) {
     Debug("Started process %d, writing id to %u\n", childProcessId,
           pidPhysicalAddress);
     *(DWORD*)pidPhysicalAddress = childProcessId;
-  } else if (registers->eax == SYSCALL_WAITPID) {
+  } else if (syscall == SYSCALL_WAITPID) {
     SyscallWaitpid(registers);
   }
-  else if(registers->eax == SYSCALL_OPENDIR) {
+  else if(syscall == SYSCALL_OPENDIR) {
     const char* dirName = (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
     Debug("SYSCALL_OPENDIR %s\n", dirName);
     Process* active = ProcessGetActiveProcess();
@@ -114,14 +114,17 @@ void KeSysCallHandler(Registers* registers) {
     registers->eax = dir;
     Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
   }
-  else if(registers->eax == SYSCALL_READDIR) {
+  else if(syscall == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);
   }
-  else if(registers->eax == SYSCALL_CLOSEDIR) {
+  else if(syscall == SYSCALL_CLOSEDIR) {
     Debug("SYSCALL_CLOSEDIR %d\n", registers->ebx);
     // TODO implement this
   }
-  else if(registers->eax == SYSCALL_SLEEP) {
+  else if(syscall == SYSCALL_CHDIR) {
+    Debug("SYSCALL_CHDIR");
+  }
+  else if(syscall == SYSCALL_SLEEP) {
     Debug("SYSCALL_SLEEP %u\n", registers->ebx);
     Process* active = ProcessGetActiveProcess();
     ProcessSleep(active, registers->ebx);
