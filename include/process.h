@@ -14,6 +14,7 @@
 #define STATE_TERMINATING 3
 #define STATE_FOREGROUND_BLOCKED 4
 #define STATE_WAIT_BLOCKED 5
+#define STATE_SLEEPING 6
 
 #define PRIORITY_FOREGROUND 255
 #define PRIORITY_BACKGROUND 0
@@ -54,6 +55,10 @@ typedef struct WaitpidBlock_S {
   int Status;
 } WaitpidBlock;
 
+typedef struct SleepBlock_S {
+  DWORD SleepUntilTicks;
+} SleepBlock;
+
 typedef struct Process_S {
   BYTE Priority;
   BYTE State;
@@ -74,8 +79,11 @@ typedef struct Process_S {
   File Files[MAX_FILES_PER_PROCESS];
   char StdinBuffer[1024];
   int StdinPosition;
+
   IOBlock IOBlock;
   WaitpidBlock WaitpidBlock;
+  SleepBlock SleepBlock;
+
   DWORD ParentId;
   void* CurrentMemPtr;
 } Process;
@@ -88,5 +96,6 @@ STATUS ProcessGetCurrentProcess(BYTE* id);
 STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);
 int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size);
+STATUS ProcessSleep(Process* process, unsigned int seconds);
 
 #endif

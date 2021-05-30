@@ -208,7 +208,7 @@ STATUS ProcessSchedule(Registers* registers) {
     while (node) {
       node = node->Next;
       if (node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED &&
-          node->Process->State != STATE_WAIT_BLOCKED) {
+          node->Process->State != STATE_WAIT_BLOCKED && node->Process->State != STATE_SLEEPING) {
         Debug("Switching to next process %s %u\n", node->Process->Name,
               node->Process->Id);
         active = node->Process;
@@ -217,6 +217,11 @@ STATUS ProcessSchedule(Registers* registers) {
                  (node->Process->State == STATE_FOREGROUND_BLOCKED ||
                   node->Process->State == STATE_WAIT_BLOCKED)) {
         Debug("Next process %s is blocked \n", node->Process->Name);
+      }
+      else if(node != NULL && node->Process->State == STATE_SLEEPING && node->Process->SleepBlock.SleepUntilTicks < currentTicks) {
+          Debug("Waking from sleep");
+          active = node->Process;
+          break;
       }
     }
     if (node == NULL) {
@@ -494,4 +499,15 @@ int ProcessAddToStdinBuffer(char charToAdd) {
   }
 
   return S_OK;
+}
+
+
+STATUS ProcessSleep(Process* p, unsigned int seconds) {
+  if (p == NULL) {
+    return S_FAIL;
+  }
+  p->State = STATE_SLEEPING;
+  p->SleepBlock.SleepUntilTicks= TimerGetTicks() + seconds * 100;
+  return S_OK;
+
 }

@@ -117,6 +117,13 @@ void KeSysCallHandler(Registers* registers) {
   else if(registers->eax == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);
   }
+  else if(registers->eax == SYSCALL_SLEEP) {
+    Debug("SYSCALL_SLEEP %u\n", registers->ebx);
+    Process* active = ProcessGetActiveProcess();
+    ProcessSleep(active, registers->ebx);
+    registers->eax = 0; // TODO return value for signals
+    ProcessSchedule(registers);
+  }
   Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall,
         registers->eip, registers->userEsp);
 }

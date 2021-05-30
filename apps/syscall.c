@@ -69,3 +69,7 @@ struct dirent *readdir(DIR *dirp) {
   dirp->Current++;
   return d;
 }
+
+unsigned int sleep(unsigned int seconds) {
+  return _syscall(SYSCALL_SLEEP, seconds, 0, 0, 0, 0);
+}
