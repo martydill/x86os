@@ -103,9 +103,9 @@ STATUS GetShortName(unsigned char* dest, unsigned char* name) {
 
   extension[i - 8] = '\0';
   if (extension[0] == '\0')
-    Sprintf(12, dest, "%s", fileName);
+    sprintf(12, dest, "%s", fileName);
   else
-    Sprintf(12, dest, "%s.%s", fileName, extension);
+    sprintf(12, dest, "%s.%s", fileName, extension);
 
   return S_OK;
 }

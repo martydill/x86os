@@ -19,12 +19,12 @@ int FSMount(char* deviceName, char* mountPoint, BYTE type) {
 
   fs->Type = type;
   fs->Device = device;
-  fs->MountPoint = KMalloc(Strlen(mountPoint) + 1);
+  fs->MountPoint = KMalloc(strlen(mountPoint) + 1);
   if (fs->MountPoint == NULL) {
     return -1;
   }
 
-  Memcopy(fs->MountPoint, mountPoint, Strlen(mountPoint) + 1);
+  Memcopy(fs->MountPoint, mountPoint, strlen(mountPoint) + 1);
   return fs;
 }
 
@@ -42,7 +42,7 @@ Device* FSDeviceForPath(char* path) {
     return NULL;
   }
   Debug("%s %s\n", path, RootFS->MountPoint);
-  if (!Strcmp(path, RootFS->MountPoint)) {
+  if (!strcmp(path, RootFS->MountPoint)) {
     Debug("Found match\n");
     return RootFS->Device;
   }

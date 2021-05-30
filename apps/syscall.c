@@ -78,6 +78,10 @@ int chdir(const char* path) {
   return _syscall(SYSCALL_CHDIR, path, 0, 0, 0, 0);
 }
 
+char* getcwd(char* buf, size_t size) {
+  return _syscall(SYSCALL_GETCWD, buf, size, 0, 0, 0);
+}
+
 unsigned int sleep(unsigned int seconds) {
   return _syscall(SYSCALL_SLEEP, seconds, 0, 0, 0, 0);
 }

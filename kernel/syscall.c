@@ -81,7 +81,7 @@ int SyscallWrite(Registers* registers) {
   Process* p = ProcessGetActiveProcess();
   if (fd == 1) {
     char* writeBuf = KMalloc(count + 1);
-    Strcpy(writeBuf, buf, count);
+    strcpy(writeBuf, buf, count);
     writeBuf[count] = '\0';
     KPrint(writeBuf);
     Debug("Writing '%s'\n", writeBuf);

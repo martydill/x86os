@@ -33,6 +33,7 @@
 // }Registers;
 
 #define MAX_FILES_PER_PROCESS 255
+#define MAX_PATH 255
 
 typedef struct File_S {
   int FileDescriptor;
@@ -59,6 +60,10 @@ typedef struct SleepBlock_S {
   DWORD SleepUntilTicks;
 } SleepBlock;
 
+typedef struct Environment_S {
+  char WorkingDirectory[MAX_PATH];
+} Environment;
+
 typedef struct Process_S {
   BYTE Priority;
   BYTE State;
@@ -84,6 +89,7 @@ typedef struct Process_S {
   WaitpidBlock WaitpidBlock;
   SleepBlock SleepBlock;
 
+  Environment Environment;
   DWORD ParentId;
   void* CurrentMemPtr;
 } Process;

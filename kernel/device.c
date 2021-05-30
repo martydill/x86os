@@ -146,7 +146,7 @@ Device* GetDevice(const char* deviceName) {
   while (list != NULL) {
     Device* temp = list->Device;
     if (temp != NULL) {
-      if (!Strcmp(deviceName, temp->Name))
+      if (!strcmp(deviceName, temp->Name))
         return temp;
     }
     list = list->Next;

@@ -16,10 +16,12 @@
 #define SYSCALL_READDIR 0x09
 #define SYSCALL_CLOSEDIR 0x0A
 #define SYSCALL_CHDIR 0x0B
-#define SYSCALL_SLEEP 0x0C
+#define SYSCALL_GETCWD 0x0C
+#define SYSCALL_SLEEP 0x0D
 
 typedef int pid_t;
 typedef unsigned int ino_t;
+typedef unsigned int size_t;
 
 typedef struct dirent{
   ino_t  d_ino;

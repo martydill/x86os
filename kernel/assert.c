@@ -15,7 +15,7 @@ void DoAssert(const char* expression, const char* fileName, int lineNumber) {
   char buffer[256];
   ConClearScreen();
 
-  Sprintf(Strlen(buffer), buffer,
+  sprintf(strlen(buffer), buffer,
           "Kernel assertion failed - %s, line %d: \"%s\"", fileName, lineNumber,
           expression);
   ConDisplayString(buffer, 0, 0);

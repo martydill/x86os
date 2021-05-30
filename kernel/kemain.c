@@ -81,6 +81,7 @@ void KeSysCallHandler(Registers* registers) {
     SyscallKPrint(registers->ebx);
     registers->eax = 0;
   } else if (syscall == SYSCALL_OPEN) {
+    Debug("SYSCALL_OPEN\n");
     int fd = SyscallOpen(registers->ebx, registers->ecx);
     registers->eax = fd;
   } else if (syscall == SYSCALL_READ) {
@@ -123,6 +124,27 @@ void KeSysCallHandler(Registers* registers) {
   }
   else if(syscall == SYSCALL_CHDIR) {
     Debug("SYSCALL_CHDIR");
+    // TODO fix issue here and in other places where params passed to main are kernel addresses
+    // not user addresses. Should require a MMVIrtualAddressToPhysicalAddress here.
+    char* dirName = (char*)registers->ebx;
+    Process* active = ProcessGetActiveProcess();
+    Debug("Changing to %s\n", dirName);
+    // TODO validate this
+    strcpy(&active->Environment.WorkingDirectory, dirName, sizeof(active->Environment.WorkingDirectory)); 
+    Debug("WD is now %s\n", active->Environment.WorkingDirectory);
+    registers->eax = 1; // TODO return value on failure
+  }
+  else if(syscall == SYSCALL_GETCWD) {
+    Debug("SYSCALL_GETCWD");
+    DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
+    Process* active = ProcessGetActiveProcess();
+    // TODO use caller's length
+    Debug("WD was %s\n", active->Environment.WorkingDirectory);
+    strcpy((char*)physicalAddress, &active->Environment.WorkingDirectory, sizeof(active->Environment.WorkingDirectory));
+    Debug("Value is %s\n", physicalAddress);
+    // TODO return value on failure
+    registers->eax = registers->ebx;
+
   }
   else if(syscall == SYSCALL_SLEEP) {
     Debug("SYSCALL_SLEEP %u\n", registers->ebx);
@@ -130,6 +152,9 @@ void KeSysCallHandler(Registers* registers) {
     ProcessSleep(active, registers->ebx);
     registers->eax = 0; // TODO return value for signals
     ProcessSchedule(registers);
+  }
+  else {
+    KePanic(registers);
   }
   Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall,
         registers->eip, registers->userEsp);
@@ -210,7 +235,7 @@ void KPrint(const char* format, ...) {
   POINT point;
 
   va_start(args, format);
-  DoSprintf(sizeof(buffer), buffer, format, args);
+  Dosprintf(sizeof(buffer), buffer, format, args);
   va_end(args);
 
   ConGetCursorPosition(&point);

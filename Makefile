@@ -30,6 +30,7 @@ kernel1: subdirs
 	mcopy -o -i ./floppy.img apps/bin/* ::
 	mcopy -o -i ./floppy.img README.md ::README.md
 	mcopy -o -i ./floppy.img Makefile ::makefile
+	mcopy -o -i ./floppy.img ./test.txt ::usr
 	rm -f ./output.txt
 	vboxmanage startvm fizzos
 	sleep 1 

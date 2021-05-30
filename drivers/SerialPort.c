@@ -32,7 +32,7 @@ void SerialPortWriteString(const char* format, ...) {
   char buffer[2048];
 
   va_start(args, format);
-  DoSprintf(sizeof(buffer), buffer, format, args);
+  Dosprintf(sizeof(buffer), buffer, format, args);
   va_end(args);
 
   char* ptr = &buffer[0];

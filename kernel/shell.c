@@ -9,44 +9,44 @@ const char* promptChar = "# ";
 
 void ProcessCommand(char* command) {
   char commandLine[64];
-  Strcpy(commandLine, command, 64);
+  strcpy(commandLine, command, 64);
 
   char buf[32];
   KPrint("\n");
   char* cmd = strtok(command, ' ');
   char* args = strtok(NULL, ' ');
 
-  if (!Strcmp(command, "clear")) {
+  if (!strcmp(command, "clear")) {
     ConClearScreen();
     ConMoveCursor(0, 0);
     /*KResetCursor();*/
-  } else if (!Strcmp(command, "dev")) {
+  } else if (!strcmp(command, "dev")) {
     DumpDeviceList();
-  } else if (!Strcmp(command, "remove")) {
+  } else if (!strcmp(command, "remove")) {
     Device* device = GetDevice("Test");
     DeviceUnregister(device);
-  } else if (!Strcmp(command, "Test")) {
+  } else if (!strcmp(command, "Test")) {
     Device device;
     device.Name = "/Keyboard";
     DeviceRegister(&device);
-  } else if (!Strcmp(command, "uptime")) {
-    Sprintf(32, buf, "Uptime: %ds", TimerGetUptime());
+  } else if (!strcmp(command, "uptime")) {
+    sprintf(32, buf, "Uptime: %ds", TimerGetUptime());
     KPrint(buf);
-  } else if (!Strcmp(command, "diskchanged")) {
+  } else if (!strcmp(command, "diskchanged")) {
     DiskChanged();
-  } else if (!Strcmp(command, "diskreset")) {
+  } else if (!strcmp(command, "diskreset")) {
     DiskReset();
-  } else if (!Strcmp(command, "seek")) {
+  } else if (!strcmp(command, "seek")) {
     static int seek = 0;
     FloppySeek(seek++);
   }
-  // else if(!Strcmp(cmd, "cat"))
+  // else if(!strcmp(cmd, "cat"))
   // {
   //     if(args != NULL) {
   //       //read(args);
   //     }
   // }
-  else if (!Strcmp(command, "ps")) {
+  else if (!strcmp(command, "ps")) {
     KPrint("Name\t\tID\t\tState\t\tCpu\t\tPriority\n");
     BYTE foreground;
     ProcessGetForegroundProcessId(&foreground);
@@ -58,7 +58,7 @@ void ProcessCommand(char* command) {
                p->CpuTicks, p->Id == foreground ? "(foreground)" : "");
       }
     }
-  } else if (!Strcmp(command, "ls")) {
+  } else if (!strcmp(command, "ls")) {
     Device* device = FSDeviceForPath("/mnt/floppy0");
     if (device) {
       KPrint("Found device %u %s\n", device, device->Name);
@@ -103,14 +103,14 @@ void ShellStart() {
     if (status == S_OK) {
       if (buf[0] == '\n') {
         command[currentPos] = '\0';
-        Strcpy(lastCommand, command, Strlen(command));
+        strcpy(lastCommand, command, strlen(command));
         ProcessCommand(command);
         Memset(command, 0, sizeof(command));
         currentPos = 0;
       } else if ((int)buf[0] == 72) {
         Debug("Command: %s\n", lastCommand);
-        Strcpy(command, lastCommand, Strlen(lastCommand));
-        currentPos = Strlen(lastCommand);
+        strcpy(command, lastCommand, strlen(lastCommand));
+        currentPos = strlen(lastCommand);
       } else if ((int)buf[0] == 8) {
         // Backspace
         if (currentPos > 0) {

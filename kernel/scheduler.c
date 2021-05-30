@@ -37,19 +37,17 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
       sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
   p->CurrentMemPtr = stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * p->Id - 1);
+  strcpy(p->Environment.WorkingDirectory, "/", 1);
 
   Debug("Process id %d\n", p->Id);
 
   MMInitializePageDirectory(p->PageDirectory);
-  MMMap(p->PageDirectory, 16, 16 + (p->Id - 1), p->Id); //, 7 + p->Id);
-  // MMMap(p->PageDirectory, 17, 1 + p->Id);
-  // MMMap(p->PageDirectory, 17, 8 + p->Id);
-  // MMMap(p->PageDirectory, 18, 9 + p->Id);
-  // MMMap(p->PageDirectory, 19, 10 + p->Id);
+  MMMap(p->PageDirectory, 16, 16 + (p->Id - 1), p->Id);
+;
 
   Debug("Commandline: %s\n", commandLine);
-  Strcpy(&p->Name, name, Strlen(name));
-  Strcpy(&p->CommandLine, commandLine, Strlen(commandLine));
+  strcpy(&p->Name, name, strlen(name));
+  strcpy(&p->CommandLine, commandLine, strlen(commandLine));
 
   if (processListStart->Process == NULL) {
     Debug("Updating existing process list node %u %u %u\n", p, processListStart,
@@ -268,8 +266,8 @@ STATUS ProcessSchedule(Registers* registers) {
       int cur = 0;
       while (tok) {
         Debug("Found token %s\n", tok);
-        p[cur] = KMalloc(Strlen(tok) + 1);
-        Strcpy(p[cur], tok, Strlen(tok) + 1);
+        p[cur] = KMalloc(strlen(tok) + 1);
+        strcpy(p[cur], tok, strlen(tok) + 1);
         cur++;
         tok = strtok(NULL, ' ');
       }
@@ -415,7 +413,7 @@ int ProcessReadFile(BYTE id, int fd, void* buf, int count) {
 
   if (fd == 0) {
     Debug("Doing read from stdin\n");
-    int len = Strlen(p->StdinBuffer);
+    int len = strlen(p->StdinBuffer);
     if (len > count) {
       len = count;
     }

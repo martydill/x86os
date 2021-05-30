@@ -346,7 +346,7 @@ void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
     i = 0;
     while (e != NULL) {
       Debug("Found %s\n", e->name);
-      Strcpy(dirimpl->dirents[i].d_name, e->name, Strlen(e->name));
+      strcpy(dirimpl->dirents[i].d_name, e->name, strlen(e->name));
        e = e->next;
        ++i;
     }
@@ -389,7 +389,7 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get siz
 
       // KPrint("\n");
 
-      if (!Strcmp(e->name, name)) {
+      if (!strcmp(e->name, name)) {
         Debug("Found cluster %d %s\n", e->firstClusterLow, name);
         clusterToFetch = e->firstClusterLow;
         *size = e->size;
@@ -505,7 +505,7 @@ STATUS FloppyInit(void) {
       KPrint("\n");*/
 
       drives[i].device.Name = KMalloc(16);
-      Sprintf(16, drives[i].device.Name, "floppy%d", i);
+      sprintf(16, drives[i].device.Name, "floppy%d", i);
       drives[i].device.Status = DEVICE_OPEN;
       DeviceRegister(&drives[i].device);
     }
