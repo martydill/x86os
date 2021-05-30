@@ -37,7 +37,14 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
       sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
   p->CurrentMemPtr = stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * p->Id - 1);
-  strcpy(p->Environment.WorkingDirectory, "/", 1);
+
+  if(active != NULL) {
+    // Copy parent's environment to child
+    Memcopy((BYTE*)&p->Environment, (BYTE**)&active->Environment, sizeof(Environment));
+  }
+  else {
+    strcpy(p->Environment.WorkingDirectory, "/", 1);
+  }
 
   Debug("Process id %d\n", p->Id);
 

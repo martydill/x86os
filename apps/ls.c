@@ -2,9 +2,14 @@
 
 int main(int argc, char* argv[]) {
   char* path;
+  char workingDirectoryBuffer[255];
 
   if (argc == 1) {
-    path = ".";
+    if(!getcwd(workingDirectoryBuffer, sizeof(workingDirectoryBuffer))) {
+      write(1, "Could not get current working directory\n", 30);
+      return 1;
+    }
+    path = workingDirectoryBuffer;
   }
   else {
     path = argv[1];
@@ -27,4 +32,5 @@ int main(int argc, char* argv[]) {
   while(d != NULL);
 
   closedir(dir);
+  return 0;
 }
