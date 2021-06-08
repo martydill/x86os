@@ -15,6 +15,8 @@
 #include <dma.h>
 #include <elf.h>
 
+extern WORD FATSectorForCluster(FAT12BootSector* bs, WORD cluster);
+
 const char* floppyTypeString[] = {"No floppy drive", "360k 5.25\"",
                                   "1.2m 5.25\"",     "720k 3.5\"",
                                   "1.44m 3.5\"",     "2.88m 3.5\""};
@@ -281,7 +283,6 @@ STATUS FloppyReadSector(int sector, char* buffer) {
     KPrint("Disk changed\n");
     return S_FAIL;
   }
-  Debug("Seekabc\n");
   FloppySeek(CYL);
 
   IoWritePortByte(CCR, 0);
@@ -330,28 +331,78 @@ STATUS FloppyReadSector(int sector, char* buffer) {
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
 void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
-  Debug("Start of read directory\n");
-  int i;
+  int count;
   BYTE buf[512];
   FloppyReadSector(0, buf);
   BYTE fat[512 * 9];
   WORD sector;
-
   WORD clusterToFetch = 0;
+  char currentDirectory[256];
+  strcpy(currentDirectory, "/", 2);
 
   if (dir != 0) {
     Debug("Reading sector\n");
     FloppyReadSector(dir, buf);
     FATDirectoryEntry* e = FATReadDirectory(buf);
-    i = 0;
+    count = 0;
     while (e != NULL) {
-      Debug("Found %s\n", e->name);
-      strcpy(dirimpl->dirents[i].d_name, e->name, strlen(e->name));
-       e = e->next;
-       ++i;
+      Debug("Current directory is '%s'\n", currentDirectory);
+      Debug("Current file is '%s'\n", e->name);
+      Debug("Looking for '%s'\n", name);
+      // If this is the correct directory, start filling in entries
+      if(!strcmp(currentDirectory, name)) {
+        Debug("Found %s, count is %d\n", e->name, count);
+        strcpy(dirimpl->dirents[count].d_name, e->name, strlen(e->name));
+
+        e = e->next;
+        ++count;
+      }
+      else {
+        Debug("Not a match\n");
+        if(!strcmp(name, e->name)){
+          Debug("Found matching dir '%s', clusters are %d %d \n", e->name, e->firstClusterLow, e->firstClusterHigh);
+          // TODO support multiple levels deep
+          strcpy(currentDirectory, e->name, strlen(e->name));
+          Debug("New currentDir = '%s'\n", currentDirectory);
+
+          for (int i = 1; i < 10; ++i) {
+              Debug("Reading sector %d to %u\n", i, fat + (i - 1) * 512);
+              FloppyReadSector(i, fat + (i - 1) * 512);
+            }
+
+            BYTE* foo = KMalloc(1024);
+            FATReadFile(foo, &s, fat, e->firstClusterLow);
+            FATDirectoryEntry* e = FATReadDirectory(foo); 
+            // while(e != NULL) {
+            //   Debug("Found in dir: %s\n", e->name);
+            //   e = e->next; 
+            // }
+        //   // 451 0
+        //   BYTE* foo = KMalloc(48); // e->size nto used for directories
+        //   WORD absoluteCluster = e->firstClusterLow - 2 + 33;
+        //   // FATReadFile(foo, &s, fat, e->firstClusterLow);
+
+        // // BYTE buf2[512];
+        //   WORD sector = FATSectorForCluster(&s, absoluteCluster);
+        //   Debug("found sector %d\n", sector);
+        //   FloppyReadSector(sector, buf);
+        //   Debug("Done reading sector\n");
+        //   // Debug(foo); // foo contains file contents
+        //   Debug("***");
+        //   FATDirectoryEntry* e = FATReadDirectory(buf);
+        //   while(e != NULL) {
+        //     Debug("Found in dir: %s\n", e->name);
+        //     e = e->next;
+        //   }
+
+          }
+          else {
+              e = e->next;
+          }
+      }
     }
   }
-  dirimpl->Count = i;
+  dirimpl->Count = count;
   dirimpl->Current = 0;
   return 0;
 }
@@ -410,7 +461,6 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get siz
   }
 }
 
-extern WORD FATSectorForCluster(FAT12BootSector* bs, WORD cluster);
 // {
 //   return FATFirstDataSector(bs) + (cluster - 2) * bs->sectorsPerCluster;
 // }
@@ -432,7 +482,7 @@ STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat, WORD cluster) {
     if (nextCluster >= 0xFF8 || nextCluster == 0xFF0) {
       Debug("No more clusters\n");
       break;
-    }
+  }
     cluster = nextCluster;
     clustersRead++;
   }
