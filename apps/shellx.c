@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
         *q++ = *p++;
       }
       *q = 0;
+      p++; 
 
       // Check for builtins
       if(!strcmp(binaryName, "cd")) {
