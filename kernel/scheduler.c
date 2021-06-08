@@ -40,9 +40,9 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
 
   if(active != NULL) {
     // Copy parent's environment to child
-    Memcopy((BYTE*)&p->Environment, (BYTE**)&active->Environment, sizeof(Environment));
+    Memcopy((BYTE*)&p->Environment, (BYTE*)&active->Environment, sizeof(Environment));
   }
-  else {
+  else {  
     strcpy(p->Environment.WorkingDirectory, "/", 1);
   }
 
