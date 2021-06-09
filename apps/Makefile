@@ -6,10 +6,10 @@ libs = syscall.o
 OUTPUT_DIR = bin
 
 SRCS := $(wildcard *.c)
-EXES := $(OUTPUT_DIR)/hello $(OUTPUT_DIR)/mount $(OUTPUT_DIR)/cat $(OUTPUT_DIR)/shellx $(OUTPUT_DIR)/idle $(OUTPUT_DIR)/ls $(OUTPUT_DIR)/sleep  #$(patsubst %.c, $(OUTPUT_DIR)/%.exe, $(SRCS))
+EXES := $(OUTPUT_DIR)/hello $(OUTPUT_DIR)/mount $(OUTPUT_DIR)/cat $(OUTPUT_DIR)/shellx $(OUTPUT_DIR)/idle $(OUTPUT_DIR)/ls $(OUTPUT_DIR)/sleep $(OUTPUT_DIR)/echo  #$(patsubst %.c, $(OUTPUT_DIR)/%.exe, $(SRCS))
 
-objs = hello.o mount.o
-apps = hello mount
+objs = mount.o
+apps = mount
 
 default: all
 
