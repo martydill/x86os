@@ -22,9 +22,14 @@ int main(int argc, char* argv[]) {
 
     char buf[255];
 
+    int runInBackground = 0;
     int bytes = read(0, buf, 255);
     if (bytes > 0) {
       buf[bytes - 1] = 0;
+
+      if(bytes > 2 && buf[bytes - 2] == '&') {
+        runInBackground = 1;
+      }
 
       char binaryName[255];
       char* p = buf;
@@ -45,7 +50,11 @@ int main(int argc, char* argv[]) {
       // TODO check for launch failures here
       pid_t pid;
       posix_spawn(&pid, binaryName, 0, 0, buf, 0);
-      waitpid(pid, 0, 0);
+
+      if(!runInBackground) {
+        // If we're running in background, do not wait
+        waitpid(pid, 0, 0);
+      }
     }
   }
 }
