@@ -98,11 +98,16 @@ void KeSysCallHandler(Registers* registers) {
           physicalAddress, argvAddress, argvAddress);
     int size;
     BYTE* fileData = FloppyReadFile(physicalAddress, &size);
-    Debug("Read %d bytes\n", size);
-    DWORD childProcessId = ELFParseFile(fileData, physicalAddress, argvAddress);
-    Debug("Started process %d, writing id to %u\n", childProcessId,
-          pidPhysicalAddress);
-    *(DWORD*)pidPhysicalAddress = childProcessId;
+    if(fileData == NULL) {
+      registers->eax = -1;
+    }
+    else {
+      Debug("Read %d bytes\n", size);
+      DWORD childProcessId = ELFParseFile(fileData, physicalAddress, argvAddress);
+      Debug("Started process %d, writing id to %u\n", childProcessId,
+            pidPhysicalAddress);
+      *(DWORD*)pidPhysicalAddress = childProcessId;
+    }
   } else if (syscall == SYSCALL_WAITPID) {
     SyscallWaitpid(registers);
   }

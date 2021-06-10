@@ -47,9 +47,12 @@ int main(int argc, char* argv[]) {
       }
 
       // If no builtins, try running command
-      // TODO check for launch failures here
       pid_t pid;
-      posix_spawn(&pid, binaryName, 0, 0, buf, 0);
+      if(posix_spawn(&pid, binaryName, 0, 0, buf, 0) == -1) {
+        KPrint("Could not find ");
+        KPrint(binaryName);
+        continue;
+      }
 
       if(!runInBackground) {
         // If we're running in background, do not wait

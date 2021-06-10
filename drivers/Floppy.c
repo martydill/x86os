@@ -347,7 +347,7 @@ void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
     count = 0;
     while (e != NULL) {
       Debug("Current directory is '%s'\n", currentDirectory);
-      Debug("Current file is '%s'\n", e->name);
+      Debug("Current file is '%s' %d\n", e->name, e->attributes);
       Debug("Looking for '%s'\n", name);
       // If this is the correct directory, start filling in entries
       if(!strcmp(currentDirectory, name)) {
@@ -449,6 +449,13 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get siz
 
       e = e->next;
     }
+
+    // Could not find file
+    if(clusterToFetch == 0) {
+      Debug("Could not find file '%s'\n", name);
+      return NULL;
+    }
+
     for (i = 1; i < 10; ++i) {
       Debug("Reading sector %d to %u\n", i, fat + (i - 1) * 512);
       FloppyReadSector(i, fat + (i - 1) * 512);
