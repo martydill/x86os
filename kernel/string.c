@@ -45,9 +45,7 @@ int strcmp(const char* string1, const char* string2) {
 #define SPECIFIER_CHAR 3
 #define SPECIFIER_UINT 4
 
-#ifndef Assert
-#define Assert(x) ;
-#endif
+
 /* Copies a format specifier'd string to another string. Private. */
 /* FIXME: Count characters and handle size */
 /* FIXME: Can't end on a %s */
@@ -64,9 +62,6 @@ STATUS Dosprintf(int size, char* buffer, const char* format, va_list args) {
   char* vaString = 0;
   char vaChar = 0;
   unsigned int vaUInt = 0, usizeNum = 0;
-
-  Assert(buffer != NULL);
-  Assert(format != NULL);
 
   /* Main parsing loop ... */
   while (*format != '\0') {
@@ -307,134 +302,36 @@ char* strtok(char* str, const char delim) {
   return p;
 }
 
-void Test_strlen() {
-  char* p;
+int atoi (const char * str) {
+  int value = 0;
+  int sign = 1;
 
-  p = "a";
-  Assert(strlen(p) == 1);
-  p = "four";
-  Assert(strlen(p) == 4);
-  p = "asdf1234asdf12345";
-  Assert(strlen(p) == 17);
-}
-
-void Test_strcmp() {
-  char* p;
-  char* q;
-
-  p = "first";
-  q = "second";
-  Assert(strcmp(p, q) != 0);
-  q = "first123";
-  Assert(strcmp(p, q) != 0);
-  q = "first";
-  Assert(strcmp(p, q) == 0);
-  p = "dev";
-  q = "d9v";
-  Assert(strcmp(p, q) != 0);
-  Assert(strcmp(NULL, NULL) == 0);
-}
-
-void Test_strcpy() {
-  char* p;
-  char buf[64];
-
-  p = "test";
-  Assert(strcpy(buf, p, sizeof(buf)) == S_OK);
-  Assert(strcpy(buf, NULL, sizeof(buf)) == S_FAIL);
-  Assert(strcpy(NULL, buf, sizeof(buf)) == S_FAIL);
-  Assert(strlen(buf) == strlen(p));
-  Assert(strcmp(buf, p) == 0);
-  Assert(strcmp(buf, "test") == 0);
-  Assert(strcmp(buf, "test2") == 1);
-}
-
-void Test_sprintf() {
-  char buf[64];
-  unsigned int u = 99;
-  Assert(sprintf(sizeof(buf), buf, "asdf") == S_OK);
-  Assert(strcmp(buf, "asdf") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "%s", "hello") == S_OK);
-  Assert(strcmp(buf, "hello") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "%d", 12345) == S_OK);
-  Assert(strcmp(buf, "12345") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "hello %s goodbye %d world", "asdf", 1234) ==
-         S_OK);
-  Assert(strcmp(buf, "hello asdf goodbye 1234 world") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "%d", 0) == S_OK);
-  Assert(strcmp(buf, "0") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "%c", 'X') == S_OK);
-  Assert(strcmp(buf, "X") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "%u", 12345) == S_OK);
-  Assert(strcmp(buf, "12345") == 0);
-
-  Assert(sprintf(sizeof(buf), buf, "Alloc %u\n", u) == S_OK);
-  Assert(strcmp(buf, "Alloc 99\n") == 0);
-}
-
-void Test_strstr() {}
-
-void Test_isalpha() {
-  for (int i = 0; i < 26; ++i) {
-    Assert(isalpha(i + 'a'));
-    Assert(isalpha(i + 'A'));
+  if(str == NULL) {
+    return 0;
   }
-  Assert(!isalpha(1));
-  Assert(!isalpha('$'));
-  Assert(!isalpha('.'));
-  Assert(!isalpha(NULL));
-  Assert(!isalpha(0));
-}
 
-void Test_tolower() {
-  for (int i = 0; i < 26; ++i) {
-    Assert(tolower(i + 'A') == i + 'a');
-    Assert(tolower(i + 'a') == i + 'a');
+  // Move to first non-null non-space character
+  while(*str == ' ') str++;
+
+  // For each character...
+  while(*str != 0) {
+    char currentChar = *str++;
+
+    if(currentChar == '-') {
+      sign = -1;
+      continue;
+    }
+
+    // Invalid character, just return 0
+    if(currentChar < '0' || currentChar > '9') {
+      return 0;
+    }
+
+    // Valid character, convert to digit
+    value = value * 10;
+    value = value + (int)(currentChar - '0');
   }
-  Assert(tolower(999) == 999);
-  Assert(tolower('$') == '$');
+
+  return value * sign;
 }
 
-void Test_strtok() {
-  char* p = strtok("hello world abc", ' ');
-  Assert(!strcmp(p, "hello"));
-
-  p = strtok(NULL, ' ');
-  Assert(!strcmp(p, "world"));
-
-  p = strtok(NULL, ' ');
-  Assert(!strcmp(p, "abc"));
-
-  p = strtok(NULL, ' ');
-  Assert(p == NULL);
-
-  p = strtok("111x222", 'x');
-  Assert(!strcmp(p, "111"));
-
-  p = strtok(NULL, ' ');
-  Assert(!strcmp(p, "222"));
-
-  p = strtok(NULL, ' ');
-  Assert(p == NULL);
-
-  p = strtok(NULL, '1');
-  Assert(p == NULL);
-}
-
-void Test_String() {
-  Test_strlen();
-  Test_strcmp();
-  Test_strcpy();
-  Test_sprintf();
-  Test_strstr();
-  Test_isalpha();
-  Test_tolower();
-  Test_strtok();
-  return;
-}
