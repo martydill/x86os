@@ -27,8 +27,10 @@ int main(int argc, char* argv[]) {
     if (bytes > 0) {
       buf[bytes - 1] = 0;
 
+      // Check for running in background with command&
       if(bytes > 2 && buf[bytes - 2] == '&') {
         runInBackground = 1;
+        buf[bytes - 2] = 0; // Remove from actual command line
       }
 
       char binaryName[255];

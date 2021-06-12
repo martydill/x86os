@@ -85,3 +85,7 @@ char* getcwd(char* buf, size_t size) {
 unsigned int sleep(unsigned int seconds) {
   return _syscall(SYSCALL_SLEEP, seconds, 0, 0, 0, 0);
 }
+
+int kill(pid_t pid, int sig) {
+  return _syscall(SYSCALL_KILL, pid, sig, 0, 0, 0);
+}

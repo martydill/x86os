@@ -18,6 +18,7 @@
 #define SYSCALL_CHDIR 0x0B
 #define SYSCALL_GETCWD 0x0C
 #define SYSCALL_SLEEP 0x0D
+#define SYSCALL_KILL 0x0E
 
 typedef int pid_t;
 typedef unsigned int ino_t;

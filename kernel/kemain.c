@@ -158,6 +158,17 @@ void KeSysCallHandler(Registers* registers) {
     registers->eax = 0; // TODO return value for signals
     ProcessSchedule(registers);
   }
+  else if(syscall == SYSCALL_KILL) {
+    Debug("SYSCALL_KILL %u\n", registers->ebx);
+    if(ProcessTerminate(registers->ebx) == S_OK) {
+      Debug("Killed %d\n", registers->ebx);
+      registers->eax = 0;
+    }
+    else {
+      Debug("Kill %d failed\n", registers->ebx);
+      registers->eax = -1;
+    }
+  }
   else {
     KePanic(registers);
   }
