@@ -103,7 +103,8 @@ void KeSysCallHandler(Registers* registers) {
     }
     else {
       Debug("Read %d bytes\n", size);
-      DWORD childProcessId = ELFParseFile(fileData, physicalAddress, argvAddress);
+      // TODO - figure out how to choose foreground for processes requiring i/o
+      DWORD childProcessId = ELFParseFile(fileData, physicalAddress, argvAddress, PRIORITY_BACKGROUND);
       Debug("Started process %d, writing id to %u\n", childProcessId,
             pidPhysicalAddress);
       *(DWORD*)pidPhysicalAddress = childProcessId;
@@ -227,10 +228,10 @@ int KeMain(MultibootInfo* bootInfo) {
 
   int size;
   BYTE* fileData = FloppyReadFile("idle", &size);
-  ELFParseFile(fileData, "idle", "idle");
+  ELFParseFile(fileData, "idle", "idle", PRIORITY_BACKGROUND);
 
   fileData = FloppyReadFile("shellx", &size);
-  ELFParseFile(fileData, "shellx", "shellx");
+  ELFParseFile(fileData, "shellx", "shellx", PRIORITY_FOREGROUND);
 
   Debug("Jumping to user mode\n");
   KeSwitchToUserMode();

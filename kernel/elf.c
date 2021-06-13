@@ -2,7 +2,7 @@
 #include <elf.h>
 
 int count = 0;
-DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine) {
+DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine, BYTE priority) {
   if (data == NULL) {
     return S_FAIL;
   }
@@ -53,5 +53,5 @@ DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine) {
   }
 
   Debug("Creating new process for entry %u\n", header->e_entry);
-  return CreateProcess(header->e_entry, processName, 255, commandLine);
+  return CreateProcess(header->e_entry, processName, priority, commandLine);
 }

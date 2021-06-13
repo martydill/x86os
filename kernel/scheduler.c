@@ -77,9 +77,9 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
           processListEnd, name);
   }
 
-  // if(priority == PRIORITY_FOREGROUND) {
-  foreground = p;
-  // }
+  if(priority == PRIORITY_FOREGROUND) {
+    foreground = p;
+  }
   return p->Id;
 }
 

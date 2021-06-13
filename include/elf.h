@@ -80,6 +80,6 @@ typedef struct {
 #define SHF_ORDERED 0x4000000
 #define SHF_EXCLUDE 0x8000000
 
-DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine);
+DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine, BYTE Priority);
 
 #endif
