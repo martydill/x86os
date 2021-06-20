@@ -19,14 +19,57 @@
 #define SYSCALL_GETCWD 0x0C
 #define SYSCALL_SLEEP 0x0D
 #define SYSCALL_KILL 0x0E
+#define SYSCALL_STAT 0x0F
+#define SYSCALL_FSTAT 0x10
+
+
+#define S_IFMT 0x01
+#define S_IFBL 0x02
+#define S_IFCHR 0x03
+#define S_IFIFO 0x04
+#define S_IFREG 0x05
+#define S_IFDIR 0x06
+#define S_IFLNK 0x07
+#define S_IFSOCK 0x08
 
 typedef int pid_t;
 typedef unsigned int ino_t;
 typedef unsigned int size_t;
 
+typedef int dev_t;
+typedef int mode_t;
+typedef int nlink_t;
+typedef int uid_t;
+typedef int gid_t;
+typedef int dev_t;
+typedef int off_t;
+typedef int time_t;
+typedef int blksize_t;
+typedef int blkcnt_t;
+
+typedef struct stat {
+  dev_t     st_dev;
+  ino_t     st_ino;
+  mode_t    st_mode;
+  nlink_t   st_nlink;
+  uid_t     st_uid;
+  gid_t     st_gid;
+  dev_t     st_rdev;
+  off_t     st_size;
+  time_t    st_atime;
+  time_t    st_mtime;
+  time_t    st_ctime;
+  blksize_t st_blksize;
+  blkcnt_t  st_blocks;
+};
+
 typedef struct dirent{
   ino_t  d_ino;
   char   d_name[255];
+
+  // Non-posix fields
+  off_t st_size;
+  mode_t st_mode;
 };
 
 typedef struct _DirImpl {

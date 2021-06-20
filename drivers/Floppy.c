@@ -354,7 +354,10 @@ void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
         Debug("Found %s, count is %d\n", e->name, count);
         strcpy(dirimpl->dirents[count].d_name, e->name, strlen(e->name));
 
-        e = e->next;
+	// Fill in some extra fields of the dirents that are needed by stat
+	dirimpl->dirents[count].st_size = e->size;
+	dirimpl->dirents[count].st_mode = e->attributes & FAT_ATTR_DIRECTORY ? S_IFDIR : S_IFREG; // TODO other types
+        e = e->next; 
         ++count;
       }
       else {

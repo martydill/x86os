@@ -25,8 +25,18 @@ int main(int argc, char* argv[]) {
   do {
     d = readdir(dir);
     if(d != NULL) {
-        write(1, d->d_name, 20);
-        write(1, "\n", 1);
+        struct stat statbuf;
+	// strcpy(fullPath + strlen(fullPath), d->d_name);
+        if(stat(d->d_name, &statbuf) == 0) {
+          write(1, d->d_name, 20);
+          if(statbuf.st_mode == S_IFDIR) {
+            write(1, "/", 1);
+          }
+          write(1, "\n", 1);
+        }
+        else {
+          write(1, "Stat failed\n", 20);
+        }
     }
   }
   while(d != NULL);

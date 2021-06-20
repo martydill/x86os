@@ -170,6 +170,27 @@ void KeSysCallHandler(Registers* registers) {
       registers->eax = -1;
     }
   }
+  else if(syscall == SYSCALL_STAT) {
+    DWORD physicalAddress = registers->ebx; //MMVirtualAddressToPhysicalAddress(registers->ebx); // TODO why is this not a virtual address...
+    DWORD statbufPhysicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
+    struct stat * statbuf = (struct stat*)statbufPhysicalAddress;
+    Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, (char*)registers->ebx, statbufPhysicalAddress);
+
+    Process* active = ProcessGetActiveProcess();
+    // TODO cache this
+    struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+    FloppyReadDirectory("/", dir);
+    for(int i = 0; i < dir->Count; ++i) {
+	    if(!strcmp(physicalAddress, dir->dirents[i].d_name)) {
+		    // TODO fill in other members of statbuf
+		    statbuf->st_mode = dir->dirents[i].st_mode;
+		    statbuf->st_size = dir->dirents[i].st_size;
+		    registers->eax = 0;
+		    return;
+	    }
+    }
+    registers->eax = -1;
+  }
   else {
     KePanic(registers);
   }

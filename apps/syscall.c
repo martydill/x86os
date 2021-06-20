@@ -89,3 +89,11 @@ unsigned int sleep(unsigned int seconds) {
 int kill(pid_t pid, int sig) {
   return _syscall(SYSCALL_KILL, pid, sig, 0, 0, 0);
 }
+
+int stat(const char *restrict path, struct stat *restrict buf) {
+  return _syscall(SYSCALL_STAT, path, buf, 0, 0, 0);
+}
+
+int fstat(int fildes, struct stat *buf) {
+  return _syscall(SYSCALL_FSTAT, fildes, buf, 0, 0, 0);
+}
