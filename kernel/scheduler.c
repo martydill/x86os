@@ -182,11 +182,11 @@ STATUS ProcessSchedule(Registers* registers) {
 
     } else {
       // todo don't switch to idle if we are still running
-      Debug("Switching from %s %d\n", active->Name, active->State);
-      Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
-            active->Registers.userEsp, active->Registers.eip,
-            active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
-            active->Registers.edx);
+      // Debug("Switching from %s %d\n", active->Name, active->State);
+      // Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
+      //       active->Registers.userEsp, active->Registers.eip,
+      //       active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
+      //       active->Registers.edx);
       active->Registers.eax = registers->eax;
       active->Registers.ebx = registers->ebx;
       active->Registers.ecx = registers->ecx;
@@ -214,14 +214,14 @@ STATUS ProcessSchedule(Registers* registers) {
       node = node->Next;
       if (node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED &&
           node->Process->State != STATE_WAIT_BLOCKED && node->Process->State != STATE_SLEEPING) {
-        Debug("Switching to next process %s %u\n", node->Process->Name,
-              node->Process->Id);
+        // Debug("Switching to next process %s %u\n", node->Process->Name,
+        //      node->Process->Id);
         active = node->Process;
         break;
       } else if (node != NULL &&
                  (node->Process->State == STATE_FOREGROUND_BLOCKED ||
                   node->Process->State == STATE_WAIT_BLOCKED)) {
-        Debug("Next process %s is blocked \n", node->Process->Name);
+        // Debug("Next process %s is blocked \n", node->Process->Name);
       }
       else if(node != NULL && node->Process->State == STATE_SLEEPING && node->Process->SleepBlock.SleepUntilTicks < currentTicks) {
           Debug("Waking from sleep");
@@ -230,7 +230,7 @@ STATUS ProcessSchedule(Registers* registers) {
       }
     }
     if (node == NULL) {
-      Debug("Switching to first process %s\n", processListStart->Process->Name);
+      // Debug("Switching to first process %s\n", processListStart->Process->Name);
       active = processListStart->Process;
     }
   }
@@ -256,8 +256,8 @@ STATUS ProcessSchedule(Registers* registers) {
   // }
 
   if (active) {
-    Debug("Switching to process %s %u %u\n", active->Name, active->Entry,
-          active->State);
+    // Debug("Switching to process %s %u %u\n", active->Name, active->Entry,
+          // active->State);
     if (active->State == STATE_PENDING) {
       // Debug("Making process running");
       Debug("Command line: %s\n", active->CommandLine);
@@ -298,11 +298,11 @@ STATUS ProcessSchedule(Registers* registers) {
     registers->userEsp = active->Registers.userEsp;
     registers->eip = active->Registers.eip;
 
-    Debug("Switching to name: %s id: %d\n", active->Name, active->Id);
-    Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
-          active->Registers.userEsp, active->Registers.eip,
-          active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
-          active->Registers.edx);
+    // Debug("Switching to name: %s id: %d\n", active->Name, active->Id);
+    // Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
+    //       active->Registers.userEsp, active->Registers.eip,
+    //       active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
+    //       active->Registers.edx);
     LastTicks = currentTicks;
 
     MMSetPageDirectory(active->PageDirectory);
@@ -366,7 +366,7 @@ STATUS ProcessTerminate(BYTE id) {
   }
   Process* p = node->Process;
 
-  Debug("Terminating process %s\n", p->Name);
+  Debug("Terminating process %s (id %d)\n", p->Name, p->Id);
   p->State = STATE_TERMINATING;
   return S_OK;
 }
@@ -485,6 +485,7 @@ int ProcessAddToStdinBuffer(char charToAdd) {
     foreground->StdinBuffer[foreground->StdinPosition++] = charToAdd;
   }
 
+  Debug("Foreground state is %d\n", foreground->State);
   // See if this unblocked a read from stdin
   if (foreground->State == STATE_FOREGROUND_BLOCKED) {
     Debug("Foreground process is blocked, checking if we can unblock\n");
