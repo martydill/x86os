@@ -94,6 +94,13 @@ typedef struct Process_S {
   void* CurrentMemPtr;
 } Process;
 
+typedef struct ProcessList {
+  struct ProcessList* Next;
+  struct ProcessList* Prev;
+  Process* Process;
+} ProcessList;
+
+
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
 DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,

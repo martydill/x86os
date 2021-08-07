@@ -9,11 +9,6 @@ BYTE nextId = 1;
 void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage,
            int processId);
 
-typedef struct ProcessList {
-  struct ProcessList* Next;
-  struct ProcessList* Prev;
-  Process* Process;
-} ProcessList;
 
 // Process processes[MAX_PROCESSES];
 
