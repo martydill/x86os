@@ -567,6 +567,7 @@ STATUS FloppyInit(void) {
       drives[i].device.Name = KMalloc(16);
       sprintf(16, drives[i].device.Name, "floppy%d", i);
       drives[i].device.Status = DEVICE_OPEN;
+	  drives[0].device.OpenDir = FloppyReadDirectory;
       DeviceRegister(&drives[i].device);
     }
   }

@@ -19,7 +19,7 @@ Process* active = NULL;
 
 DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
                     char* commandLine) {
-  unsigned int* stackAddress = 64 * 1024 * 1024 + 128 * 1024;
+  DWORD stackAddress = 64 * 1024 * 1024 + 8 * 1024;
   // Memset(stackAddress - 1024*1024, 0, 1024*1024);
   Process* p = KMalloc(sizeof(Process));
   Memset(p, 0, sizeof(Process));
@@ -31,8 +31,10 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
   p->PageDirectory = ((unsigned int)KMallocWithTagAligned(
       sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
-  p->CurrentMemPtr = stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * p->Id - 1);
+  Debug("Process id %d, , st: %u, memptr %u, calc %u\n", p->Id, p->KernelStack, p->CurrentMemPtr, stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)));
+  p->CurrentMemPtr = stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)); // physical address
 
+  Debug("Process id %d, , st: %u, memptr %u\n", p->Id, p->KernelStack, p->CurrentMemPtr);
   if(active != NULL) {
     // Copy parent's environment to child
     Memcopy((BYTE*)&p->Environment, (BYTE*)&active->Environment, sizeof(Environment));
@@ -41,7 +43,7 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
     strcpy(p->Environment.WorkingDirectory, "/", 1);
   }
 
-  Debug("Process id %d\n", p->Id);
+  Debug("Process id %d, memptr %u\n", p->Id, p->CurrentMemPtr);
 
   MMInitializePageDirectory(p->PageDirectory);
   MMMap(p->PageDirectory, 16, 16 + (p->Id - 1), p->Id);
@@ -68,8 +70,8 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
     ++processCount;
 
     Debug("New end is %d\n", processListEnd->Process->Id);
-    Debug("Created %u %u %u %u %u %s\n", entryPoint, p, next, processListStart,
-          processListEnd, name);
+    Debug("Created %u %u %u %u %u %s %u\n", entryPoint, p, next, processListStart,
+          processListEnd, name, p->CurrentMemPtr);
   }
 
   if(priority == PRIORITY_FOREGROUND) {
@@ -263,25 +265,27 @@ STATUS ProcessSchedule(Registers* registers) {
           argcCounter++;
         }
       }
-      char** p = KMalloc(argcCounter * sizeof(char*));
+      char** p = KMallocInProcess(active, argcCounter * sizeof(char*));
       char* tok = strtok(active->CommandLine, ' ');
       int cur = 0;
+
       while (tok) {
-        Debug("Found token %s\n", tok);
-        p[cur] = KMalloc(strlen(tok) + 1);
+        p[cur] = KMallocInProcess(active, strlen(tok) + 1);
+        Debug("%u: Found token %s at %u\n", p, tok, p[cur]);
         strcpy(p[cur], tok, strlen(tok) + 1);
+		p[cur] = p[cur] - (active->Id - 1) * 4 * 1024 * 1024;
         cur++;
         tok = strtok(NULL, ' ');
       }
-
+	  DWORD q = p - (active->Id - 1) * 4 * 1024 * 1024;
       active->State = STATE_RUNNING;
       Memset(&active->Registers, 0, sizeof(Registers));
       active->Registers.eip = active->Entry;
       active->Registers.userEsp = active->KernelStack;
       active->Registers.eax = argcCounter;
       active->Registers.ebx = p;
-      Debug("Stack is %u\n, count is %d\n", active->Registers.userEsp,
-            argcCounter);
+      Debug("Stack is %u, memptr is %u, count is %d, q=%u, p=%u, p[0]=%u, p[1]=%u\n", active->Registers.userEsp, active->CurrentMemPtr,
+            argcCounter, q, p, p[0], p[1]);
     }
     registers->eax = active->Registers.eax;
     registers->ebx = active->Registers.ebx;

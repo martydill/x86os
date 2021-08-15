@@ -115,11 +115,17 @@ void KeSysCallHandler(Registers* registers) {
   else if(syscall == SYSCALL_OPENDIR) {
     const char* dirName = (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
     Debug("SYSCALL_OPENDIR %s\n", dirName);
+
+	// TODO get device, read from device depending on what dir we are accessing
+	Device* device = FSDeviceForPath(dirName);
+	Debug("****************%s\n", device->Name);
+	Debug("Done find device\n");
     Process* active = ProcessGetActiveProcess();
-    struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-    FloppyReadDirectory(dirName, dir);
-    registers->eax = dir;
-    Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
+     struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+	device->OpenDir(dirName, dir);
+    // FloppyReadDirectory(dirName, dir);
+     registers->eax = dir;
+    // Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
   }
   else if(syscall == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);
@@ -172,24 +178,36 @@ void KeSysCallHandler(Registers* registers) {
   }
   else if(syscall == SYSCALL_STAT) {
     DWORD physicalAddress = registers->ebx; //MMVirtualAddressToPhysicalAddress(registers->ebx); // TODO why is this not a virtual address...
+	char* name = (char*)physicalAddress;
     DWORD statbufPhysicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
     struct stat * statbuf = (struct stat*)statbufPhysicalAddress;
-    Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, (char*)registers->ebx, statbufPhysicalAddress);
+    Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, name, statbufPhysicalAddress);
 
+	Device* device = FSDeviceForPath(name);
+	Debug("****************%s\n", device->Name);
+	Debug("Done find device\n");
+	
     Process* active = ProcessGetActiveProcess();
     // TODO cache this
-    struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-    FloppyReadDirectory("/", dir);
-    for(int i = 0; i < dir->Count; ++i) {
-	    if(!strcmp(physicalAddress, dir->dirents[i].d_name)) {
-		    // TODO fill in other members of statbuf
-		    statbuf->st_mode = dir->dirents[i].st_mode;
-		    statbuf->st_size = dir->dirents[i].st_size;
-		    registers->eax = 0;
-		    return;
-	    }
-    }
-    registers->eax = -1;
+	
+    // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+	device->Stat(name, statbuf);
+
+    // // TODO cache this
+    // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+    // // TODO fix directory 
+	// // TOOO read from device/procfs
+    // FloppyReadDirectory("/", dir);
+    // for(int i = 0; i < dir->Count; ++i) {
+	//     if(!strcmp(physicalAddress, dir->dirents[i].d_name)) {
+	// 	    // TODO fill in other members of statbuf
+	// 	    statbuf->st_mode = dir->dirents[i].st_mode;
+	// 	    statbuf->st_size = dir->dirents[i].st_size;
+	// 	    registers->eax = 0;
+	// 	    return;
+	//     }
+    // }
+    registers->eax = 0;
   }
   else {
     KePanic(registers);
@@ -240,6 +258,8 @@ int KeMain(MultibootInfo* bootInfo) {
   KPrint("Initializing PCI ...\n");
   PciInit();
 
+  KPrint("Initializing ProcFS...\n");
+  ProcFSInit();
   InstallInterruptHandler(0x80, KeSysCallHandler);
   Test_String();
 

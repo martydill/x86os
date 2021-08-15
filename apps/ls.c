@@ -23,11 +23,13 @@ int main(int argc, char* argv[]) {
 
   struct dirent *d;
   do {
+	  char fullPath[255];
     d = readdir(dir);
     if(d != NULL) {
         struct stat statbuf;
-	// strcpy(fullPath + strlen(fullPath), d->d_name);
-        if(stat(d->d_name, &statbuf) == 0) {
+		sprintf(255, "%s/%s", path, d->d_name);
+	 	// strcpy(fullPath), d->d_name);
+        if(stat(fullPath, &statbuf) == 0) {
           write(1, d->d_name, 20);
           if(statbuf.st_mode == S_IFDIR) {
             write(1, "/", 1);
