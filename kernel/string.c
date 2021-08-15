@@ -8,6 +8,7 @@
 
 #include <kernel.h>
 #include <console.h>
+#include <kernel_shared.h>
 
 /* Returns the length of the requested string */
 int strlen(const char* string) {
@@ -22,14 +23,20 @@ int strlen(const char* string) {
   return length;
 }
 
-/* Determines whether the two strings are equal */
 int strcmp(const char* string1, const char* string2) {
-  if (strlen(string1) != strlen(string2))
+  if (strlen(string1) != strlen(string2)) {
     return 1;
+  }
+	return strncmp(string1, string2, strlen(string1));
+}
 
-  while (*string1 != 0) {
-    if (*string1++ != *string2++)
+int strncmp(const char *s1, const char *s2, size_t n) {
+	size_t counter = 0;
+  while (*s1 != 0 && counter < n) {
+    if (* s1++ != *s2++) {
       return 1;
+	}
+	  counter++;
   }
 
   return 0;

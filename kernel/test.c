@@ -44,6 +44,14 @@ void Test_strcpy() {
   Assert(strcmp(buf, "test2") == 1);
 }
 
+void Test_strncmp() {
+  Assert(strncmp("/proc", "/proc/cpuinfo", 5) == 0);
+  Assert(strncmp("hello", "he", 2) == 0);
+  Assert(strncmp("hello", "hz", 2) == 1);
+  Assert(strncmp("hzz", "hzq", 3) == 1);
+  Assert(strncmp("a", "b", 1) == 1);
+}
+
 void Test_sprintf() {
   char buf[64];
   unsigned int u = 99;
@@ -137,6 +145,7 @@ void Test_String() {
   Test_strlen();
   Test_strcmp();
   Test_strcpy();
+  Test_strncmp();
   Test_sprintf();
   Test_strstr();
   Test_isalpha();
