@@ -187,11 +187,11 @@ void KeSysCallHandler(Registers* registers) {
 	Debug("****************%s\n", device->Name);
 	Debug("Done find device\n");
 	
-    Process* active = ProcessGetActiveProcess();
+    //Process* active = ProcessGetActiveProcess();
     // TODO cache this
 	
     // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-	device->Stat(name, statbuf);
+	STATUS result = device->Stat(name, statbuf);
 
     // // TODO cache this
     // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
@@ -207,7 +207,7 @@ void KeSysCallHandler(Registers* registers) {
 	// 	    return;
 	//     }
     // }
-    registers->eax = 0;
+    registers->eax = result;
   }
   else {
     KePanic(registers);

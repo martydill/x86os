@@ -27,7 +27,8 @@ int main(int argc, char* argv[]) {
     d = readdir(dir);
     if(d != NULL) {
         struct stat statbuf;
-		sprintf(255, "%s/%s", path, d->d_name);
+		sprintf(255, fullPath, "%s%s%s", path, (strlen(path) == 1 ? "" : "/"), d->d_name);
+		// write(1, fullPath, 99);
 	 	// strcpy(fullPath), d->d_name);
         if(stat(fullPath, &statbuf) == 0) {
           write(1, d->d_name, 20);

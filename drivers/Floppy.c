@@ -14,6 +14,8 @@
 #include <fat.h>
 #include <dma.h>
 #include <elf.h>
+#include <process.h>
+
 
 extern WORD FATSectorForCluster(FAT12BootSector* bs, WORD cluster);
 
@@ -330,6 +332,25 @@ STATUS FloppyReadSector(int sector, char* buffer) {
 
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
+
+STATUS FloppyStat(char* name, struct stat* statbuf) {
+	// TODO figure out where / should be stripped out
+	name = name + 1;
+    Process* active = ProcessGetActiveProcess();
+	struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+	FloppyReadDirectory("/", dir);
+    for(int i = 0; i < dir->Count; ++i) {
+	    if(!strcmp(name, dir->dirents[i].d_name)) {
+		    // TODO fill in other members of statbuf
+		    statbuf->st_mode = dir->dirents[i].st_mode;
+		    statbuf->st_size = dir->dirents[i].st_size;
+		    return S_OK;
+	    }
+    }
+
+	return S_FAIL;
+}
+
 void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
   int count;
   BYTE buf[512];
@@ -567,7 +588,8 @@ STATUS FloppyInit(void) {
       drives[i].device.Name = KMalloc(16);
       sprintf(16, drives[i].device.Name, "floppy%d", i);
       drives[i].device.Status = DEVICE_OPEN;
-	  drives[0].device.OpenDir = FloppyReadDirectory;
+	  drives[i].device.OpenDir = FloppyReadDirectory;
+	  drives[i].device.Stat = FloppyStat;
       DeviceRegister(&drives[i].device);
     }
   }

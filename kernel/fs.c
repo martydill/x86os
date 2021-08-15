@@ -58,9 +58,8 @@ Device* FSDeviceForPath(char* path) {
 	  }
   }
 
-  Debug("Did not find match, giving up\n");
-  // TODO - search VFS tree
-  return NULL;
+  Debug("Did not find match, using root\n");
+  return RootFS->Device;
 }
 
 STATUS FSInit() {
