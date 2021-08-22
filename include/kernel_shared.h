@@ -22,6 +22,54 @@
 #define SYSCALL_STAT 0x0F
 #define SYSCALL_FSTAT 0x10
 
+// unistd.h
+
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
+
+//termios.h
+
+#define NCCS 32
+
+typedef int cc_t;
+typedef int speed_t;
+typedef int tcflag_t;
+
+typedef struct termios {
+	tcflag_t  c_iflag;
+	tcflag_t  c_oflag;
+	tcflag_t  c_cflag;
+	tcflag_t  c_lflag;
+	cc_t      c_cc[NCCS];
+};
+
+#define TCSAFLUSH 0x03
+
+
+#define BRKINT 0x01
+#define ICRNL	0x02
+#define IGNBRK 0x03
+#define IGNCR 0x04
+#define IGNPAR 0x05
+#define INLCR 0x06
+#define INPCK 0x07
+#define ISTRIP 0x08
+#define IXANY 0x09
+#define IXOFF 0x0A
+#define IXON 0x0B
+#define PARMRK 0x0C
+
+
+#define ECHO 1 << 1
+#define ECHOE 1 << 2
+#define ECHOK 1 << 3
+#define ECHONL 1 << 4
+#define ICANON 1 << 5
+#define IEXTEN 1 << 6
+#define ISIG 1 << 7
+#define NOFLSH 1 << 8
+#define TOSTOP 1 << 9
 
 #define S_IFMT 0x01
 #define S_IFBL 0x02
@@ -32,9 +80,37 @@
 #define S_IFLNK 0x07
 #define S_IFSOCK 0x08
 
+
+#define OPOST 1 << 1
+#define ONLCR 1 << 2
+#define OCRNL 1 << 3
+#define ONOCR 1 << 4
+#define ONLRET 1 << 5
+#define OFILL 1 << 6
+
+
+#define CSIZE 1 << 1
+#define CS5 1 << 2
+#define CS6 1 << 3
+#define CS7 1 << 4
+#define CS8 1 << 1
+#define CSTOPB 1 << 5
+#define CREAD 1 << 6
+#define PARENB 1 << 7
+#define PARODD 1 << 8
+#define HUPCL 1 << 9
+#define CLOCAL 1 << 10
+
+#define VMIN 1
+#define VTIME 255
+
+//time.h
+typedef int time_t;
+
 typedef int pid_t;
 typedef unsigned int ino_t;
 typedef unsigned int size_t;
+typedef int ssize_t;
 
 typedef int dev_t;
 typedef int mode_t;
@@ -87,5 +163,19 @@ typedef struct {
 typedef struct {
   // todo
 } posix_spawnattr_t;
+
+// errno.h
+extern int errno;
+
+// fcntl.h
+
+#define O_CLOEXEC 1 << 1
+#define O_CREAT 1 << 2
+#define O_DIRECTORY 1 << 3
+#define O_EXCL 1 << 4
+#define O_NOCTTY 1 << 5
+#define O_NOFOLLOW 1 << 6
+#define O_TRUNC 1 << 7
+#define O_TTY_INIT 1 << 8
 
 #endif
