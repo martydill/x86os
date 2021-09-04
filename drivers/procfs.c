@@ -5,11 +5,37 @@
 #include <kernel_shared.h>
 #include <process.h>
 
+const char* PROC_FIELD_CMDLINE = "cmdline";
+
 Device procFSDevice;
 
-STATUS ProcFSRead(char* buffer, int numBytes) {
-  Memcopy(buffer, "This is a procfs", 10);
-  return S_OK;
+STATUS ProcFSRead(char* name, int numBytes) {
+	Debug("Reading %s\n", name);
+
+	char localName[255];
+	strcpy(localName, name, strlen(name));
+
+	char* part = strtok(localName, '/');
+	part = strtok(NULL, '/');
+	part = strtok(NULL, '/');
+	int processId = atoi(part);
+
+	Debug("For process %d\n", processId);
+	  ProcessList* node = ProcessGetProcessListNodeById(processId);
+	if (node == NULL) {
+		Debug("Could not find process\n");
+		return S_FAIL;
+	}
+	Debug("Found process\n");
+	Debug(node->Process->CommandLine);
+	char* data = KMalloc(strlen(node->Process->CommandLine));
+	strcpy(data, node->Process->CommandLine, strlen(node->Process->CommandLine));
+
+  return data;
+}
+STATUS ProcFSOpen(char* name, int numBytes) {
+	Debug("Opening %s\n", name);
+	return S_OK;
 }
 
 STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
@@ -46,6 +72,7 @@ STATUS ProcFSInit(void) {
   procFSDevice.Read = ProcFSRead;
   procFSDevice.OpenDir = ProcFSOpenDir;
   procFSDevice.Stat = ProcFSStat;
+  procFSDevice.Open = ProcFSOpen;
   procFSDevice.Status = 0;
   procFSDevice.Status |= DEVICE_OPEN;
   procFSDevice.Status |= DEVICE_CAN_READ;

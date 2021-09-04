@@ -14,12 +14,24 @@ int main(int argc, char* argv[]) {
     d = readdir(dir);
     if(d != NULL) {
         struct stat statbuf;
+		int pid = atoi(d->d_name);
 		sprintf(255, fullPath, "/proc/%s", d->d_name);
         if(stat(fullPath, &statbuf) == 0) {
-          write(1, d->d_name, 20);
-          if(statbuf.st_mode == S_IFDIR) {
-            write(1, "/", 1);
-          }
+			if(pid > 0 && statbuf.st_mode == S_IFDIR) {
+				write(1, d->d_name, 20);
+
+				sprintf(255, fullPath, "/proc/%s/cmdline", d->d_name);	
+				// write(1, fullPath, 20);
+				int fd = open(fullPath);
+				if(fd > 0) {
+					char fileBuf[255];
+					int numBytes = read(fd, fileBuf, sizeof(fileBuf));
+					if(numBytes > 0) {
+						write(1, "        ", 8);
+						write(1, fileBuf, numBytes);
+					}
+				}
+			}
           write(1, "\n", 1);
         }
         else {

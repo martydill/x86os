@@ -351,6 +351,10 @@ STATUS FloppyStat(char* name, struct stat* statbuf) {
 	return S_FAIL;
 }
 
+STATUS FloppyOpen(char* name, int bytes) {
+	return S_OK;
+}
+
 void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
   int count;
   BYTE buf[512];
@@ -589,6 +593,8 @@ STATUS FloppyInit(void) {
       sprintf(16, drives[i].device.Name, "floppy%d", i);
       drives[i].device.Status = DEVICE_OPEN;
 	  drives[i].device.OpenDir = FloppyReadDirectory;
+	//   drives[i].device.Open = FloppyOpen;
+	  drives[i].device.Read = FloppyReadFile;
 	  drives[i].device.Stat = FloppyStat;
       DeviceRegister(&drives[i].device);
     }
