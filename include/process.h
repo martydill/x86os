@@ -100,7 +100,6 @@ typedef struct ProcessList {
   Process* Process;
 } ProcessList;
 
-
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
 DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,

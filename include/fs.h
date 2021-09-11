@@ -5,7 +5,7 @@
 #define FS_TYPE_FAT 1
 #define FS_TYPE_VIRTUAL 2
 
-typedef struct Filesystem{
+typedef struct Filesystem {
   BYTE Type;
   char* MountPoint;
   Device* Device;

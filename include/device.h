@@ -8,7 +8,7 @@
 
 #define MAX_DEVICE_NAME 32
 
-//void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
+// void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
 typedef STATUS (*DeviceFunc)(char*, int);
 typedef STATUS (*DeviceStatFunc)(char*, struct stat* statbuf);
 typedef STATUS (*DeviceOpenDirFunc)(char* name, struct _DirImpl* dir);

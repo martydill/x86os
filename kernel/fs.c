@@ -29,16 +29,15 @@ int FSMount(char* deviceName, char* mountPoint, BYTE type, Filesystem* parent) {
 
   Memcopy(fs->MountPoint, mountPoint, strlen(mountPoint) + 1);
 
-  if(parent != NULL) {
+  if (parent != NULL) {
     Debug("Setting to child of %s\n", parent->Device->Name);
-	  parent->Children[parent->NumberOfChildren] = fs;
-	  parent->NumberOfChildren++;
+    parent->Children[parent->NumberOfChildren] = fs;
+    parent->NumberOfChildren++;
   }
   return fs;
 }
 
 STATUS FSUnmount(char* mountPoint) { return S_OK; }
-
 
 Device* FSDeviceForPath(char* path) {
   Debug("Searching for path %s %s\n", path, RootFS->MountPoint);
@@ -51,11 +50,12 @@ Device* FSDeviceForPath(char* path) {
     return RootFS->Device;
   }
   Debug("No match, searching children\n");
-  for(int i = 0; i < RootFS->NumberOfChildren; ++i) {
-	  if(!strncmp(path, RootFS->Children[i]->MountPoint, strlen(RootFS->Children[i]->MountPoint))) {
-		  Debug("Found match in children\n");
-		  return RootFS->Children[i]->Device;
-	  }
+  for (int i = 0; i < RootFS->NumberOfChildren; ++i) {
+    if (!strncmp(path, RootFS->Children[i]->MountPoint,
+                 strlen(RootFS->Children[i]->MountPoint))) {
+      Debug("Found match in children\n");
+      return RootFS->Children[i]->Device;
+    }
   }
 
   Debug("Did not find match, using root\n");
@@ -67,7 +67,7 @@ STATUS FSInit() {
   Debug("Found rootfs %u %s\n", RootFS, RootFS->MountPoint);
 
   ProcFS = FSMount("procfs", "/proc", FS_TYPE_VIRTUAL, RootFS);
-  Debug("Found procfs %u %s\n", ProcFS, ProcFS->MountPoint); 
+  Debug("Found procfs %u %s\n", ProcFS, ProcFS->MountPoint);
 
   Device* procfs = FSDeviceForPath("/proc");
   Debug("Found device %s\n", procfs->Name);

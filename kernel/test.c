@@ -130,7 +130,6 @@ void Test_strtok() {
   Assert(p == NULL);
 }
 
-
 void Test_atoi() {
   Assert(atoi(NULL) == 0);
   Assert(atoi("abcd") == 0);

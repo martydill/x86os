@@ -40,17 +40,15 @@ int SyscallOpen(const char* pathname, int flags) {
   Debug("SyscallOpen!\n");
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
-	Device* device = FSDeviceForPath(pathname);
-	Debug("****************%s\n", device->Name);
-	Debug("Done find device\n");
+    Device* device = FSDeviceForPath(pathname);
+    Debug("****************%s\n", device->Name);
+    Debug("Done find device\n");
 
     Process* active = ProcessGetActiveProcess();
-    //  struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-	// device->Open(pathname, dir);
     int size;
-	BYTE* fileData = device->Read(pathname, 0);
+    BYTE* fileData = device->Read(pathname, 0);
     // BYTE* fileData = FloppyReadFile(pathname, &size);
-	Debug("syscallopen found '%s'\n", fileData);
+    Debug("syscallopen found '%s'\n", fileData);
     int fd = ProcessOpenFile(processId, pathname, fileData, strlen(fileData));
     Debug("Found fd %d with size %d\n", fd, size);
     return fd;

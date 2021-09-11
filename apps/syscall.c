@@ -56,12 +56,12 @@ pid_t waitpid(pid_t pid, int* status_ptr, int options) {
   return _syscall(SYSCALL_WAITPID, pid, status_ptr, options, 0, 0);
 }
 
-DIR *opendir(const char *name){
+DIR* opendir(const char* name) {
   return _syscall(SYSCALL_OPENDIR, name, 0, 0, 0, 0);
 }
 
-struct dirent *readdir(DIR *dirp) {
-  if(dirp->Current >= dirp->Count) {
+struct dirent* readdir(DIR* dirp) {
+  if (dirp->Current >= dirp->Count) {
     return NULL;
   }
 
@@ -70,9 +70,7 @@ struct dirent *readdir(DIR *dirp) {
   return d;
 }
 
-int closedir(DIR* dir){
-  return _syscall(SYSCALL_CLOSEDIR, dir, 0, 0, 0, 0);
-}
+int closedir(DIR* dir) { return _syscall(SYSCALL_CLOSEDIR, dir, 0, 0, 0, 0); }
 
 int chdir(const char* path) {
   return _syscall(SYSCALL_CHDIR, path, 0, 0, 0, 0);
@@ -90,10 +88,10 @@ int kill(pid_t pid, int sig) {
   return _syscall(SYSCALL_KILL, pid, sig, 0, 0, 0);
 }
 
-int stat(const char *restrict path, struct stat *restrict buf) {
+int stat(const char* restrict path, struct stat* restrict buf) {
   return _syscall(SYSCALL_STAT, path, buf, 0, 0, 0);
 }
 
-int fstat(int fildes, struct stat *buf) {
+int fstat(int fildes, struct stat* buf) {
   return _syscall(SYSCALL_FSTAT, fildes, buf, 0, 0, 0);
 }

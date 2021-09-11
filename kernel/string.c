@@ -2,7 +2,7 @@
 /*
  * String.c
  * Run-time library string handling routines
- * 
+ *
  * This is shared between kernel and compiled apps
  */
 
@@ -27,16 +27,16 @@ int strcmp(const char* string1, const char* string2) {
   if (strlen(string1) != strlen(string2)) {
     return 1;
   }
-	return strncmp(string1, string2, strlen(string1));
+  return strncmp(string1, string2, strlen(string1));
 }
 
-int strncmp(const char *s1, const char *s2, size_t n) {
-	size_t counter = 0;
+int strncmp(const char* s1, const char* s2, size_t n) {
+  size_t counter = 0;
   while (*s1 != 0 && counter < n) {
-    if (* s1++ != *s2++) {
+    if (*s1++ != *s2++) {
       return 1;
-	}
-	  counter++;
+    }
+    counter++;
   }
 
   return 0;
@@ -51,7 +51,6 @@ int strncmp(const char *s1, const char *s2, size_t n) {
 #define SPECIFIER_STRING 2
 #define SPECIFIER_CHAR 3
 #define SPECIFIER_UINT 4
-
 
 /* Copies a format specifier'd string to another string. Private. */
 /* FIXME: Count characters and handle size */
@@ -309,28 +308,29 @@ char* strtok(char* str, const char delim) {
   return p;
 }
 
-int atoi (const char * str) {
+int atoi(const char* str) {
   int value = 0;
   int sign = 1;
 
-  if(str == NULL) {
+  if (str == NULL) {
     return 0;
   }
 
   // Move to first non-null non-space character
-  while(*str == ' ') str++;
+  while (*str == ' ')
+    str++;
 
   // For each character...
-  while(*str != 0) {
+  while (*str != 0) {
     char currentChar = *str++;
 
-    if(currentChar == '-') {
+    if (currentChar == '-') {
       sign = -1;
       continue;
     }
 
     // Invalid character, just return 0
-    if(currentChar < '0' || currentChar > '9') {
+    if (currentChar < '0' || currentChar > '9') {
       return 0;
     }
 
@@ -341,4 +341,3 @@ int atoi (const char * str) {
 
   return value * sign;
 }
-

@@ -28,7 +28,7 @@
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
-//termios.h
+// termios.h
 
 #define NCCS 32
 
@@ -37,18 +37,17 @@ typedef int speed_t;
 typedef int tcflag_t;
 
 typedef struct termios {
-	tcflag_t  c_iflag;
-	tcflag_t  c_oflag;
-	tcflag_t  c_cflag;
-	tcflag_t  c_lflag;
-	cc_t      c_cc[NCCS];
+  tcflag_t c_iflag;
+  tcflag_t c_oflag;
+  tcflag_t c_cflag;
+  tcflag_t c_lflag;
+  cc_t c_cc[NCCS];
 };
 
 #define TCSAFLUSH 0x03
 
-
 #define BRKINT 0x01
-#define ICRNL	0x02
+#define ICRNL 0x02
 #define IGNBRK 0x03
 #define IGNCR 0x04
 #define IGNPAR 0x05
@@ -59,7 +58,6 @@ typedef struct termios {
 #define IXOFF 0x0A
 #define IXON 0x0B
 #define PARMRK 0x0C
-
 
 #define ECHO 1 << 1
 #define ECHOE 1 << 2
@@ -80,14 +78,12 @@ typedef struct termios {
 #define S_IFLNK 0x07
 #define S_IFSOCK 0x08
 
-
 #define OPOST 1 << 1
 #define ONLCR 1 << 2
 #define OCRNL 1 << 3
 #define ONOCR 1 << 4
 #define ONLRET 1 << 5
 #define OFILL 1 << 6
-
 
 #define CSIZE 1 << 1
 #define CS5 1 << 2
@@ -104,7 +100,7 @@ typedef struct termios {
 #define VMIN 1
 #define VTIME 255
 
-//time.h
+// time.h
 typedef int time_t;
 
 typedef int pid_t;
@@ -124,24 +120,24 @@ typedef int blksize_t;
 typedef int blkcnt_t;
 
 typedef struct stat {
-  dev_t     st_dev;
-  ino_t     st_ino;
-  mode_t    st_mode;
-  nlink_t   st_nlink;
-  uid_t     st_uid;
-  gid_t     st_gid;
-  dev_t     st_rdev;
-  off_t     st_size;
-  time_t    st_atime;
-  time_t    st_mtime;
-  time_t    st_ctime;
+  dev_t st_dev;
+  ino_t st_ino;
+  mode_t st_mode;
+  nlink_t st_nlink;
+  uid_t st_uid;
+  gid_t st_gid;
+  dev_t st_rdev;
+  off_t st_size;
+  time_t st_atime;
+  time_t st_mtime;
+  time_t st_ctime;
   blksize_t st_blksize;
-  blkcnt_t  st_blocks;
+  blkcnt_t st_blocks;
 };
 
-typedef struct dirent{
-  ino_t  d_ino;
-  char   d_name[255];
+typedef struct dirent {
+  ino_t d_ino;
+  char d_name[255];
 
   // Non-posix fields
   off_t st_size;
@@ -149,12 +145,11 @@ typedef struct dirent{
 };
 
 typedef struct _DirImpl {
- int Handle;  
- struct dirent dirents[255];
- int Current;
- int Count;
+  int Handle;
+  struct dirent dirents[255];
+  int Current;
+  int Count;
 } DIR;
-
 
 typedef struct {
   // todo

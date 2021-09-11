@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 
   pid_t pid = atoi(argv[1]);
   int sig = 1;
-  if(kill(pid, sig) == -1) {
+  if (kill(pid, sig) == -1) {
     write(1, "Failed to kill\n", 20);
     return 1;
   }

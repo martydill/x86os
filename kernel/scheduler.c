@@ -9,7 +9,6 @@ BYTE nextId = 1;
 void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage,
            int processId);
 
-
 // Process processes[MAX_PROCESSES];
 
 Process* foreground = NULL;
@@ -31,15 +30,19 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
   p->PageDirectory = ((unsigned int)KMallocWithTagAligned(
       sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
-  Debug("Process id %d, , st: %u, memptr %u, calc %u\n", p->Id, p->KernelStack, p->CurrentMemPtr, stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)));
-  p->CurrentMemPtr = stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)); // physical address
+  Debug("Process id %d, , st: %u, memptr %u, calc %u\n", p->Id, p->KernelStack,
+        p->CurrentMemPtr,
+        stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)));
+  p->CurrentMemPtr = stackAddress + 1024 * 1024 +
+                     (4 * 1024 * 1024 * (p->Id - 1)); // physical address
 
-  Debug("Process id %d, , st: %u, memptr %u\n", p->Id, p->KernelStack, p->CurrentMemPtr);
-  if(active != NULL) {
+  Debug("Process id %d, , st: %u, memptr %u\n", p->Id, p->KernelStack,
+        p->CurrentMemPtr);
+  if (active != NULL) {
     // Copy parent's environment to child
-    Memcopy((BYTE*)&p->Environment, (BYTE*)&active->Environment, sizeof(Environment));
-  }
-  else {  
+    Memcopy((BYTE*)&p->Environment, (BYTE*)&active->Environment,
+            sizeof(Environment));
+  } else {
     strcpy(p->Environment.WorkingDirectory, "/", 1);
   }
 
@@ -47,7 +50,7 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
 
   MMInitializePageDirectory(p->PageDirectory);
   MMMap(p->PageDirectory, 16, 16 + (p->Id - 1), p->Id);
-;
+  ;
 
   Debug("Commandline: %s\n", commandLine);
   strcpy(&p->Name, name, strlen(name));
@@ -70,11 +73,11 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
     ++processCount;
 
     Debug("New end is %d\n", processListEnd->Process->Id);
-    Debug("Created %u %u %u %u %u %s %u\n", entryPoint, p, next, processListStart,
-          processListEnd, name, p->CurrentMemPtr);
+    Debug("Created %u %u %u %u %u %s %u\n", entryPoint, p, next,
+          processListStart, processListEnd, name, p->CurrentMemPtr);
   }
 
-  if(priority == PRIORITY_FOREGROUND) {
+  if (priority == PRIORITY_FOREGROUND) {
     foreground = p;
   }
   return p->Id;
@@ -182,8 +185,8 @@ STATUS ProcessSchedule(Registers* registers) {
       // Debug("Switching from %s %d\n", active->Name, active->State);
       // Debug("Old values: Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
       //       active->Registers.userEsp, active->Registers.eip,
-      //       active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
-      //       active->Registers.edx);
+      //       active->Registers.eax, active->Registers.ebx,
+      //       active->Registers.ecx, active->Registers.edx);
       active->Registers.eax = registers->eax;
       active->Registers.ebx = registers->ebx;
       active->Registers.ecx = registers->ecx;
@@ -210,7 +213,8 @@ STATUS ProcessSchedule(Registers* registers) {
     while (node) {
       node = node->Next;
       if (node != NULL && node->Process->State != STATE_FOREGROUND_BLOCKED &&
-          node->Process->State != STATE_WAIT_BLOCKED && node->Process->State != STATE_SLEEPING) {
+          node->Process->State != STATE_WAIT_BLOCKED &&
+          node->Process->State != STATE_SLEEPING) {
         // Debug("Switching to next process %s %u\n", node->Process->Name,
         //      node->Process->Id);
         active = node->Process;
@@ -219,15 +223,16 @@ STATUS ProcessSchedule(Registers* registers) {
                  (node->Process->State == STATE_FOREGROUND_BLOCKED ||
                   node->Process->State == STATE_WAIT_BLOCKED)) {
         // Debug("Next process %s is blocked \n", node->Process->Name);
-      }
-      else if(node != NULL && node->Process->State == STATE_SLEEPING && node->Process->SleepBlock.SleepUntilTicks < currentTicks) {
-          Debug("Waking from sleep");
-          active = node->Process;
-          break;
+      } else if (node != NULL && node->Process->State == STATE_SLEEPING &&
+                 node->Process->SleepBlock.SleepUntilTicks < currentTicks) {
+        Debug("Waking from sleep");
+        active = node->Process;
+        break;
       }
     }
     if (node == NULL) {
-      // Debug("Switching to first process %s\n", processListStart->Process->Name);
+      // Debug("Switching to first process %s\n",
+      // processListStart->Process->Name);
       active = processListStart->Process;
     }
   }
@@ -254,7 +259,7 @@ STATUS ProcessSchedule(Registers* registers) {
 
   if (active) {
     // Debug("Switching to process %s %u %u\n", active->Name, active->Entry,
-          // active->State);
+    // active->State);
     if (active->State == STATE_PENDING) {
       // Debug("Making process running");
       Debug("Command line: %s\n", active->CommandLine);
@@ -273,19 +278,21 @@ STATUS ProcessSchedule(Registers* registers) {
         p[cur] = KMallocInProcess(active, strlen(tok) + 1);
         Debug("%u: Found token %s at %u\n", p, tok, p[cur]);
         strcpy(p[cur], tok, strlen(tok) + 1);
-		p[cur] = p[cur] - (active->Id - 1) * 4 * 1024 * 1024;
+        p[cur] = p[cur] - (active->Id - 1) * 4 * 1024 * 1024;
         cur++;
         tok = strtok(NULL, ' ');
       }
-	  DWORD q = p - (active->Id - 1) * 4 * 1024 * 1024;
+      DWORD q = p - (active->Id - 1) * 4 * 1024 * 1024;
       active->State = STATE_RUNNING;
       Memset(&active->Registers, 0, sizeof(Registers));
       active->Registers.eip = active->Entry;
       active->Registers.userEsp = active->KernelStack;
       active->Registers.eax = argcCounter;
       active->Registers.ebx = p;
-      Debug("Stack is %u, memptr is %u, count is %d, q=%u, p=%u, p[0]=%u, p[1]=%u\n", active->Registers.userEsp, active->CurrentMemPtr,
-            argcCounter, q, p, p[0], p[1]);
+      Debug("Stack is %u, memptr is %u, count is %d, q=%u, p=%u, p[0]=%u, "
+            "p[1]=%u\n",
+            active->Registers.userEsp, active->CurrentMemPtr, argcCounter, q, p,
+            p[0], p[1]);
     }
     registers->eax = active->Registers.eax;
     registers->ebx = active->Registers.ebx;
@@ -300,8 +307,8 @@ STATUS ProcessSchedule(Registers* registers) {
     // Debug("Switching to name: %s id: %d\n", active->Name, active->Id);
     // Debug("Esp %u Eip %u Eax %u Ebx %u Ecx %u Edx %u\n",
     //       active->Registers.userEsp, active->Registers.eip,
-    //       active->Registers.eax, active->Registers.ebx, active->Registers.ecx,
-    //       active->Registers.edx);
+    //       active->Registers.eax, active->Registers.ebx,
+    //       active->Registers.ecx, active->Registers.edx);
     LastTicks = currentTicks;
 
     MMSetPageDirectory(active->PageDirectory);
@@ -475,11 +482,10 @@ int ProcessAddToStdinBuffer(char charToAdd) {
   }
   Debug("Added %c to buffer\n", charToAdd);
 
-  if(charToAdd == 8) {
+  if (charToAdd == 8) {
     // backspace
     foreground->StdinBuffer[--foreground->StdinPosition] = 0;
-  }
-  else {
+  } else {
     // other
     foreground->StdinBuffer[foreground->StdinPosition++] = charToAdd;
   }
@@ -506,13 +512,11 @@ int ProcessAddToStdinBuffer(char charToAdd) {
   return S_OK;
 }
 
-
 STATUS ProcessSleep(Process* p, unsigned int seconds) {
   if (p == NULL) {
     return S_FAIL;
   }
   p->State = STATE_SLEEPING;
-  p->SleepBlock.SleepUntilTicks= TimerGetTicks() + seconds * 100;
+  p->SleepBlock.SleepUntilTicks = TimerGetTicks() + seconds * 100;
   return S_OK;
-
 }

@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
   KPrint("Starting shell\n");
   while (1) {
 
-    if(!getcwd(workingDirectory, sizeof(workingDirectory))) {
+    if (!getcwd(workingDirectory, sizeof(workingDirectory))) {
       KPrint("Unable to get directory\n");
       return 1;
     }
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
       buf[bytes - 1] = 0;
 
       // Check for running in background with command&
-      if(bytes > 2 && buf[bytes - 2] == '&') {
+      if (bytes > 2 && buf[bytes - 2] == '&') {
         runInBackground = 1;
         buf[bytes - 2] = 0; // Remove from actual command line
       }
@@ -40,23 +40,23 @@ int main(int argc, char* argv[]) {
         *q++ = *p++;
       }
       *q = 0;
-      p++; 
+      p++;
 
       // Check for builtins
-      if(!strcmp(binaryName, "cd")) {
+      if (!strcmp(binaryName, "cd")) {
         builtin_cd(p);
         continue;
       }
 
       // If no builtins, try running command
       pid_t pid;
-      if(posix_spawn(&pid, binaryName, 0, 0, buf, 0) == -1) {
+      if (posix_spawn(&pid, binaryName, 0, 0, buf, 0) == -1) {
         KPrint("Could not find ");
         KPrint(binaryName);
         continue;
       }
 
-      if(!runInBackground) {
+      if (!runInBackground) {
         // If we're running in background, do not wait
         waitpid(pid, 0, 0);
       }
