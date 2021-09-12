@@ -409,7 +409,7 @@ int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size) {
   p->Files[0].Data = fileData;
   p->Files[0].CurrentLocation = fileData;
   // p->Files[0].Path = &name;
-  p->Files[0].FileDescriptor = 123;
+  p->Files[0].FileDescriptor = 123; // TODO use unique file descriptors
   p->Files[0].Size = size;
   Debug("Opened fd %d with size %u at location %u\n",
         p->Files[0].FileDescriptor, size, fileData);

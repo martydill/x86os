@@ -41,19 +41,21 @@ int SyscallOpen(const char* pathname, int flags) {
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     Device* device = FSDeviceForPath(pathname);
-    Debug("****************%s\n", device->Name);
-    Debug("Done find device\n");
+	if(device == NULL) {
+		Debug("Could not find device for path %s\n", pathname);
+		return S_FAIL;
+	}
 
     Process* active = ProcessGetActiveProcess();
-    int size;
-    BYTE* fileData = device->Read(pathname, 0);
-    // BYTE* fileData = FloppyReadFile(pathname, &size);
+    int fileSize;
+    BYTE* fileData = device->Read(pathname, &fileSize);
     Debug("syscallopen found '%s'\n", fileData);
-    int fd = ProcessOpenFile(processId, pathname, fileData, strlen(fileData));
-    Debug("Found fd %d with size %d\n", fd, size);
+    int fd = ProcessOpenFile(processId, pathname, fileData, fileSize);
+    Debug("Found fd %d with size %d\n", fd, fileSize);
     return fd;
   } else {
     Debug("Could not get current process\n");
+	return S_FAIL;
   }
 }
 
