@@ -491,6 +491,8 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get siz
     FATReadFile(foo, &s, fat, clusterToFetch);
     return foo;
   }
+
+  return NULL;
 }
 
 // {

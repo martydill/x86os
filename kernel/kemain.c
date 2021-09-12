@@ -65,7 +65,8 @@ DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
           processId);
     return phys;
   }
-  KePanic("Cannot convert");
+  Debug("Cannot convert virtual address %u to physical address", virtualAddress);
+  KeHalt();
 };
 
 extern PageDirectory* kernelPageDirectory;
@@ -78,11 +79,13 @@ void KeSysCallHandler(Registers* registers) {
   if (syscall == SYSCALL_EXIT) {
     SyscallExit(registers);
   } else if (syscall == SYSCALL_KPRINT) {
-    SyscallKPrint(registers->ebx);
+	const char* data = (const char*)registers->ebx;
+    SyscallKPrint(data);
     registers->eax = 0;
   } else if (syscall == SYSCALL_OPEN) {
     Debug("SYSCALL_OPEN\n");
-    int fd = SyscallOpen(registers->ebx, registers->ecx);
+	const char* path = (const char*)registers->ebx;
+    int fd = SyscallOpen(path, registers->ecx);
     registers->eax = fd;
   } else if (syscall == SYSCALL_READ) {
     Debug("read\n");
@@ -217,7 +220,7 @@ void KeSysCallHandler(Registers* registers) {
 extern void KeSwitchToUserMode();
 
 /* Start here ... */
-int KeMain(MultibootInfo* bootInfo) {
+void KeMain(MultibootInfo* bootInfo) {
   unsigned int amount;
   char* buf;
 
@@ -274,7 +277,6 @@ int KeMain(MultibootInfo* bootInfo) {
 
   Debug("Jumping to user mode\n");
   KeSwitchToUserMode();
-  return 0;
 }
 
 void IdleLoop() {

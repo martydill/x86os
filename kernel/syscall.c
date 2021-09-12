@@ -23,7 +23,8 @@
 
 void SyscallKPrint(const char* data) { KPrint(data); }
 
-void SyscallExit(int code) {
+void SyscallExit(Registers* registers) {
+	// TODO read exit code from registers->ebx
   Debug("ok\n");
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {

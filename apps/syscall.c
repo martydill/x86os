@@ -1,6 +1,6 @@
 
 #include "kernel_shared.h"
-#include "../include/stdarg.h";
+#include "../include/stdarg.h"
 
 extern int main(int argc, char* argv[]);
 
