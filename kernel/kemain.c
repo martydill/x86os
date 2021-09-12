@@ -269,8 +269,8 @@ int KeMain(MultibootInfo* bootInfo) {
   BYTE* fileData = FloppyReadFile("idle", &size);
   ELFParseFile(fileData, "idle", "idle", PRIORITY_BACKGROUND);
 
-  fileData = FloppyReadFile("shellx", &size);
-  ELFParseFile(fileData, "shellx", "shellx", PRIORITY_FOREGROUND);
+  fileData = FloppyReadFile("shell", &size);
+  ELFParseFile(fileData, "shell", "shell", PRIORITY_FOREGROUND);
 
   Debug("Jumping to user mode\n");
   KeSwitchToUserMode();
