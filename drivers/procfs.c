@@ -9,7 +9,7 @@ const char* PROC_FIELD_CMDLINE = "cmdline";
 
 Device procFSDevice;
 
-STATUS ProcFSRead(char* name, int numBytes) {
+STATUS ProcFSRead(char* name, int* bytesRead) {
   Debug("Reading %s\n", name);
 
   char localName[255];
@@ -28,11 +28,15 @@ STATUS ProcFSRead(char* name, int numBytes) {
   }
   Debug("Found process\n");
   Debug(node->Process->CommandLine);
-  char* data = KMalloc(strlen(node->Process->CommandLine));
-  strcpy(data, node->Process->CommandLine, strlen(node->Process->CommandLine));
 
+  int sizeOfData = strlen(node->Process->CommandLine);
+  char* data = KMalloc(sizeOfData);
+  strcpy(data, node->Process->CommandLine, sizeOfData);
+
+  *bytesRead = sizeOfData;	
   return data;
 }
+
 STATUS ProcFSOpen(char* name, int numBytes) {
   Debug("Opening %s\n", name);
   return S_OK;
