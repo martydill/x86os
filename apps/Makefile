@@ -6,24 +6,22 @@ libs = syscall.o
 OUTPUT_DIR = bin
 
 SRCS := $(wildcard *.c)
-EXES := $(OUTPUT_DIR)/mount $(OUTPUT_DIR)/cat $(OUTPUT_DIR)/shell $(OUTPUT_DIR)/idle $(OUTPUT_DIR)/ls $(OUTPUT_DIR)/ps $(OUTPUT_DIR)/sleep $(OUTPUT_DIR)/echo  $(OUTPUT_DIR)/kill #$(patsubst %.c, $(OUTPUT_DIR)/%.exe, $(SRCS))
+EXES := $(OUTPUT_DIR)/cat $(OUTPUT_DIR)/shell $(OUTPUT_DIR)/idle $(OUTPUT_DIR)/ls $(OUTPUT_DIR)/ps $(OUTPUT_DIR)/sleep $(OUTPUT_DIR)/echo  $(OUTPUT_DIR)/kill #$(patsubst %.c, $(OUTPUT_DIR)/%.exe, $(SRCS))
 
-objs = mount.o
-apps = mount
 
 default: all
 
 syscall.o: syscall.c
-	$(CC) $(CFLAGS) -g0 -nostartfiles -c $< -o syscall.o
+	$(CC) $(CFLAGS) -g0 -c $< -o syscall.o
 
 string.o: ../kernel/string.c
-	$(CC) $(CFLAGS) -g0 -nostartfiles -c $< -o $@
+	$(CC) $(CFLAGS) -g0 -c $< -o $@
 
 boot.o: boot.s
 	$(AS) $(ASFLAGS) -f elf -o boot.o boot.s
 
 %.o: %.c
-	$(CC) $(CFLAGS) -g0 -nostartfiles -c $< -o $@
+	$(CC) $(CFLAGS) -g0 -c $< -o $@
 
 $(OUTPUT_DIR)/%: %.o boot.o string.o syscall.o
 	mkdir -p $(OUTPUT_DIR)
