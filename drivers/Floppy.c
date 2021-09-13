@@ -351,7 +351,7 @@ STATUS FloppyStat(char* name, struct stat* statbuf) {
 
 STATUS FloppyOpen(char* name, int bytes) { return S_OK; }
 
-void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
+STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
   int count;
   BYTE buf[512];
   FloppyReadSector(0, buf);
@@ -432,7 +432,7 @@ void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
   return 0;
 }
 
-BYTE* FloppyReadFile(char* name, int* size) // todo get siz
+char* FloppyReadFile(char* name, int* size) // todo get siz
 {
   Debug("Start of read\n");
   int i;
@@ -465,7 +465,7 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get siz
 
       // KPrint("\n");
 
-      if (!strcmp(e->name, name)) {
+      if (!strcmp((const char*)e->name, name)) {
         Debug("Found cluster %d %s\n", e->firstClusterLow, name);
         clusterToFetch = e->firstClusterLow;
         *size = e->size;
@@ -483,13 +483,13 @@ BYTE* FloppyReadFile(char* name, int* size) // todo get siz
 
     for (i = 1; i < 10; ++i) {
       Debug("Reading sector %d to %u\n", i, fat + (i - 1) * 512);
-      FloppyReadSector(i, fat + (i - 1) * 512);
+      FloppyReadSector(i, (char*)(fat + (i - 1) * 512));
     }
     Debug("Allocating %u\n", *size);
-    BYTE* foo = KMalloc(*size);
+    char* fileData = KMalloc(*size);
 
-    FATReadFile(foo, &s, fat, clusterToFetch);
-    return foo;
+    FATReadFile((BYTE*)fileData, &s, fat, clusterToFetch);
+    return fileData;
   }
 
   return NULL;
@@ -508,7 +508,7 @@ STATUS FATReadFile(BYTE* buffer, FAT12BootSector* bs, BYTE* fat, WORD cluster) {
 
   while (1) {
     WORD sector = FATSectorForCluster(bs, cluster);
-    FloppyReadSector(sector, buffer + (clustersRead * 512));
+    FloppyReadSector(sector, (char*)(buffer + (clustersRead * 512)));
 
     WORD nextCluster = FATGetNextCluster(fat, cluster);
     Debug("Current: %u Next: %u  Count: %u\n", cluster, nextCluster,

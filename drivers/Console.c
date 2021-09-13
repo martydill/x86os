@@ -211,7 +211,7 @@ STATUS ConDisplayString(const char* str, WORD x, WORD y) {
     // Update cursor position
     // ConMoveCursor(point.X, point.Y);
     // ScrollDown();
-    *str++;
+    str++;
   }
 
   // TODO - calculate everything from loc instead of keeping track of position

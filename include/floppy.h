@@ -23,8 +23,8 @@ STATUS FloppyEnableMotor(void);
 /* Disables the floppy drive's motor */
 STATUS FloppyDisableMotor(void);
 
-BYTE* FloppyReadFile(char* name, int* size);
+char* FloppyReadFile(char* name, int* size);
 
-void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl);
+STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl);
 
 #endif
