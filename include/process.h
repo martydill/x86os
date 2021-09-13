@@ -109,5 +109,7 @@ STATUS ProcessTerminate(BYTE id);
 STATUS ProcessGetForegroundProcessId(BYTE* id);
 int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size);
 STATUS ProcessSleep(Process* process, unsigned int seconds);
+ProcessList* ProcessGetProcesses();
+ProcessList* ProcessGetProcessListNodeById(BYTE ID);
 
 #endif

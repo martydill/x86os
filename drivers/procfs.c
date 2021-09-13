@@ -9,7 +9,7 @@ const char* PROC_FIELD_CMDLINE = "cmdline";
 
 Device procFSDevice;
 
-STATUS ProcFSRead(char* name, int* bytesRead) {
+char* ProcFSRead(char* name, int* bytesRead) {
   Debug("Reading %s\n", name);
 
   char localName[255];
@@ -21,10 +21,11 @@ STATUS ProcFSRead(char* name, int* bytesRead) {
   int processId = atoi(part);
 
   Debug("For process %d\n", processId);
+
   ProcessList* node = ProcessGetProcessListNodeById(processId);
   if (node == NULL) {
     Debug("Could not find process\n");
-    return S_FAIL;
+    return NULL;
   }
   Debug("Found process\n");
   Debug(node->Process->CommandLine);
@@ -33,7 +34,6 @@ STATUS ProcFSRead(char* name, int* bytesRead) {
   char* data = KMalloc(sizeOfData);
   strcpy(data, node->Process->CommandLine, sizeOfData);
 
-  *bytesRead = sizeOfData;	
   return data;
 }
 

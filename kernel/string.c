@@ -260,6 +260,7 @@ char* strstr(const char* s1, const char* s2) {
   if (s1 == NULL || s2 == NULL) {
     return NULL;
   }
+  return NULL;
 }
 
 int isalpha(int c) {

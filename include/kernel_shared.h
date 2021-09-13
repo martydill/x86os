@@ -173,4 +173,7 @@ extern int errno;
 #define O_TRUNC 1 << 7
 #define O_TTY_INIT 1 << 8
 
+// string.h
+char* strtok(char* restrict s, const char delim);
+
 #endif

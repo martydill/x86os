@@ -8,8 +8,12 @@
 
 #define MAX_DEVICE_NAME 32
 
+struct stat;
+struct _DirImpl;
+
 // void* FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
 typedef STATUS (*DeviceFunc)(char*, int);
+typedef char* (*DeviceReadFunc)(char*, int*);
 typedef STATUS (*DeviceStatFunc)(char*, struct stat* statbuf);
 typedef STATUS (*DeviceOpenDirFunc)(char* name, struct _DirImpl* dir);
 
@@ -24,7 +28,7 @@ typedef struct DeviceList_S {
 typedef struct Device_S {
   char* Name;
   DWORD Status;
-  DeviceFunc Read;
+  DeviceReadFunc Read;
   DeviceFunc Write;
   DeviceFunc Open;
   DeviceFunc Close;

@@ -33,12 +33,13 @@ kernel1: subdirs
 	mmd -i ./floppy.img usr
 	mcopy -o -i ./floppy.img ./test.txt ::usr/test.txt
 	rm -f ./output.txt
+
+
+run:
 	vboxmanage startvm fizzos
 	sleep 1 
 	vboxmanage controlvm fizzos keyboardputscancode 1c 9c
 	tail -f ./output.txt
-
-
 
 clean:
 	vboxmanage controlvm fizzos poweroff | true
