@@ -1,6 +1,6 @@
-FizzOS
+x86OS
 ======
-FizzOS is an experimental sort-of-OS that I hacked together many years ago. It doesn't do a whole lot, but it does have basic keyboard, console, and serial support, and the beginnings of a floppy disk driver.
+x86OS is an experimental sort-of-OS that I hacked together many years ago. It doesn't do a whole lot, but it does have basic keyboard, console, and serial support, and the beginnings of a floppy disk driver.
 
 It is primarily designed to be run using the Bochs emulator.
 It is booted using a GRUB multiboot boot sector (this part wasn't written by me) on a floppy disk image. 

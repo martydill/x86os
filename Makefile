@@ -22,7 +22,7 @@ $(SUBDIRS):
 
 
 kernel1: subdirs
-	vboxmanage controlvm fizzos poweroff | true
+	vboxmanage controlvm x86os poweroff | true
 	sleep 1
 	$(LD) -T kernel.ls -nostdlib -melf_i386 boot/boot.o boot/startup.o obj/*.o  -o bin/$(KERNEL)
 	cp base_images/floppy.img ./floppy.img
@@ -36,13 +36,13 @@ kernel1: subdirs
 
 
 run:
-	vboxmanage startvm fizzos
+	vboxmanage startvm x86os
 	sleep 1 
-	vboxmanage controlvm fizzos keyboardputscancode 1c 9c
+	vboxmanage controlvm x86os keyboardputscancode 1c 9c
 	tail -f ./output.txt
 
 clean:
-	vboxmanage controlvm fizzos poweroff | true
+	vboxmanage controlvm x86os poweroff | true
 	-rm -rf obj/*.o
 	-rm bin/$(KERNEL)
 	-rm boot/*.o

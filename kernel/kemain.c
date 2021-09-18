@@ -65,7 +65,8 @@ DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
           processId);
     return phys;
   }
-  Debug("Cannot convert virtual address %u to physical address", virtualAddress);
+  Debug("Cannot convert virtual address %u to physical address",
+        virtualAddress);
   KeHalt();
 };
 
@@ -79,12 +80,12 @@ void KeSysCallHandler(Registers* registers) {
   if (syscall == SYSCALL_EXIT) {
     SyscallExit(registers);
   } else if (syscall == SYSCALL_KPRINT) {
-	const char* data = (const char*)registers->ebx;
+    const char* data = (const char*)registers->ebx;
     SyscallKPrint(data);
     registers->eax = 0;
   } else if (syscall == SYSCALL_OPEN) {
     Debug("SYSCALL_OPEN\n");
-	const char* path = (const char*)registers->ebx;
+    const char* path = (const char*)registers->ebx;
     int fd = SyscallOpen(path, registers->ecx);
     registers->eax = fd;
   } else if (syscall == SYSCALL_READ) {
@@ -232,7 +233,7 @@ void KeMain(MultibootInfo* bootInfo) {
   ConInit();
   ConClearScreen();
 
-  KPrint("FizzOS kernel 0.0.2\n");
+  KPrint("x86virtualOS kernel\n");
 
   KPrint("Initializing timer...\n");
   TimerInit();
