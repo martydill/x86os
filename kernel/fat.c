@@ -110,7 +110,7 @@ STATUS GetShortName(unsigned char* dest, unsigned char* name) {
   return S_OK;
 }
 
-FATDirectoryEntry* FATReadDirectory(unsigned char* directorySector) {
+FATDirectoryEntry* FATReadDirectory(char* directorySector) {
   FATDirectoryEntry* head = NULL;
   FATDirectoryEntry* e = NULL;
   FATDirectoryEntry* current = NULL;

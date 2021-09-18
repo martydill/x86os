@@ -309,7 +309,7 @@ STATUS FloppyReadSector(int sector, char* buffer) {
   for (z = 0; z < 7; ++z)
     ReadByte();
 
-  Memcopy(buffer, FLOPPY_DMA_ADDRESS, FLOPPY_DMA_BUFFER_SIZE);
+  Memcopy((BYTE*)buffer, (BYTE*)FLOPPY_DMA_ADDRESS, FLOPPY_DMA_BUFFER_SIZE);
   // int i;
   // unsigned char* blah = (unsigned char*)0x0000;
   // for(i = 0; i < 512; ++i)
@@ -329,7 +329,9 @@ STATUS FloppyReadSector(int sector, char* buffer) {
   return S_OK;
 }
 
+// TODO move these
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
+Process* ProcessGetActiveProcess();
 
 STATUS FloppyStat(char* name, struct stat* statbuf) {
   // TODO figure out where / should be stripped out
@@ -350,10 +352,12 @@ STATUS FloppyStat(char* name, struct stat* statbuf) {
 }
 
 STATUS FloppyOpen(char* name, int bytes) { return S_OK; }
+// TODO move somewhere else
+FATDirectoryEntry* FATReadDirectory(char* directorySector);
 
 STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
   int count;
-  BYTE buf[512];
+  char buf[512];
   FloppyReadSector(0, buf);
   BYTE fat[512 * 9];
   WORD sector;
@@ -373,7 +377,7 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
       // If this is the correct directory, start filling in entries
       if (!strcmp(currentDirectory, name)) {
         Debug("Found %s, count is %d\n", e->name, count);
-        strcpy(dirimpl->dirents[count].d_name, e->name, strlen(e->name));
+        strcpy(dirimpl->dirents[count].d_name, e->name, strlen((char*)e->name));
 
         // Fill in some extra fields of the dirents that are needed by stat
         dirimpl->dirents[count].st_size = e->size;
@@ -384,21 +388,21 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
         ++count;
       } else {
         Debug("Not a match\n");
-        if (!strcmp(name, e->name)) {
+        if (!strcmp(name, (char*)e->name)) {
           Debug("Found matching dir '%s', clusters are %d %d \n", e->name,
                 e->firstClusterLow, e->firstClusterHigh);
           // TODO support multiple levels deep
-          strcpy(currentDirectory, e->name, strlen(e->name));
+          strcpy(currentDirectory, (char*)e->name, strlen((char*)e->name));
           Debug("New currentDir = '%s'\n", currentDirectory);
 
           for (int i = 1; i < 10; ++i) {
             Debug("Reading sector %d to %u\n", i, fat + (i - 1) * 512);
-            FloppyReadSector(i, fat + (i - 1) * 512);
+            FloppyReadSector(i, (char*)fat + (i - 1) * 512);
           }
 
-          BYTE* foo = KMalloc(1024);
-          FATReadFile(foo, &s, fat, e->firstClusterLow);
-          FATDirectoryEntry* e = FATReadDirectory(foo);
+          char* direntry = KMalloc(1024);
+          FATReadFile((BYTE*)direntry, &s, fat, e->firstClusterLow);
+          FATDirectoryEntry* e = FATReadDirectory(direntry);
           // while(e != NULL) {
           //   Debug("Found in dir: %s\n", e->name);
           //   e = e->next;
@@ -436,7 +440,7 @@ char* FloppyReadFile(char* name, int* size) // todo get siz
 {
   Debug("Start of read\n");
   int i;
-  BYTE buf[512];
+  char buf[512];
   FloppyReadSector(0, buf);
   BYTE fat[512 * 9];
   /*for(i = 0; i < 70; ++i)
