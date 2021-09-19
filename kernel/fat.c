@@ -49,7 +49,7 @@ int FATSectorForCluster(FAT12BootSector* bs, int cluster) {
 int FATParseBootSector(char* bootSector) {
   bootSector += 3; /* skip jump thing */
 
-  Memcopy(&s.oemName, bootSector, 8);
+  Memcopy(s.oemName, (BYTE*)bootSector, 8);
   bootSector += 8;
 
   READ_WORD(s.bytesPerSector, bootSector);
@@ -103,9 +103,9 @@ STATUS GetShortName(unsigned char* dest, unsigned char* name) {
 
   extension[i - 8] = '\0';
   if (extension[0] == '\0')
-    sprintf(12, dest, "%s", fileName);
+    sprintf(12, (char*)dest, "%s", fileName);
   else
-    sprintf(12, dest, "%s.%s", fileName, extension);
+    sprintf(12, (char*)dest, "%s.%s", fileName, extension);
 
   return S_OK;
 }
@@ -124,14 +124,14 @@ FATDirectoryEntry* FATReadDirectory(char* directorySector) {
       continue;
     }
 
-    e = KMalloc(sizeof(FATDirectoryEntry));
+    e = (FATDirectoryEntry*)KMalloc(sizeof(FATDirectoryEntry));
     if (head == NULL) {
       head = e;
     } else if (current) {
       current->next = e;
     }
     current = e;
-    GetShortName(&e->name, directorySector);
+    GetShortName(e->name, (unsigned char*)directorySector);
     directorySector += 11;
     READ_BYTE(e->attributes, directorySector);
     READ_BYTE(e->reserved, directorySector);
