@@ -124,26 +124,11 @@ void KeyboardHandler(Registers* registers) {
 
 Device kbDevice;
 
-/* The keyboard device's read handler */
-// fixme - read numBytes
-STATUS KbRead(char* buffer, int numBytes) {
-  if (startPos == endPos) {
-    return S_FAIL;
-  } else {
-    buffer[0] = kbBuffer[startPos];
-    startPos++;
-    if (startPos == KB_BUFFER_SIZE)
-      startPos = 0;
-  }
-  return S_OK;
-}
-
 /* Initialize keyboard device */
 STATUS KbInit(void) {
   InstallIrqHandler(KB_IRQ, KeyboardHandler);
 
   kbDevice.Name = "Keyboard";
-  kbDevice.Read = KbRead;
   kbDevice.Status = 0;
   kbDevice.Status |= DEVICE_CAN_READ;
   kbDevice.Status |= DEVICE_OPEN;

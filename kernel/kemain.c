@@ -233,7 +233,7 @@ void KeMain(MultibootInfo* bootInfo) {
   ConInit();
   ConClearScreen();
 
-  KPrint("x86virtualOS kernel\n");
+  KPrint("x86OS kernel\n");
 
   KPrint("Initializing timer...\n");
   TimerInit();

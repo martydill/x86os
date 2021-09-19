@@ -5,7 +5,7 @@ TSS GlobalTSS;
 
 STATUS LoadTSS(GDTEntry* gdt) {
   Assert(gdt != NULL);
-  Memset(&GlobalTSS, 0, sizeof(TSS));
+  Memset((BYTE*)&GlobalTSS, 0, sizeof(TSS));
   GlobalTSS.SS0 = 0x10;
   GlobalTSS.ESP0 = 1024 * 1024 * 10; // KMalloc(1024 * 8); // 8k Kernel stack
   GlobalTSS.IOPB = sizeof(TSS) - 1;

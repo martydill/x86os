@@ -21,10 +21,14 @@
 #include <fs.h>
 #include <syscall.h>
 
+// TODO
+Process* ProcessGetActiveProcess();
+Device* FSDeviceForPath();
+
 void SyscallKPrint(const char* data) { KPrint(data); }
 
 void SyscallExit(Registers* registers) {
-	// TODO read exit code from registers->ebx
+  // TODO read exit code from registers->ebx
   Debug("ok\n");
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
@@ -42,27 +46,27 @@ int SyscallOpen(const char* pathname, int flags) {
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     Device* device = FSDeviceForPath(pathname);
-	if(device == NULL) {
-		Debug("Could not find device for path %s\n", pathname);
-		return S_FAIL;
-	}
+    if (device == NULL) {
+      Debug("Could not find device for path %s\n", pathname);
+      return S_FAIL;
+    }
 
     Process* active = ProcessGetActiveProcess();
     int fileSize;
-    BYTE* fileData = device->Read(pathname, &fileSize);
+    BYTE* fileData = (BYTE*)device->Read(pathname, &fileSize);
     Debug("syscallopen found '%s'\n", fileData);
     int fd = ProcessOpenFile(processId, pathname, fileData, fileSize);
     Debug("Found fd %d with size %d\n", fd, fileSize);
     return fd;
   } else {
     Debug("Could not get current process\n");
-	return S_FAIL;
+    return S_FAIL;
   }
 }
 
 int SyscallRead(Registers* registers) {
   int fd = registers->ebx;
-  void* buf = registers->ecx;
+  void* buf = (void*)registers->ecx;
   int count = registers->edx;
 
   Process* p = ProcessGetActiveProcess();
@@ -71,6 +75,7 @@ int SyscallRead(Registers* registers) {
     int bytesRead = ProcessReadFile(p->Id, fd, buf, count);
     Debug("Read %d bytes: %s\n", bytesRead, buf);
     registers->eax = bytesRead;
+    return bytesRead;
   } else {
     Debug("Can't read, blocking %d at eip %u\n", p->Id, registers->eip);
     p->State = STATE_FOREGROUND_BLOCKED;
@@ -78,12 +83,13 @@ int SyscallRead(Registers* registers) {
     p->IOBlock.Buf = buf;
     p->IOBlock.Count = count;
     ProcessSchedule(registers);
+    return -1;
   }
 } // TODO ssize_t, size_t
 
 int SyscallWrite(Registers* registers) {
   int fd = registers->ebx;
-  void* buf = registers->ecx;
+  void* buf = (void*)registers->ecx;
   int count = registers->edx;
 
   Debug("SyscallWrite! %u, %d bytes\n", buf, count);
@@ -96,6 +102,7 @@ int SyscallWrite(Registers* registers) {
     KPrint(writeBuf);
     Debug("Writing '%s'\n", writeBuf);
   }
+  return 0;
 } // TODO ssize_t, size_t
 
 int SyscallWaitpid(Registers* registers) {
@@ -107,4 +114,5 @@ int SyscallWaitpid(Registers* registers) {
   p->State = STATE_WAIT_BLOCKED;
   p->WaitpidBlock.id = pid;
   ProcessSchedule(registers);
+  return 0;
 } // TODO ssize_t, size_t
