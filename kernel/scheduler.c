@@ -1,6 +1,7 @@
 #include <kernel.h>
 #include <process.h>
 #include <mm.h>
+#include <kernel_shared.h>
 
 BYTE currentProcess = 0;
 BYTE processCount = 0;
@@ -20,21 +21,22 @@ DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
                     char* commandLine) {
   DWORD stackAddress = 64 * 1024 * 1024 + 8 * 1024;
   // Memset(stackAddress - 1024*1024, 0, 1024*1024);
-  Process* p = KMalloc(sizeof(Process));
-  Memset(p, 0, sizeof(Process));
+  Process* p = (Process*)KMalloc(sizeof(Process));
+  Memset((BYTE*)p, 0, sizeof(Process));
   p->Id = nextId++;
   p->State = STATE_PENDING;
-  p->Entry = entryPoint;
+  p->Entry = (unsigned int)entryPoint;
   p->Priority = priority;
   p->KernelStack = stackAddress;
-  p->PageDirectory = ((unsigned int)KMallocWithTagAligned(
-      sizeof(PageDirectory), "BASE", 4096)); // & 0xFFFFF000;
+  p->PageDirectory = (PageDirectory*)KMallocWithTagAligned(
+      sizeof(PageDirectory), "BASE", 4096); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
   Debug("Process id %d, , st: %u, memptr %u, calc %u\n", p->Id, p->KernelStack,
         p->CurrentMemPtr,
         stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)));
-  p->CurrentMemPtr = stackAddress + 1024 * 1024 +
-                     (4 * 1024 * 1024 * (p->Id - 1)); // physical address
+  p->CurrentMemPtr =
+      (void*)((unsigned int)stackAddress + 1024 * 1024 +
+              (4 * 1024 * 1024 * (p->Id - 1))); // physical address
 
   Debug("Process id %d, , st: %u, memptr %u\n", p->Id, p->KernelStack,
         p->CurrentMemPtr);
@@ -282,17 +284,12 @@ STATUS ProcessSchedule(Registers* registers) {
         cur++;
         tok = strtok(NULL, ' ');
       }
-      DWORD q = p - (active->Id - 1) * 4 * 1024 * 1024;
       active->State = STATE_RUNNING;
-      Memset(&active->Registers, 0, sizeof(Registers));
+      Memset((BYTE*)&active->Registers, 0, sizeof(Registers));
       active->Registers.eip = active->Entry;
       active->Registers.userEsp = active->KernelStack;
       active->Registers.eax = argcCounter;
-      active->Registers.ebx = p;
-      Debug("Stack is %u, memptr is %u, count is %d, q=%u, p=%u, p[0]=%u, "
-            "p[1]=%u\n",
-            active->Registers.userEsp, active->CurrentMemPtr, argcCounter, q, p,
-            p[0], p[1]);
+      active->Registers.ebx = (unsigned int)p;
     }
     registers->eax = active->Registers.eax;
     registers->ebx = active->Registers.ebx;
@@ -313,6 +310,8 @@ STATUS ProcessSchedule(Registers* registers) {
 
     MMSetPageDirectory(active->PageDirectory);
   }
+
+  return S_OK;
 }
 
 ProcessList* ProcessGetProcesses() { return processListStart; }
@@ -395,7 +394,7 @@ STATUS ProcessWakeFromIO(BYTE id, void (*function)(), void* param) {
   }
   Process* p = node->Process;
   p->State = STATE_WAITING;
-  p->Registers.eip = function;
+  p->Registers.eip = (unsigned int)function;
   Debug("Setting process %d to ready from io\n", p->Id);
   return S_OK;
 }
@@ -438,8 +437,8 @@ int ProcessReadFile(BYTE id, int fd, void* buf, int count) {
     // Mapping 67108864-71303168 to 71303168-75497472 for process 2
     char* addr = buf + (4 * 1024 * 1024);
     Debug("Copy from %u to %u\n", p->StdinBuffer, addr);
-    Memcopy(addr, p->StdinBuffer, len);
-    Memset(p->StdinBuffer, 0, 255);
+    Memcopy((BYTE*)addr, (BYTE*)p->StdinBuffer, len);
+    Memset((BYTE*)p->StdinBuffer, 0, 255);
     p->StdinPosition = 0;
     Debug("Completed kernel mode read\n");
     return len;
