@@ -80,7 +80,8 @@ void InitializeGDT(void) {
   gdtResult = SetGdtEntry(4, LOW_ADDRESS, HIGH_ADDRESS, 0xF2, 0xCF);
   Assert(gdtResult == S_OK);
 
-  SetGdtEntry(5, &GlobalTSS, &GlobalTSS + sizeof(TSS) - 1, 0x89, 0x00);
+  SetGdtEntry(5, (unsigned int)&GlobalTSS,
+              (unsigned int)&GlobalTSS + sizeof(TSS) - 1, 0x89, 0x00);
   LoadTSS(&GDT[5]);
   LoadGdt();
   FlushTSS();
