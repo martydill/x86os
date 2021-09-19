@@ -14,7 +14,8 @@ DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine,
   Debug("Type: %d\n", header->e_type);
   Debug("Entry: %u\n", header->e_entry);
 
-  void* addr = 1024 * 1024 * 64 + count * 1024 * 1024 * 4; // 1024 * 1024 * 8;
+  void* addr =
+      (void*)(1024 * 1024 * 64 + count * 1024 * 1024 * 4); // 1024 * 1024 * 8;
   Debug("For physical address %u and data located at %c %c %c %c\n", addr,
         data[0], data[1], data[2], data[3]);
   count++;
@@ -22,13 +23,13 @@ DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine,
         header->e_shentsize, header->e_shoff);
   for (int i = 0; i < header->e_shnum; ++i) {
     ELFSectionHeader* sectionHeader =
-        data + header->e_shoff + (i * header->e_shentsize);
+        (ELFSectionHeader*)(data + header->e_shoff + (i * header->e_shentsize));
     Debug("\tType: %u  Address: %u\n  Offset: %u\n  Size: %u  Flags: %u\n",
           sectionHeader->sh_type, sectionHeader->sh_addr,
           sectionHeader->sh_offset, sectionHeader->sh_size,
           sectionHeader->sh_flags);
     if (sectionHeader->sh_type == SHT_NOBITS) {
-      void* s = KMalloc(sectionHeader->sh_size);
+      void* s = (void*)KMalloc(sectionHeader->sh_size);
       Debug("Alocating memory at %u\n", s);
       Memset(s, 0, sectionHeader->sh_size);
       sectionHeader->sh_offset = (DWORD)s - (DWORD)header;
@@ -42,7 +43,7 @@ DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine,
         header->e_phentsize, header->e_phoff);
   for (int i = 0; i < header->e_phnum; ++i) {
     ELFProgramHeader* programHeader =
-        data + header->e_phoff + (i * header->e_phentsize);
+        (ELFProgramHeader*)(data + header->e_phoff + (i * header->e_phentsize));
     Debug("\tType: %u  Address: %u\n  Offset: %u\n  Size: %u %u\n",
           programHeader->p_type, programHeader->p_vaddr,
           programHeader->p_offset, programHeader->p_memsz,
