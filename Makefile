@@ -41,7 +41,6 @@ run:
 	tail -f ./output.txt
 
 clean:
-	vboxmanage controlvm x86os poweroff | true
 	-rm -rf obj/*.o
 	-rm bin/$(KERNEL)
 	-rm boot/*.o

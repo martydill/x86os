@@ -20,6 +20,7 @@
 #include <process.h>
 #include <fs.h>
 #include <syscall.h>
+#include <floppy.h>
 
 /* Enable interrupts */
 void KeEnableInterrupts(void) {
@@ -102,7 +103,7 @@ void KeSysCallHandler(Registers* registers) {
     Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress,
           physicalAddress, argvAddress, argvAddress);
     int size;
-    BYTE* fileData = FloppyReadFile(physicalAddress, &size);
+    BYTE* fileData = (BYTE*)FloppyReadFile((char*)physicalAddress, &size);
     if (fileData == NULL) {
       registers->eax = -1;
     } else {
@@ -271,10 +272,10 @@ void KeMain(MultibootInfo* bootInfo) {
   FSInit();
 
   int size;
-  BYTE* fileData = FloppyReadFile("idle", &size);
+  BYTE* fileData = (BYTE*)FloppyReadFile("idle", &size);
   ELFParseFile(fileData, "idle", "idle", PRIORITY_BACKGROUND);
 
-  fileData = FloppyReadFile("shell", &size);
+  fileData = (BYTE*)FloppyReadFile("shell", &size);
   ELFParseFile(fileData, "shell", "shell", PRIORITY_FOREGROUND);
 
   Debug("Jumping to user mode\n");

@@ -18,4 +18,6 @@ STATUS FSInit();
 Filesystem* FSMount(char* deviceName, char* mountPoint, BYTE type,
                     Filesystem* parent);
 
+Device* FSDeviceForPath(char* path);
+
 #endif
