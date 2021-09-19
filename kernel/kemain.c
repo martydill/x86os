@@ -86,30 +86,11 @@ void KeSysCallHandler(Registers* registers) {
   } else if (syscall == SYSCALL_OPEN) {
     registers->eax = SyscallOpen(registers);
   } else if (syscall == SYSCALL_READ) {
-    Debug("read\n");
-    SyscallRead(registers);
+    registers->eax = SyscallRead(registers);
   } else if (syscall == SYSCALL_WRITE) {
-    SyscallWrite(registers);
+    registers->eax = SyscallWrite(registers);
   } else if (syscall == SYSCALL_POSIX_SPAWN) {
-    DWORD pidPhysicalAddress =
-        MMVirtualAddressToPhysicalAddress(registers->ebx);
-    DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
-    DWORD argvAddress = MMVirtualAddressToPhysicalAddress(registers->esi);
-    Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress,
-          physicalAddress, argvAddress, argvAddress);
-    int size;
-    BYTE* fileData = (BYTE*)FloppyReadFile((char*)physicalAddress, &size);
-    if (fileData == NULL) {
-      registers->eax = -1;
-    } else {
-      Debug("Read %d bytes\n", size);
-      // TODO - figure out how to choose foreground for processes requiring i/o
-      DWORD childProcessId = ELFParseFile(fileData, physicalAddress,
-                                          argvAddress, PRIORITY_BACKGROUND);
-      Debug("Started process %d, writing id to %u\n", childProcessId,
-            pidPhysicalAddress);
-      *(DWORD*)pidPhysicalAddress = childProcessId;
-    }
+    registers->eax = SyscallPosixSpawn(registers);
   } else if (syscall == SYSCALL_WAITPID) {
     SyscallWaitpid(registers);
   } else if (syscall == SYSCALL_OPENDIR) {

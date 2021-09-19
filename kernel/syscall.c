@@ -112,6 +112,49 @@ int SyscallWrite(Registers* registers) {
   return 0;
 } // TODO ssize_t, size_t
 
+int SyscallPosixSpawn(Registers* registers) {
+  DWORD pidPhysicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
+  DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
+  DWORD argvAddress = MMVirtualAddressToPhysicalAddress(registers->esi);
+  Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress,
+        physicalAddress, argvAddress, argvAddress);
+  int size;
+  BYTE* fileData = (BYTE*)FloppyReadFile((char*)physicalAddress, &size);
+  if (fileData == NULL) {
+    return -1;
+  } else {
+    Debug("Read %d bytes\n", size);
+    // TODO - figure out how to choose foreground for processes requiring i/o
+    DWORD childProcessId = ELFParseFile(fileData, physicalAddress, argvAddress,
+                                        PRIORITY_BACKGROUND);
+    Debug("Started process %d, writing id to %u\n", childProcessId,
+          pidPhysicalAddress);
+    *(DWORD*)pidPhysicalAddress = childProcessId;
+    return 0;
+  }
+}
+
+int SyscallOpendir(Registers* registers) {
+  const char* dirName =
+      (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
+  Debug("SYSCALL_OPENDIR %s\n", dirName);
+
+  // TODO get device, read from device depending on what dir we are accessing
+  Device* device = FSDeviceForPath(dirName);
+  Debug("****************%s\n", device->Name);
+  Debug("Done find device\n");
+  Process* active = ProcessGetActiveProcess();
+  struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+  device->OpenDir(dirName, dir);
+  // FloppyReadDirectory(dirName, dir);
+  return (DWORD)dir;
+  // Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
+}
+
+int SyscallReaddir(Registers* registers) { return 0; }
+
+int SyscallClosedir(Registers* registers) { return 0; }
+
 int SyscallWaitpid(Registers* registers) {
   int pid = registers->ebx;
 
@@ -123,3 +166,9 @@ int SyscallWaitpid(Registers* registers) {
   ProcessSchedule(registers);
   return 0;
 } // TODO ssize_t, size_t
+
+int SyscallKill(Registers* registers) { return 0; }
+
+int SyscallSleep(Registers* registers) { return 0; }
+
+int SyscallStat(Registers* registers) { return 0; }

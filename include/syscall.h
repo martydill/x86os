@@ -9,7 +9,14 @@ int SyscallKPrint(Registers* registers);
 int SyscallExit(Registers* registers);
 int SyscallMount(const char* mountPoint, const char* destination);
 int SyscallOpen(Registers* registers);
-int SyscallRead(Registers* registers);    // TODO ssize_t, size_t
+int SyscallRead(Registers* registers); // TODO ssize_t, size_t
+int SyscallPosixSpawn(Registers* registers);
 int SyscallWaitpid(Registers* registers); // TODO ssize_t, size_t
+int SyscallOpendir(Registers* registers);
+int SyscallReaddir(Registers* registers);
+int SyscallClosedir(Registers* registers);
+int SyscallKill(Registers* registers);
+int SyscallSleep(Registers* registers);
+int SyscallStat(Registers* registers);
 
 #endif
