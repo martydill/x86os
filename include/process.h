@@ -112,4 +112,6 @@ STATUS ProcessSleep(Process* process, unsigned int seconds);
 ProcessList* ProcessGetProcesses();
 ProcessList* ProcessGetProcessListNodeById(BYTE ID);
 
+Process* ProcessGetActiveProcess();
+
 #endif

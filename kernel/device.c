@@ -87,7 +87,7 @@ void AddToList(Device* device) {
   DeviceList* deviceList = Root.Children;
 
   if (Root.Children == NULL) {
-    Root.Children = KMalloc(sizeof(DeviceList));
+    Root.Children = (DeviceList*)KMalloc(sizeof(DeviceList));
     Root.Children->Device = device;
     Root.Children->Next = NULL;
     return;
@@ -98,7 +98,7 @@ void AddToList(Device* device) {
     deviceList = deviceList->Next;
   }
 
-  deviceList = KMalloc(sizeof(DeviceList));
+  deviceList = (DeviceList*)KMalloc(sizeof(DeviceList));
   deviceList->Device = device;
   deviceList->Next = NULL;
 

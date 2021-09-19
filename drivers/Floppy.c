@@ -331,7 +331,6 @@ STATUS FloppyReadSector(int sector, char* buffer) {
 
 // TODO move these
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
-Process* ProcessGetActiveProcess();
 
 STATUS FloppyStat(char* name, struct stat* statbuf) {
   // TODO figure out where / should be stripped out

@@ -7,27 +7,28 @@
 Filesystem* RootFS = NULL;
 Filesystem* ProcFS = NULL;
 
-int FSMount(char* deviceName, char* mountPoint, BYTE type, Filesystem* parent) {
+Filesystem* FSMount(char* deviceName, char* mountPoint, BYTE type,
+                    Filesystem* parent) {
   Device* device = GetDevice(deviceName);
   if (device == NULL) {
     Debug("Could not find device named %s\n", deviceName);
-    return -1;
+    return NULL;
   }
 
   Filesystem* fs = (Filesystem*)KMalloc(sizeof(Filesystem));
   if (fs == NULL) {
-    return -1;
+    return NULL;
   }
-  Memset(fs, 0, sizeof(Filesystem));
+  Memset((BYTE*)fs, 0, sizeof(Filesystem));
 
   fs->Type = type;
   fs->Device = device;
-  fs->MountPoint = KMalloc(strlen(mountPoint) + 1);
+  fs->MountPoint = (char*)KMalloc(strlen(mountPoint) + 1);
   if (fs->MountPoint == NULL) {
-    return -1;
+    return NULL;
   }
 
-  Memcopy(fs->MountPoint, mountPoint, strlen(mountPoint) + 1);
+  Memcopy((BYTE*)fs->MountPoint, (BYTE*)mountPoint, strlen(mountPoint) + 1);
 
   if (parent != NULL) {
     Debug("Setting to child of %s\n", parent->Device->Name);

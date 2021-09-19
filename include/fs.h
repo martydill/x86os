@@ -15,4 +15,7 @@ typedef struct Filesystem {
 
 STATUS FSInit();
 
+Filesystem* FSMount(char* deviceName, char* mountPoint, BYTE type,
+                    Filesystem* parent);
+
 #endif

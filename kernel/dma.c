@@ -36,6 +36,8 @@ STATUS DmaInit() {
 
   /* Enable channel 2*/
   IoWritePortByte(0x0a, 0x02);
+
+  return S_OK;
 }
 
 STATUS DmaEnableChannel(int channel) {
@@ -50,7 +52,7 @@ STATUS DmaDisableChannel(int channel) {
   return S_OK;
 }
 
-DmaFloppyRead() {
+STATUS DmaFloppyRead() {
   DmaInit();
   IoWritePortByte(0x0a, 0x06);
   IoWritePortByte(0x0b, 0x46);
@@ -61,4 +63,5 @@ DmaFloppyRead() {
                               ; single transfer, address increment, autoinit,
     read, channel2) out 0x0a, 0x02          ; unmask DMA channel 2
       */
+  return S_OK;
 }

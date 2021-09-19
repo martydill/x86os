@@ -68,6 +68,7 @@ DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
   Debug("Cannot convert virtual address %u to physical address",
         virtualAddress);
   KeHalt();
+  return -1; // Not reachable
 };
 
 extern PageDirectory* kernelPageDirectory;
@@ -128,7 +129,7 @@ void KeSysCallHandler(Registers* registers) {
     struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
     device->OpenDir(dirName, dir);
     // FloppyReadDirectory(dirName, dir);
-    registers->eax = dir;
+    registers->eax = (DWORD)dir;
     // Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
   } else if (syscall == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);

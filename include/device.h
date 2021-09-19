@@ -41,4 +41,6 @@ STATUS DeviceRegister(Device* device);
 
 STATUS DeviceUnregister(Device* device);
 
+Device* GetDevice(const char* deviceName);
+
 #endif

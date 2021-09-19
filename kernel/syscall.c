@@ -22,7 +22,6 @@
 #include <syscall.h>
 
 // TODO
-Process* ProcessGetActiveProcess();
 Device* FSDeviceForPath();
 
 void SyscallKPrint(const char* data) { KPrint(data); }
