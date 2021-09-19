@@ -80,16 +80,11 @@ void KeSysCallHandler(Registers* registers) {
         registers->ebx, registers->ecx, registers->edx, registers->esi,
         registers->edi, registers->ebp, registers->userEsp, registers->eip);
   if (syscall == SYSCALL_EXIT) {
-    SyscallExit(registers);
+    registers->eax = SyscallExit(registers);
   } else if (syscall == SYSCALL_KPRINT) {
-    const char* data = (const char*)registers->ebx;
-    SyscallKPrint(data);
-    registers->eax = 0;
+    registers->eax = SyscallKPrint(registers);
   } else if (syscall == SYSCALL_OPEN) {
-    Debug("SYSCALL_OPEN\n");
-    const char* path = (const char*)registers->ebx;
-    int fd = SyscallOpen(path, registers->ecx);
-    registers->eax = fd;
+    registers->eax = SyscallOpen(registers);
   } else if (syscall == SYSCALL_READ) {
     Debug("read\n");
     SyscallRead(registers);

@@ -24,24 +24,32 @@
 // TODO
 Device* FSDeviceForPath();
 
-void SyscallKPrint(const char* data) { KPrint(data); }
+int SyscallKPrint(Registers* registers) {
+  const char* data = (const char*)registers->ebx;
+  KPrint(data);
+  return 0;
+}
 
-void SyscallExit(Registers* registers) {
+int SyscallExit(Registers* registers) {
   // TODO read exit code from registers->ebx
   Debug("ok\n");
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     Debug("killing\n");
     ProcessTerminate(processId);
+    return 0;
   } else {
     Debug("Could not get current process\n");
+    return 1;
   }
 }
 
-void SyscallMount(const char* mountPoint, const char* destination) {}
+int SyscallMount(const char* mountPoint, const char* destination) { return 0; }
 
-int SyscallOpen(const char* pathname, int flags) {
-  Debug("SyscallOpen!\n");
+int SyscallOpen(Registers* registers) {
+  const char* pathname = (const char*)registers->ebx;
+  int flags = (int)registers->ecx;
+
   BYTE processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     Device* device = FSDeviceForPath(pathname);
@@ -59,7 +67,7 @@ int SyscallOpen(const char* pathname, int flags) {
     return fd;
   } else {
     Debug("Could not get current process\n");
-    return S_FAIL;
+    return -1;
   }
 }
 

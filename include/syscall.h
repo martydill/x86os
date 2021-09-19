@@ -5,10 +5,10 @@
 #include <kernel.h>
 #include <interrupt.h>
 
-void SyscallKPrint(const char* data);
-void SyscallExit(Registers* registers);
-void SyscallMount(const char* mountPoint, const char* destination);
-int SyscallOpen(const char* pathname, int flags);
+int SyscallKPrint(Registers* registers);
+int SyscallExit(Registers* registers);
+int SyscallMount(const char* mountPoint, const char* destination);
+int SyscallOpen(Registers* registers);
 int SyscallRead(Registers* registers);    // TODO ssize_t, size_t
 int SyscallWaitpid(Registers* registers); // TODO ssize_t, size_t
 
