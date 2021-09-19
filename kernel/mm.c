@@ -184,7 +184,7 @@ void MMInitializePageTables(PageDirectory* pageDirectory) {
       // address += NUM_PAGE_TABLE_ENTRIES * sizeof(int);
     }
 
-    pageDirectory->Entries[pd] = pageTable;
+    pageDirectory->Entries[pd] = (unsigned int)pageTable;
     pageDirectory->Entries[pd] |= 3;
     pageTable = pageTable + (4096);
 
@@ -264,7 +264,7 @@ void MMPageFaultHandler(Registers* registers) {
     if (code & (1 << 2)) {
       Process* p = ProcessGetActiveProcess();
       Debug("Mapping for user page directory %u\n", &p->PageDirectory);
-      MMMapPageToProcess(&p->PageDirectory, page, 1);
+      MMMapPageToProcess(p->PageDirectory, page, 1);
       // MMMapPageToProcess(kernelPageDirectory, page, 1);
       // asm volatile("mov %0, %%cr3":: "b"(&p->PageDirectory));
 
@@ -287,7 +287,8 @@ void MMInitializePaging() {
   kernelPageDirectory =
       (PageDirectory*)((unsigned int)_kernelEndAddress & 0xFFFFF000) + 0x1000;
 
-  Memset(PhysicalMemoryToProcessMap, 0, sizeof(PhysicalMemoryToProcessMap));
+  Memset((BYTE*)PhysicalMemoryToProcessMap, 0,
+         sizeof(PhysicalMemoryToProcessMap));
 
   MMInstallPageFaultHandler();
   MMInitializePageDirectory(kernelPageDirectory);
@@ -299,7 +300,7 @@ void MMInitializePaging() {
 
   // Available memory starts at kernel end + size of page directory and page
   // tables
-  BaseMallocAddress = kernelPageDirectory + (4096 * 1024) + 1024;
+  BaseMallocAddress = (unsigned int)kernelPageDirectory + (4096 * 1024) + 1024;
   // Debug("%u %u\n", BaseMallocAddress, kernelPageDirectory);
   // for (i = 0; i < 1024; ++i) {
   //   const unsigned int z = KMalloc(1024 * i);
