@@ -72,8 +72,5 @@ STATUS FSInit() {
 
   Device* procfs = FSDeviceForPath("/proc");
   Debug("Found device %s\n", procfs->Name);
-  char buf[32];
-  DeviceRead(procfs, buf, 32);
-  Debug("Read from procfs: %s\n", buf);
   return S_OK;
 }

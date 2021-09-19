@@ -33,33 +33,34 @@ STATUS DeviceInit() {
 }
 
 /* Reads data from the specified device into the supplied buffer */
-STATUS DeviceRead(Device* device, char* buffer, int numBytes) {
-  Assert(device != NULL);
-  Assert(buffer != NULL);
+// char* DeviceRead(Device* device, char* buffer, int numBytes) {
+//   Assert(device != NULL);
+//   Assert(buffer != NULL);
 
-  /* Make sure the device is open */
-  if (!(device->Status & DEVICE_OPEN)) {
-    Debug("Unable to read from %s, device is not open  %d %d\r\n", device->Name,
-          device, device->Status);
-    return S_FAIL;
-  }
+//   /* Make sure the device is open */
+//   if (!(device->Status & DEVICE_OPEN)) {
+//     Debug("Unable to read from %s, device is not open  %d %d\r\n",
+//     device->Name,
+//           device, device->Status);
+//     return S_FAIL;
+//   }
 
-  /* Make sure it's ready for a read */
-  if (!(device->Status & DEVICE_CAN_READ)) {
-    Debug("Unable to read from %s, device is not ready for a read\r\n",
-          device->Name);
-    return S_FAIL;
-  }
+//   /* Make sure it's ready for a read */
+//   if (!(device->Status & DEVICE_CAN_READ)) {
+//     Debug("Unable to read from %s, device is not ready for a read\r\n",
+//           device->Name);
+//     return S_FAIL;
+//   }
 
-  /* Make sure it has a read handler */
-  if (device->Read == NULL) {
-    Debug("Unable to read from %s, device does not have a read handler\r\n",
-          device->Name);
-    return S_FAIL;
-  }
+//   /* Make sure it has a read handler */
+//   if (device->Read == NULL) {
+//     Debug("Unable to read from %s, device does not have a read handler\r\n",
+//           device->Name);
+//     return S_FAIL;
+//   }
 
-  return device->Read(buffer, numBytes);
-}
+//   return device->Read(buffer, numBytes);
+// }
 
 /* Writes the specified data to the device */
 STATUS DeviceWrite(Device* device, char* buffer, int numBytes) {
