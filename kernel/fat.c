@@ -119,7 +119,7 @@ FATDirectoryEntry* FATReadDirectory(char* directorySector) {
       break;
     }
 
-    if (*directorySector == FREE_DIRECTORY_ENTRY) {
+    if ((unsigned char)*directorySector == FREE_DIRECTORY_ENTRY) {
       directorySector += 32;
       continue;
     }
