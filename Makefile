@@ -22,9 +22,11 @@ $(SUBDIRS):
 
 
 kernel1: subdirs
+	$(LD) -T kernel.ls -nostdlib -melf_i386 boot/boot.o boot/startup.o obj/*.o  -o bin/$(KERNEL)
+
+run:
 	vboxmanage controlvm x86os poweroff | true
 	sleep 1
-	$(LD) -T kernel.ls -nostdlib -melf_i386 boot/boot.o boot/startup.o obj/*.o  -o bin/$(KERNEL)
 	cp base_images/floppy.img ./floppy.img
 	mcopy -o -i ./floppy.img bin/kernel0 ::
 	mcopy -o -i ./floppy.img apps/bin/* ::
@@ -33,9 +35,6 @@ kernel1: subdirs
 	mmd -i ./floppy.img usr
 	mcopy -o -i ./floppy.img ./test.txt ::usr/test.txt
 	rm -f ./output.txt
-
-
-run:
 	vboxmanage startvm x86os
 	sleep 1 
 	vboxmanage controlvm x86os keyboardputscancode 1c 9c
