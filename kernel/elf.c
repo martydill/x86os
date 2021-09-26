@@ -54,6 +54,7 @@ DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine,
     }
   }
 
-  Debug("Creating new process for entry %u\n", header->e_entry);
+  Debug("Creating new process for entry %u with command line '%s'\n",
+        header->e_entry, commandLine);
   return CreateProcess(header->e_entry, processName, priority, commandLine);
 }

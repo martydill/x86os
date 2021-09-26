@@ -18,5 +18,7 @@ int SyscallClosedir(Registers* registers);
 int SyscallKill(Registers* registers);
 int SyscallSleep(Registers* registers);
 int SyscallStat(Registers* registers);
+int SyscallChdir(Registers* registers);
+int SyscallGetcwd(Registers* registers);
 
 #endif

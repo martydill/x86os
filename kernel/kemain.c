@@ -94,101 +94,26 @@ void KeSysCallHandler(Registers* registers) {
   } else if (syscall == SYSCALL_WAITPID) {
     SyscallWaitpid(registers);
   } else if (syscall == SYSCALL_OPENDIR) {
-    const char* dirName =
-        (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
-    Debug("SYSCALL_OPENDIR %s\n", dirName);
-
-    // TODO get device, read from device depending on what dir we are accessing
-    Device* device = FSDeviceForPath(dirName);
-    Debug("****************%s\n", device->Name);
-    Debug("Done find device\n");
-    Process* active = ProcessGetActiveProcess();
-    struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-    device->OpenDir(dirName, dir);
-    // FloppyReadDirectory(dirName, dir);
-    registers->eax = (DWORD)dir;
-    // Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
+    registers->eax = SyscallOpendir(registers);
   } else if (syscall == SYSCALL_READDIR) {
     Debug("SYSCALL_READDIR %d\n", registers->ebx);
+    registers->eax = SyscallReaddir(registers);
   } else if (syscall == SYSCALL_CLOSEDIR) {
     Debug("SYSCALL_CLOSEDIR %d\n", registers->ebx);
     // TODO implement this
+    registers->eax = SyscallClosedir(registers);
   } else if (syscall == SYSCALL_CHDIR) {
-    Debug("SYSCALL_CHDIR");
-    // TODO fix issue here and in other places where params passed to main are
-    // kernel addresses not user addresses. Should require a
-    // MMVIrtualAddressToPhysicalAddress here.
-    char* dirName = (char*)registers->ebx;
-    Process* active = ProcessGetActiveProcess();
-    Debug("Changing to %s\n", dirName);
-    // TODO validate this
-    strcpy(&active->Environment.WorkingDirectory, dirName,
-           sizeof(active->Environment.WorkingDirectory));
-    Debug("WD is now %s\n", active->Environment.WorkingDirectory);
-    registers->eax = 1; // TODO return value on failure
+    registers->eax = SyscallChdir(registers);
   } else if (syscall == SYSCALL_GETCWD) {
     Debug("SYSCALL_GETCWD");
-    DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
-    Process* active = ProcessGetActiveProcess();
-    // TODO use caller's length
-    Debug("WD was %s\n", active->Environment.WorkingDirectory);
-    strcpy((char*)physicalAddress, &active->Environment.WorkingDirectory,
-           sizeof(active->Environment.WorkingDirectory));
-    Debug("Value is %s\n", physicalAddress);
-    // TODO return value on failure
-    registers->eax = registers->ebx;
-
+    registers->eax = SyscallGetcwd(registers);
   } else if (syscall == SYSCALL_SLEEP) {
-    Debug("SYSCALL_SLEEP %u\n", registers->ebx);
-    Process* active = ProcessGetActiveProcess();
-    ProcessSleep(active, registers->ebx);
-    registers->eax = 0; // TODO return value for signals
-    ProcessSchedule(registers);
+    registers->eax = SyscallSleep(registers);
   } else if (syscall == SYSCALL_KILL) {
     Debug("SYSCALL_KILL %u\n", registers->ebx);
-    if (ProcessTerminate(registers->ebx) == S_OK) {
-      Debug("Killed %d\n", registers->ebx);
-      registers->eax = 0;
-    } else {
-      Debug("Kill %d failed\n", registers->ebx);
-      registers->eax = -1;
-    }
+    registers->eax = SyscallKill(registers);
   } else if (syscall == SYSCALL_STAT) {
-    DWORD physicalAddress =
-        registers->ebx; // MMVirtualAddressToPhysicalAddress(registers->ebx); //
-                        // TODO why is this not a virtual address...
-    char* name = (char*)physicalAddress;
-    DWORD statbufPhysicalAddress =
-        MMVirtualAddressToPhysicalAddress(registers->ecx);
-    struct stat* statbuf = (struct stat*)statbufPhysicalAddress;
-    Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, name,
-          statbufPhysicalAddress);
-
-    Device* device = FSDeviceForPath(name);
-    Debug("****************%s\n", device->Name);
-    Debug("Done find device\n");
-
-    // Process* active = ProcessGetActiveProcess();
-    // TODO cache this
-
-    // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-    STATUS result = device->Stat(name, statbuf);
-
-    // // TODO cache this
-    // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-    // // TODO fix directory
-    // // TOOO read from device/procfs
-    // FloppyReadDirectory("/", dir);
-    // for(int i = 0; i < dir->Count; ++i) {
-    //     if(!strcmp(physicalAddress, dir->dirents[i].d_name)) {
-    // 	    // TODO fill in other members of statbuf
-    // 	    statbuf->st_mode = dir->dirents[i].st_mode;
-    // 	    statbuf->st_size = dir->dirents[i].st_size;
-    // 	    registers->eax = 0;
-    // 	    return;
-    //     }
-    // }
-    registers->eax = result;
+    registers->eax = SyscallStat(registers);
   } else {
     KePanic(registers);
   }

@@ -284,6 +284,8 @@ STATUS ProcessSchedule(Registers* registers) {
         cur++;
         tok = strtok(NULL, ' ');
       }
+      Debug("Arg count is %u\n", argcCounter);
+
       active->State = STATE_RUNNING;
       Memset((BYTE*)&active->Registers, 0, sizeof(Registers));
       active->Registers.eip = active->Entry;

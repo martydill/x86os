@@ -81,7 +81,6 @@ int SyscallRead(Registers* registers) {
   if (ProcessCanReadFile(p, fd, buf, count) == S_OK) {
     int bytesRead = ProcessReadFile(p->Id, fd, buf, count);
     Debug("Read %d bytes: %s\n", bytesRead, buf);
-    registers->eax = bytesRead;
     return bytesRead;
   } else {
     Debug("Can't read, blocking %d at eip %u\n", p->Id, registers->eip);
@@ -90,7 +89,11 @@ int SyscallRead(Registers* registers) {
     p->IOBlock.Buf = buf;
     p->IOBlock.Count = count;
     ProcessSchedule(registers);
-    return -1;
+
+    // ProcessSchedule can change eax so we need to make sure we return the new
+    // value
+    // TODO
+    return registers->eax;
   }
 } // TODO ssize_t, size_t
 
@@ -151,9 +154,9 @@ int SyscallOpendir(Registers* registers) {
   // Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
 }
 
-int SyscallReaddir(Registers* registers) { return 0; }
+int SyscallReaddir(Registers* registers) { return registers->eax; }
 
-int SyscallClosedir(Registers* registers) { return 0; }
+int SyscallClosedir(Registers* registers) { return registers->eax; }
 
 int SyscallWaitpid(Registers* registers) {
   int pid = registers->ebx;
@@ -164,11 +167,94 @@ int SyscallWaitpid(Registers* registers) {
   p->State = STATE_WAIT_BLOCKED;
   p->WaitpidBlock.id = pid;
   ProcessSchedule(registers);
-  return 0;
+
+  // Return old value of eax here. We do not want to change it because
+  // we already saved the value above.
+  //   return registers->eax;
+  return 0; //
 } // TODO ssize_t, size_t
 
-int SyscallKill(Registers* registers) { return 0; }
+int SyscallKill(Registers* registers) {
+  Debug("SYSCALL_KILL %u\n", registers->ebx);
+  if (ProcessTerminate(registers->ebx) == S_OK) {
+    Debug("Killed %d\n", registers->ebx);
+    return 0;
+  } else {
+    Debug("Kill %d failed\n", registers->ebx);
+    return -1;
+  }
+}
 
-int SyscallSleep(Registers* registers) { return 0; }
+int SyscallSleep(Registers* registers) {
+  Debug("SYSCALL_SLEEP %u\n", registers->ebx);
+  Process* active = ProcessGetActiveProcess();
+  ProcessSleep(active, registers->ebx);
+  ProcessSchedule(registers);
+  return 0; // TODO return value for signals
+}
 
-int SyscallStat(Registers* registers) { return 0; }
+int SyscallStat(Registers* registers) {
+  DWORD physicalAddress =
+      registers->ebx; // MMVirtualAddressToPhysicalAddress(registers->ebx); //
+                      // TODO why is this not a virtual address...
+  char* name = (char*)physicalAddress;
+  DWORD statbufPhysicalAddress =
+      MMVirtualAddressToPhysicalAddress(registers->ecx);
+  struct stat* statbuf = (struct stat*)statbufPhysicalAddress;
+  Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, name,
+        statbufPhysicalAddress);
+
+  Device* device = FSDeviceForPath(name);
+  Debug("****************%s\n", device->Name);
+  Debug("Done find device\n");
+
+  // Process* active = ProcessGetActiveProcess();
+  // TODO cache this
+
+  // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+  STATUS result = device->Stat(name, statbuf);
+
+  // // TODO cache this
+  // struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
+  // // TODO fix directory
+  // // TOOO read from device/procfs
+  // FloppyReadDirectory("/", dir);
+  // for(int i = 0; i < dir->Count; ++i) {
+  //     if(!strcmp(physicalAddress, dir->dirents[i].d_name)) {
+  // 	    // TODO fill in other members of statbuf
+  // 	    statbuf->st_mode = dir->dirents[i].st_mode;
+  // 	    statbuf->st_size = dir->dirents[i].st_size;
+  // 	    registers->eax = 0;
+  // 	    return;
+  //     }
+  // }
+  return result;
+}
+
+int SyscallChdir(Registers* registers) {
+  Debug("SYSCALL_CHDIR");
+  // TODO fix issue here and in other places where params passed to main are
+  // kernel addresses not user addresses. Should require a
+  // MMVIrtualAddressToPhysicalAddress here.
+  char* dirName = (char*)registers->ebx;
+  Process* active = ProcessGetActiveProcess();
+  Debug("Changing to %s\n", dirName);
+  // TODO validate this
+  strcpy(&active->Environment.WorkingDirectory, dirName,
+         sizeof(active->Environment.WorkingDirectory));
+  Debug("WD is now %s\n", active->Environment.WorkingDirectory);
+  return 1; // TODO return value on failure
+}
+
+int SyscallGetcwd(Registers* registers) {
+  Debug("SYSCALL_GETCWD");
+  DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
+  Process* active = ProcessGetActiveProcess();
+  // TODO use caller's length
+  Debug("WD was %s\n", active->Environment.WorkingDirectory);
+  strcpy((char*)physicalAddress, &active->Environment.WorkingDirectory,
+         sizeof(active->Environment.WorkingDirectory));
+  Debug("Value is %s\n", physicalAddress);
+  // TODO return value on failure
+  return registers->ebx;
+}
