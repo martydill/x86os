@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
       char binaryName[255];
       char* p = buf;
       char* q = binaryName;
-      while (*p != ' ') {
+      while (*p != ' ' && *p != 0) {
         *q++ = *p++;
       }
       *q = 0;

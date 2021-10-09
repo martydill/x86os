@@ -1,3 +1,4 @@
 can't ls usr
+can't ls subdirectories
 proc not showing up in ls
-ps not having a name in ps
+stat failed for some ls calls
