@@ -97,7 +97,7 @@ STATUS MMMapPageToProcess(PageDirectory* pd, WORD page, WORD process) {
 }
 
 void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage,
-           int processId) {
+           ProcessId processId) {
   int pageSize = 1024 * 1024 * 4;
   Debug("Mapping %d-%d to %d-%d for process %d\n", virtualPage * pageSize,
         (virtualPage + 1) * pageSize, physicalPage * pageSize,

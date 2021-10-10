@@ -32,8 +32,7 @@ int SyscallKPrint(Registers* registers) {
 
 int SyscallExit(Registers* registers) {
   // TODO read exit code from registers->ebx
-  Debug("ok\n");
-  BYTE processId;
+  ProcessId processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     Debug("killing\n");
     ProcessTerminate(processId);
@@ -50,7 +49,7 @@ int SyscallOpen(Registers* registers) {
   const char* pathname = (const char*)registers->ebx;
   int flags = (int)registers->ecx;
 
-  BYTE processId;
+  ProcessId processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     Device* device = FSDeviceForPath(pathname);
     if (device == NULL) {
@@ -159,13 +158,13 @@ int SyscallReaddir(Registers* registers) { return registers->eax; }
 int SyscallClosedir(Registers* registers) { return registers->eax; }
 
 int SyscallWaitpid(Registers* registers) {
-  int pid = registers->ebx;
+  ProcessId pid = registers->ebx;
 
   Debug("SyscallWaitpid! %u\n", pid);
 
   Process* p = ProcessGetActiveProcess();
   p->State = STATE_WAIT_BLOCKED;
-  p->WaitpidBlock.id = pid;
+  p->WaitpidBlock.Id = pid;
   ProcessSchedule(registers);
 
   // Return old value of eax here. We do not want to change it because

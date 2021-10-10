@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
     d = readdir(dir);
     if (d != NULL) {
       struct stat statbuf;
-      int pid = atoi(d->d_name);
+      unsigned int pid = atoi(d->d_name);
       sprintf(255, fullPath, "/proc/%s", d->d_name);
       if (stat(fullPath, &statbuf) == 0) {
         if (pid > 0 && statbuf.st_mode == S_IFDIR) {

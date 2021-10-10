@@ -16,6 +16,8 @@ typedef unsigned int DWORD;
 typedef unsigned int STATUS;
 typedef unsigned char BOOL;
 
+typedef unsigned int ProcessId;
+
 #define FALSE 0
 #define TRUE 1
 

@@ -52,7 +52,7 @@ typedef struct IOBlock_S {
 } IOBlock;
 
 typedef struct WaitpidBlock_S {
-  DWORD id;
+  ProcessId Id;
   int Status;
 } WaitpidBlock;
 
@@ -67,7 +67,7 @@ typedef struct Environment_S {
 typedef struct Process_S {
   BYTE Priority;
   BYTE State;
-  DWORD Id;
+  ProcessId Id;
 
   DWORD Esp;
   DWORD SS;
@@ -102,15 +102,15 @@ typedef struct ProcessList {
 
 STATUS ProcessSchedule(Registers* registers);
 STATUS ProcessInit();
-DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
-                    char* commandLine);
-STATUS ProcessGetCurrentProcess(BYTE* id);
-STATUS ProcessTerminate(BYTE id);
-STATUS ProcessGetForegroundProcessId(BYTE* id);
-int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size);
+ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
+                        char* commandLine);
+STATUS ProcessGetCurrentProcess(ProcessId* id);
+STATUS ProcessTerminate(ProcessId id);
+STATUS ProcessGetForegroundProcessId(ProcessId* id);
+int ProcessOpenFile(ProcessId id, char* name, BYTE* fileData, int size);
 STATUS ProcessSleep(Process* process, unsigned int seconds);
 ProcessList* ProcessGetProcesses();
-ProcessList* ProcessGetProcessListNodeById(BYTE ID);
+ProcessList* ProcessGetProcessListNodeById(ProcessId id);
 
 Process* ProcessGetActiveProcess();
 

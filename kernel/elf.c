@@ -2,8 +2,8 @@
 #include <elf.h>
 
 int count = 0;
-DWORD ELFParseFile(BYTE* data, char* processName, char* commandLine,
-                   BYTE priority) {
+ProcessId ELFParseFile(BYTE* data, char* processName, char* commandLine,
+                       BYTE priority) {
   if (data == NULL) {
     return S_FAIL;
   }

@@ -18,7 +18,7 @@ char* ProcFSRead(char* name, int* bytesRead) {
   char* part = strtok(localName, '/');
   part = strtok(NULL, '/');
   part = strtok(NULL, '/');
-  int processId = atoi(part);
+  ProcessId processId = atoi(part);
 
   Debug("For process %d\n", processId);
 
@@ -27,10 +27,10 @@ char* ProcFSRead(char* name, int* bytesRead) {
     Debug("Could not find process\n");
     return NULL;
   }
-  Debug("Found process\n");
-  Debug(node->Process->CommandLine);
+  Debug("Found process '%s'\n", node->Process->CommandLine);
 
   int sizeOfData = strlen(node->Process->CommandLine);
+  *bytesRead = sizeOfData;
   char* data = KMalloc(sizeOfData);
   strcpy(data, node->Process->CommandLine, sizeOfData);
 

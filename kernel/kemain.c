@@ -59,7 +59,7 @@ void ShellStart();
 void IdleLoop();
 
 DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
-  BYTE processId;
+  ProcessId processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
     DWORD phys = virtualAddress + (processId - 1) * 4 * 1024 * 1024;
     Debug("Virt %u = phys %u for process %d\n", virtualAddress, phys,

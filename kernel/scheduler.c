@@ -3,12 +3,12 @@
 #include <mm.h>
 #include <kernel_shared.h>
 
-BYTE currentProcess = 0;
+ProcessId currentProcess = 0;
+ProcessId nextId = 1;
 BYTE processCount = 0;
-BYTE nextId = 1;
 
 void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage,
-           int processId);
+           ProcessId processId);
 
 // Process processes[MAX_PROCESSES];
 
@@ -17,8 +17,8 @@ ProcessList* processListStart = NULL;
 ProcessList* processListEnd = NULL;
 Process* active = NULL;
 
-DWORD CreateProcess(void* entryPoint, char* name, BYTE priority,
-                    char* commandLine) {
+ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
+                        char* commandLine) {
   DWORD stackAddress = 64 * 1024 * 1024 + 8 * 1024;
   // Memset(stackAddress - 1024*1024, 0, 1024*1024);
   Process* p = (Process*)KMalloc(sizeof(Process));
@@ -98,7 +98,7 @@ STATUS ProcessInit() {
   return S_OK;
 }
 
-ProcessList* ProcessGetProcessListNodeById(BYTE id) {
+ProcessList* ProcessGetProcessListNodeById(ProcessId id) {
   // Debug("Searching for process %d\n", id);
   ProcessList* ps = processListStart;
   do {
@@ -150,9 +150,9 @@ STATUS ProcessSchedule(Registers* registers) {
       Debug("ParentId was %d\n", active->ParentId);
       if (active->ParentId != 0) {
         ProcessList* node = ProcessGetProcessListNodeById(active->ParentId);
-        Debug("waiting on %d\n", node->Process->WaitpidBlock.id);
-        if (node && node->Process->WaitpidBlock.id == active->Id) {
-          node->Process->WaitpidBlock.id = 0;
+        Debug("waiting on %d\n", node->Process->WaitpidBlock.Id);
+        if (node && node->Process->WaitpidBlock.Id == active->Id) {
+          node->Process->WaitpidBlock.Id = 0;
           node->Process->State = STATE_WAITING;
           Debug("%s %d waitpid is unblocked\n", node->Process->Name,
                 node->Process->Id);
@@ -320,7 +320,7 @@ ProcessList* ProcessGetProcesses() { return processListStart; }
 
 Process* ProcessGetActiveProcess() { return active; }
 
-STATUS ProcessGetCurrentProcess(BYTE* id) {
+STATUS ProcessGetCurrentProcess(ProcessId* id) {
   if (id == NULL) {
     return S_FAIL;
   }
@@ -332,7 +332,7 @@ STATUS ProcessGetCurrentProcess(BYTE* id) {
   return S_OK;
 }
 
-STATUS ProcessGetForegroundProcessId(BYTE* id) {
+STATUS ProcessGetForegroundProcessId(ProcessId* id) {
   if (id == NULL) {
     return S_FAIL;
   }
@@ -343,7 +343,7 @@ STATUS ProcessGetForegroundProcessId(BYTE* id) {
   return S_OK;
 }
 
-STATUS ProcessSetForegroundProcessId(BYTE id) {
+STATUS ProcessSetForegroundProcessId(ProcessId id) {
   if (foreground == NULL) {
     return S_FAIL;
   }
@@ -362,7 +362,7 @@ STATUS ProcessSetForegroundProcessId(BYTE id) {
   return S_OK;
 }
 
-STATUS ProcessTerminate(BYTE id) {
+STATUS ProcessTerminate(ProcessId id) {
   ProcessList* node;
   if (id == NULL) {
     return S_FAIL;
@@ -378,7 +378,7 @@ STATUS ProcessTerminate(BYTE id) {
   return S_OK;
 }
 
-STATUS ProcessBlockForIO(BYTE id) {
+STATUS ProcessBlockForIO(ProcessId id) {
   ProcessList* node = ProcessGetProcessListNodeById(id);
   if (node == NULL) {
     return S_FAIL;
@@ -389,7 +389,7 @@ STATUS ProcessBlockForIO(BYTE id) {
   return S_OK;
 }
 
-STATUS ProcessWakeFromIO(BYTE id, void (*function)(), void* param) {
+STATUS ProcessWakeFromIO(ProcessId id, void (*function)(), void* param) {
   ProcessList* node = ProcessGetProcessListNodeById(id);
   if (node == NULL) {
     return S_FAIL;
@@ -401,7 +401,7 @@ STATUS ProcessWakeFromIO(BYTE id, void (*function)(), void* param) {
   return S_OK;
 }
 
-int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size) {
+int ProcessOpenFile(ProcessId id, char* name, BYTE* fileData, int size) {
   ProcessList* node = ProcessGetProcessListNodeById(id);
   if (node == NULL) {
     return S_FAIL;
@@ -417,7 +417,7 @@ int ProcessOpenFile(BYTE id, char* name, BYTE* fileData, int size) {
   return p->Files[0].FileDescriptor;
 }
 
-int ProcessReadFile(BYTE id, int fd, void* buf, int count) {
+int ProcessReadFile(ProcessId id, int fd, void* buf, int count) {
   Debug("Read file %d %d %u %d\n", id, fd, buf, count);
   ProcessList* node = ProcessGetProcessListNodeById(id);
   if (node == NULL) {
