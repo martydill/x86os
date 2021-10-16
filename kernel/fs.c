@@ -6,6 +6,7 @@
 
 Filesystem* RootFS = NULL;
 Filesystem* ProcFS = NULL;
+Filesystem* NullFS = NULL;
 
 Filesystem* FSMount(char* deviceName, char* mountPoint, BYTE type,
                     Filesystem* parent) {
@@ -70,7 +71,8 @@ STATUS FSInit() {
   ProcFS = FSMount("procfs", "/proc", FS_TYPE_VIRTUAL, RootFS);
   Debug("Found procfs %u %s\n", ProcFS, ProcFS->MountPoint);
 
-  Device* procfs = FSDeviceForPath("/proc");
-  Debug("Found device %s\n", procfs->Name);
+  NullFS = FSMount("null", "/null", FS_TYPE_VIRTUAL, RootFS);
+  Debug("Found null %u %s\n", NullFS, NullFS->MountPoint);
+
   return S_OK;
 }

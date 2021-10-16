@@ -163,8 +163,10 @@ void KeMain(MultibootInfo* bootInfo) {
   KPrint("Initializing PCI ...\n");
   PciInit();
 
-  KPrint("Initializing ProcFS...\n");
+  KPrint("Initializing virtual devices...\n");
   ProcFSInit();
+  NullDeviceInit();
+
   InstallInterruptHandler(0x80, KeSysCallHandler);
   Test_String();
 

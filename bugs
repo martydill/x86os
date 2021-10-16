@@ -2,3 +2,4 @@ can't ls usr
 can't ls subdirectories
 proc not showing up in ls
 stat failed for some ls calls
+crash after calling ps a few times
