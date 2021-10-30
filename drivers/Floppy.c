@@ -401,7 +401,7 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
 
           char* direntry = KMalloc(1024);
           FATReadFile((BYTE*)direntry, &s, fat, e->firstClusterLow);
-          FATDirectoryEntry* e = FATReadDirectory(direntry);
+          e = FATReadDirectory(direntry);
           // while(e != NULL) {
           //   Debug("Found in dir: %s\n", e->name);
           //   e = e->next;
