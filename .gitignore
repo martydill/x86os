@@ -7,3 +7,4 @@ floppy.img
 output.txt
 *.exe
 apps/bin
+Logs/*
