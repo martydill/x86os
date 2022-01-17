@@ -6,7 +6,7 @@ x86OS
 x86OS is an x86-based hobby opearting system.
 
 This project was originally started in around 2002 or 2003 and then abandoned for a long time. I resurrected it in around 2019
-and got it building agin on modern systems.
+and got it building again on modern systems.
 
 It is booted using a GRUB multiboot boot sector (this part wasn't written by me) on a floppy disk image. 
 
