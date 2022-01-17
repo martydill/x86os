@@ -39,7 +39,7 @@ Development
   - LLVM (we use ldd, the LLVM linker)
   - VirtualBox (not strictly required but it's what I use)
 
-###Building and Running
+### Building and Running
 - To build: 
 	 - `make`
 	 - This will build the source tree and produce a bootable floppy image at `./floppy.img`
