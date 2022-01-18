@@ -8,3 +8,4 @@ output.txt
 *.exe
 apps/bin
 Logs/*
+test.txt
