@@ -17,10 +17,12 @@ It is primarily designed to be run using VirtualBox.
  - Readonly FAT12 floppy driver
  - Serial port driver for debug output
  - Preemptive multitasking with a simple scheduler
- - Basic timer support
- - Loading and executing user-mode POSIX ELF binaries
- - The beginnings of a standard I/O and syscall model
+ - Basic sleep timer support
+ - A tiny subset of POSIX syscalls (`read`, `write`, `open`, `stat`, `posix_spawn`, etc.)
+ - Loading and executing user-mode ELF binaries
+ - The beginnings of a standard I/O layer
  - The beginnings of a set of user-mode utilities like `ls`, `ps`, and so on
+ - The beginnings of a ProcFS (`/proc`)
 
 ## These things do not exist yet:
 - Proper memory management
