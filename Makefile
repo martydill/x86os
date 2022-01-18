@@ -33,7 +33,7 @@ run:
 	mcopy -o -i ./floppy.img README.md ::README.md
 	mcopy -o -i ./floppy.img Makefile ::makefile
 	mmd -i ./floppy.img usr
-	mcopy -o -i ./floppy.img ./test.txt ::usr/test.txt
+	mcopy -o -i ./floppy.img ./test.txt ::usr/test.txt | true
 	rm -f ./output.txt
 	vboxmanage startvm x86os
 	sleep 1 
