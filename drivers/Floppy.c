@@ -333,16 +333,40 @@ STATUS FloppyReadSector(int sector, char* buffer) {
 WORD FATGetNextCluster(BYTE* fat, WORD cluster);
 
 STATUS FloppyStat(char* name, struct stat* statbuf) {
-  // TODO figure out where / should be stripped out
-  name = name + 1;
+  char pathBuf[255];
+  char filenameBuf[255];
+  char* fileName;
+
+  strcpy(pathBuf, name, strlen(name));
+  pathBuf[strlen(name)] = 0;
+  fileName = pathBuf + strlen(pathBuf);
+  while (*fileName != '/') {
+    fileName--;
+  }
+  strcpy(filenameBuf, fileName + 1, strlen(fileName));
+  filenameBuf[strlen(fileName)] = 0;
+  *fileName = 0;
+
+  if (!strcmp(pathBuf, "")) {
+    strcpy(pathBuf, "/", 2);
+  }
+
+  Debug("Filename: '%s' '%s'\n", name, filenameBuf);
   Process* active = ProcessGetActiveProcess();
-  struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-  FloppyReadDirectory("/", dir);
-  for (int i = 0; i < dir->Count; ++i) {
-    if (!strcmp(name, dir->dirents[i].d_name)) {
+  struct _DirImpl* d = KMallocInProcess(active, sizeof(struct _DirImpl));
+
+  // todo send correct path
+  FloppyReadDirectory(pathBuf, d);
+  Debug("Done reading directory, finding file...\n");
+  Debug("Number of directory entries: %d\n", d->Count);
+
+  for (int i = 0; i < d->Count; ++i) {
+    Debug("Checking if '%s' matches '%s'\n", fileName, d->dirents[i].d_name);
+    if (!strcmp(filenameBuf, d->dirents[i].d_name)) {
+      Debug("Found file '%s' in directory '%s'\n", filenameBuf, pathBuf);
       // TODO fill in other members of statbuf
-      statbuf->st_mode = dir->dirents[i].st_mode;
-      statbuf->st_size = dir->dirents[i].st_size;
+      statbuf->st_mode = d->dirents[i].st_mode;
+      statbuf->st_size = d->dirents[i].st_size;
       return S_OK;
     }
   }
@@ -372,7 +396,7 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
     while (e != NULL) {
       Debug("Current directory is '%s'\n", currentDirectory);
       Debug("Current file is '%s' %d\n", e->name, e->attributes);
-      Debug("Looking for '%s'\n", name);
+      Debug("Looking for directory '%s'\n", name);
       // If this is the correct directory, start filling in entries
       if (!strcmp(currentDirectory, name)) {
         Debug("Found %s, count is %d\n", e->name, count);
@@ -391,7 +415,10 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
           Debug("Found matching dir '%s', clusters are %d %d \n", e->name,
                 e->firstClusterLow, e->firstClusterHigh);
           // TODO support multiple levels deep
+
           strcpy(currentDirectory, (char*)e->name, strlen((char*)e->name));
+          currentDirectory[strlen(e->name)] = 0;
+
           Debug("New currentDir = '%s'\n", currentDirectory);
 
           for (int i = 1; i < 10; ++i) {
