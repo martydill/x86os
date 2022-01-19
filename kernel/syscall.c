@@ -57,10 +57,14 @@ int SyscallOpen(Registers* registers) {
       return S_FAIL;
     }
 
-    Process* active = ProcessGetActiveProcess();
+    // TODO find better way to check for existence
     int fileSize;
     BYTE* fileData = (BYTE*)device->Read(pathname, &fileSize);
-    Debug("syscallopen found '%s'\n", fileData);
+    if (fileData == NULL) {
+      Debug("Could not find file '%s%\n", pathname);
+      return S_FAIL;
+    }
+
     int fd = ProcessOpenFile(processId, pathname, fileData, fileSize);
     Debug("Found fd %d with size %d\n", fd, fileSize);
     return fd;
