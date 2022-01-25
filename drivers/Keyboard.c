@@ -57,7 +57,7 @@ char shiftKeyCodes[128] = {
     RSHIFT, UNKNOWN55, LALT, SPACEBAR /* fixme add rest of keys */
 };
 const BYTE functionKeyStart = 59;
-const BYTE functionKeyEnd = functionKeyStart + 11;
+const BYTE functionKeyEnd = 70;
 
 BOOL IsNonPrintableKey(BYTE key) {
   return key >= functionKeyStart && key <= functionKeyEnd;
