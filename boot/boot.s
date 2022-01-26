@@ -12,6 +12,7 @@ extern _start
 
 ; The Multiboot header (in NASM syntax)
 align 4
+section .multibootHeader
 dd MULTIBOOT_HEADER_MAGIC
 dd MULTIBOOT_HEADER_FLAGS
 dd CHECKSUM

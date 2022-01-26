@@ -6,6 +6,9 @@ ENTRY (_start)
 SECTIONS
 {
     . = physical_load_addr; _physical_load_addr = physical_load_addr;
+	.multibootHeader : {
+      *(.multibootHeader)
+   }
     .text :
     {
         *(.text)
