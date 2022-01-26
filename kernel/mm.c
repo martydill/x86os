@@ -8,9 +8,7 @@
 #define MEM_FILL_CHAR 'X'
 
 unsigned int counter = 0;
-int pos = 8;
-unsigned int BaseMallocAddress; // = kernelPageDirectory
-// fixme - use actual dynamic memory allocationG114
+unsigned int BaseMallocAddress;
 
 // 4MB page -> Process ID map
 WORD PhysicalMemoryToProcessMap[NUM_PAGE_DIRECTORY_ENTRIES];
@@ -71,9 +69,6 @@ void KFree(void* pointer) {
   return;
 }
 
-// unsigned int page_aligned_end = (((unsigned int*)BASE_MALLOC_ADDRESS) &
-// 0xFFFFF000) + 0x1000;
-
 extern char _kernelEndAddress[];
 
 extern char _physical_load_addr[];
@@ -102,73 +97,40 @@ void MMMap(PageDirectory* pageDirectory, int virtualPage, int physicalPage,
   Debug("Mapping %d-%d to %d-%d for process %d\n", virtualPage * pageSize,
         (virtualPage + 1) * pageSize, physicalPage * pageSize,
         (physicalPage + 1) * pageSize, processId);
-  // Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory,
-  // pageDirectory->Entries);
-  // set each entry to not present
-  // unsigned int i = 0;
-  // for(i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i)
-  // {
-  pageDirectory->Entries[virtualPage] =
-      (physicalPage * 1024 * 1024 * 4); // | (1 << 3) | (1 << 7);
-  // attribute: supervisor level, read/write, not present.
-  // pageDirectory->Entries[i] = 0;
-  // pageDirectory->Entries[i] |= 1;
-  pageDirectory->Entries[virtualPage] |= 1 << 0;
-  pageDirectory->Entries[virtualPage] |= 1 << 1;
-  pageDirectory->Entries[virtualPage] |= 1 << 2;
-  pageDirectory->Entries[virtualPage] |= 1 << 7;
-  // Debug("%u %u\n", pageDirectory->Entries[i], i);
-  // }
 
-  // for(i = 0; i < 8; ++i) {
+  pageDirectory->Entries[virtualPage] = (physicalPage * 1024 * 1024 * 4);
+  pageDirectory->Entries[virtualPage] |= PDE_PRESENT;
+  pageDirectory->Entries[virtualPage] |= PDE_WRITABLE;
+  pageDirectory->Entries[virtualPage] |= PDE_SUPERVISOR;
+  pageDirectory->Entries[virtualPage] |= PDE_4MB_PAGES;
+
   MMMapPageToProcess(pageDirectory, virtualPage, processId);
 
-  kernelPageDirectory->Entries[physicalPage] =
-      (physicalPage * 1024 * 1024 * 4); // | (1 << 3) | (1 << 7);
-  // attribute: supervisor level, read/write, not present.
-  // pageDirectory->Entries[i] = 0;
-  // pageDirectory->Entries[i] |= 1;
-  kernelPageDirectory->Entries[physicalPage] |= 1 << 0;
-  kernelPageDirectory->Entries[physicalPage] |= 1 << 1;
-  kernelPageDirectory->Entries[physicalPage] |= 1 << 2;
-  kernelPageDirectory->Entries[physicalPage] |= 1 << 7;
+  kernelPageDirectory->Entries[physicalPage] = (physicalPage * 1024 * 1024 * 4);
+  kernelPageDirectory->Entries[physicalPage] |= PDE_PRESENT;
+  kernelPageDirectory->Entries[physicalPage] |= PDE_WRITABLE;
+  kernelPageDirectory->Entries[physicalPage] |= PDE_SUPERVISOR;
+  kernelPageDirectory->Entries[physicalPage] |= PDE_4MB_PAGES;
   MMMapPageToProcess(kernelPageDirectory, physicalPage, 0);
-  //}
 }
-// int count = 0
+
 void MMInitializePageDirectory(PageDirectory* pageDirectory) {
   Debug("Initializing page directory %d %d\n", (unsigned int)pageDirectory,
         pageDirectory->Entries);
-  // set each entry to not present
-  unsigned int i = 0;
-  for (i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i) {
-    pageDirectory->Entries[i] = (i * 1024 * 1024 * 4); // | (1 << 3) | (1 << 7);
-    // attribute: supervisor level, read/write, not present.
-    // pageDirectory->Entries[i] = 0;
-    // pageDirectory->Entries[i] |= 1;
-    // pageDirectory->Entries[i] |= 1 << 0;
-    pageDirectory->Entries[i] |= 1 << 1;
-    pageDirectory->Entries[i] |= 1 << 2;
-    pageDirectory->Entries[i] |= 1 << 7;
+  for (int i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i) {
+    pageDirectory->Entries[i] = (i * 1024 * 1024 * 4);
+    pageDirectory->Entries[i] |= PDE_WRITABLE;
+    pageDirectory->Entries[i] |= PDE_SUPERVISOR;
+    pageDirectory->Entries[i] |= PDE_4MB_PAGES;
 
     MMMapPageToProcess(pageDirectory, i, 0);
 
     // Map first 16 * 4MB pages to kernel space
     if (i < 16) {
-      // Mark as present
-      pageDirectory->Entries[i] |= 1 << 0;
+      pageDirectory->Entries[i] |= PDE_PRESENT;
       MMMapPageToProcess(kernelPageDirectory, i, 0);
     }
-    // Debug("%u %u\n", pageDirectory->Entries[i], i);
   }
-
-  // for(i = 0; i <= 11; ++i) {
-  //   MMMapPageToProcess(pageDirectory, i, 1);
-  // }
-  // Map all 16 * 4mb kernel pages to the process
-  //     for(int i = 0; i < 16; ++i) {
-  //   MMMapPageToProcess(pageDirectory, i, 0);
-  // }
 }
 
 void MMInitializePageTables(PageDirectory* pageDirectory) {
@@ -180,8 +142,6 @@ void MMInitializePageTables(PageDirectory* pageDirectory) {
   for (int pd = 0; pd < NUM_PAGE_DIRECTORY_ENTRIES; ++pd) {
     for (i = 0; i < NUM_PAGE_TABLE_ENTRIES; ++i) {
       pageTable[i] = ((1024 * 1024 * 4) * pd + (i * 0x1000)) | 3;
-      // Debug("PT %d %d %d\n", i, pd, pageTable[i]);
-      // address += NUM_PAGE_TABLE_ENTRIES * sizeof(int);
     }
 
     pageDirectory->Entries[pd] = (unsigned int)pageTable;
@@ -204,24 +164,13 @@ void MMSetPageDirectory(PageDirectory* pageDirectory) {
 }
 
 void MMEnablePaging(PageDirectory* pageDirectory) {
-  // Debug("Enabling large pages\n");
-
   // Enable pse for 4mb pages
-
-  // asm volatile("movl %%cr4, %%eax");
-  // asm volatile("or eax, 0x00000010");
-  // asm volatile("movl cr4, eax");
-  // mov eax, cr4
-  // or eax, 0x00000010
-  // mov cr4, eax
-
   unsigned int cr4;
   asm volatile("mov %%cr4, %0" : "=b"(cr4));
   cr4 |= 0x00000010;
   asm volatile("mov %0, %%cr4" ::"b"(cr4));
 
   MMSetPageDirectory(pageDirectory);
-  // asm volatile("mov %0, %%cr3":: "b"(pageDirectory));
 
   Debug("Enabling paging\n");
   // reads cr0, switches the "paging enable" bit, and writes it back.
@@ -267,7 +216,6 @@ void MMPageFaultHandler(Registers* registers) {
       MMMapPageToProcess(p->PageDirectory, page, 1);
       // MMMapPageToProcess(kernelPageDirectory, page, 1);
       // asm volatile("mov %0, %%cr3":: "b"(&p->PageDirectory));
-
     } else {
       Debug("Mapping for kernel page directory %u\n", kernelPageDirectory);
       MMMapPageToProcess(kernelPageDirectory, page, 1);
@@ -301,13 +249,4 @@ void MMInitializePaging() {
   // Available memory starts at kernel end + size of page directory and page
   // tables
   BaseMallocAddress = (unsigned int)kernelPageDirectory + (4096 * 1024) + 1024;
-  // Debug("%u %u\n", BaseMallocAddress, kernelPageDirectory);
-  // for (i = 0; i < 1024; ++i) {
-  //   const unsigned int z = KMalloc(1024 * i);
-  //   Debug("Allocated %u bytes at %u", 1024 * i, z);
-  // }
-  // while(1) {}
-  // int* x= (int*)989999999;
-  // *x = 5;
-  // i = *((unsigned int*)pageDirectory + 0x5000);
 }
