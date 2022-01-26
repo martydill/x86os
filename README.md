@@ -34,20 +34,20 @@ It is primarily designed to be run using VirtualBox.
 Development
 ===========
 
- ## Prerequisites:
-  - Mac OS X (it might work on other platforms but I haven't tried it)
-  - GCC
-  - NASM
-  - LLVM (we use ldd, the LLVM linker)
-  - VirtualBox (not strictly required but it's what I use)
 
 ### Building and Running
-- To build: 
-	 - `make`
-	 - This will build the source tree and produce a bootable floppy image at `./floppy.img`
+The build environment is dockerized:
+- `make docker-init`
+	 - This will build the base docker image
+- `make docker-build`
+	 - This will compile x86os and produce a bootable floppy image in the root directory called `./floppy.img`
+- `make run-qemu`
+	- Launches x86os in QEMU using the floppy image. Requires `qemu-system-i386`.
+- `make run-virtualbox`
+	- Launches x86os in VirtualBox. Requires VirtualBox and a VirtualBox VM called `x86os`.
 
-- To run:
-  
-   - Create a VirtualBox VM named `x86os`. Point it to that floppy image. Point the serial port to a file (I use `serial.txt`) for easier debugging
-   - Run `make run`. This will start virtualbox and launch x86os.
-   - Tail the serial port file with `tail -f serial.txt` for extra log output
+If you don't want to use the dockerized version you'll need these tools installed:
+ - GCC
+ - NASM
+ - A version of LD that supports linker scripts, such as LLVM's ldd. The default ld in OS X does not support them.
+ - mtools for manipulating the floppy image
