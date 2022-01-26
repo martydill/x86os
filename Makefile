@@ -65,5 +65,3 @@ run-virtualbox:
 	vboxmanage controlvm x86os poweroff | true
 	sleep 1
 	vboxmanage startvm x86os
-	sleep 1 
-	vboxmanage controlvm x86os keyboardputscancode 1c 9c
