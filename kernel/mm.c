@@ -13,15 +13,13 @@ unsigned int BaseMallocAddress;
 // 4MB page -> Process ID map
 WORD PhysicalMemoryToProcessMap[NUM_PAGE_DIRECTORY_ENTRIES];
 PageDirectory* CurrentPageDirectory = NULL;
+PageDirectory* kernelPageDirectory;
+
+extern char _kernelEndAddress[];
 
 void* KMallocWithTag(unsigned int numBytes, char* tag) {
   void* pointer = NULL;
   Assert(tag != NULL);
-
-  if (counter == 0) {
-    Debug("Setting counter to %d\n", BaseMallocAddress);
-    counter = BaseMallocAddress;
-  }
 
   pointer = (void*)counter;
   Debug("Allocated %u bytes at %u\n", numBytes, pointer);
@@ -34,11 +32,6 @@ void* KMallocWithTag(unsigned int numBytes, char* tag) {
 void* KMallocWithTagAligned(unsigned int numBytes, char* tag, int alignTo) {
   void* pointer = NULL;
   Assert(tag != NULL);
-
-  if (counter == 0) {
-    Debug("Setting counter to %d\n", BaseMallocAddress);
-    counter = BaseMallocAddress;
-  }
 
   pointer = (void*)counter;
 
@@ -68,12 +61,6 @@ void KFree(void* pointer) {
 
   return;
 }
-
-extern char _kernelEndAddress[];
-
-extern char _physical_load_addr[];
-
-PageDirectory* kernelPageDirectory;
 
 STATUS MMMapPageToProcess(PageDirectory* pd, WORD page, WORD process) {
 
@@ -229,7 +216,6 @@ void MMInstallPageFaultHandler() {
 
 void MMInitializePaging() {
   int i;
-  Debug("Addr: %u\n", _physical_load_addr);
   Debug("Initializing page directory\r\n");
   Debug("End: %d\r\n", (unsigned int)_kernelEndAddress);
   kernelPageDirectory =
@@ -249,4 +235,5 @@ void MMInitializePaging() {
   // Available memory starts at kernel end + size of page directory and page
   // tables
   BaseMallocAddress = (unsigned int)kernelPageDirectory + (4096 * 1024) + 1024;
+  counter = BaseMallocAddress;
 }
