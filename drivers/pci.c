@@ -13,24 +13,6 @@
 
 char PCI_VENDOR_NAMES[65535][32];
 
-typedef struct PciDevice_S {
-  WORD vendorId;
-  WORD deviceId;
-
-  WORD command;
-  WORD status;
-
-  BYTE revisionId;
-  BYTE progInterface;
-  BYTE subclass;
-  BYTE classCode;
-
-  BYTE cacheLineSize;
-  BYTE latencyTimer;
-  BYTE headerType;
-  BYTE bist;
-} PciDevice;
-
 Device pciDevice;
 
 DWORD PciReadConfigByte(BYTE bus, BYTE device, BYTE function, BYTE reg) {
@@ -71,6 +53,8 @@ char* PciGetVendor(WORD vendorId) {
     return "InnoTek Systemberatung GmbH";
   case 0x1022:
     return "Advanced Micro Devices, Inc. ";
+  case 0x10ec:
+    return "Realtek Semiconductor Co., Ltd.";
   default:
     return "Unknown";
   }
@@ -78,6 +62,14 @@ char* PciGetVendor(WORD vendorId) {
 
 char* PciGetDevice(WORD vendorId, WORD deviceId) {
   switch (vendorId) {
+  case 0x10ec:
+    switch (deviceId) {
+    case 0x8139:
+      return "RTL-8100/8101L/8139 PCI Fast Ethernet Adapter";
+    default:
+      return "Unknown";
+    }
+
   case 0x8086:
     switch (deviceId) {
     case 0x100E:
@@ -88,6 +80,7 @@ char* PciGetDevice(WORD vendorId, WORD deviceId) {
       return "82371SB PIIX3 ISA";
     case 0x7113:
       return "82371AB/EB/MB PIIX4 ACPI";
+
     default:
       return "Unknown";
     }
@@ -116,6 +109,7 @@ char* PciGetDevice(WORD vendorId, WORD deviceId) {
 }
 
 const WORD PCI_INVALID_VENDOR = 0xFFFF;
+extern STATUS Rtl8139Init(PciDevice* pciDevice);
 
 /* Initialize pci device */
 STATUS PciInit(void) {
@@ -139,6 +133,9 @@ STATUS PciInit(void) {
       KPrint("%s %d, %s\n", PciGetVendor(dev.vendorId), dev.deviceId,
              PciGetDevice(dev.vendorId, dev.deviceId),
              PciGetClass(dev.classCode));
+      if (dev.deviceId == 0x8139) {
+        Rtl8139Init(&dev);
+      }
     }
   }
   return S_OK;
