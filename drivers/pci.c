@@ -26,6 +26,19 @@ DWORD PciReadConfigByte(BYTE bus, BYTE device, BYTE function, BYTE reg) {
   return result;
 }
 
+DWORD PciWriteConfigDword(BYTE bus, BYTE device, BYTE function, BYTE reg,
+                          DWORD value) {
+  DWORD busAddress = bus << 16;
+  DWORD deviceAddress = device << 11;
+  DWORD functionAddress = function << 8;
+  DWORD rawAddress =
+      busAddress | deviceAddress | functionAddress | 0x80000000 | (reg << 2);
+  IoWritePortDword(0xCF8, rawAddress);
+  IoWritePortDword(0xCFC, value);
+  DWORD result = IoReadPortDword(0xCFC);
+  return result;
+}
+
 // https://pci-ids.ucw.cz/read/PD/
 char* PciGetClass(BYTE class) {
   switch (class) {
@@ -120,20 +133,29 @@ STATUS PciInit(void) {
 
   for (BYTE bus = 0; bus < 0xFF; ++bus) {
     for (BYTE device = 0; device < 0x16; ++device) {
-      DWORD rawBytes[4];
-      for (int i = 0; i < 4; ++i) {
+      DWORD rawBytes[5];
+      for (int i = 0; i < 5; ++i) {
         DWORD result = PciReadConfigByte(bus, device, 0, i);
+
+        if (i == 1) {
+          PciWriteConfigDword(bus, device, 0, i, result | 0x04);
+        }
+
         rawBytes[i] = result;
       }
       PciDevice dev;
-      Memcopy((BYTE*)&dev, (BYTE*)&rawBytes, sizeof(PciDevice));
+      Memset(&dev, 0, sizeof(PciDevice));
+
+      Memcopy((BYTE*)&dev, (BYTE*)&rawBytes, 5 * sizeof(DWORD));
       if (dev.vendorId == PCI_INVALID_VENDOR)
         continue;
+      dev.bar0 = dev.bar0 & 0xFFFFFFF0;
 
       KPrint("%s %d, %s\n", PciGetVendor(dev.vendorId), dev.deviceId,
              PciGetDevice(dev.vendorId, dev.deviceId),
              PciGetClass(dev.classCode));
       if (dev.deviceId == 0x8139) {
+        KPrint("%u\n", dev.command & (1 << 2));
         Rtl8139Init(&dev);
       }
     }
