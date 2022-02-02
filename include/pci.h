@@ -24,10 +24,14 @@ typedef struct PciDevice_S {
   DWORD bar3;
   DWORD bar4;
   DWORD bar5;
+  // Not actually part of the PCI spec, just extra accounting fields
+  DWORD bus;
+  DWORD device;
 } PciDevice;
 
 DWORD PciReadConfigByte(BYTE bus, BYTE device, BYTE function, BYTE reg);
 STATUS PciInit(void);
 STATUS PciDestroy(void);
+STATUS PciEnableBusMaster(PciDevice* device);
 
 #endif

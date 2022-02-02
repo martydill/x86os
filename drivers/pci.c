@@ -11,6 +11,7 @@
 #include <console.h>
 #include <device.h>
 
+const WORD PCI_INVALID_VENDOR = 0xFFFF;
 char PCI_VENDOR_NAMES[65535][32];
 
 Device pciDevice;
@@ -121,8 +122,17 @@ char* PciGetDevice(WORD vendorId, WORD deviceId) {
   }
 }
 
-const WORD PCI_INVALID_VENDOR = 0xFFFF;
 extern STATUS Rtl8139Init(PciDevice* pciDevice);
+
+// Enable bus mastering for the given device by setting bit 2 in the command
+// register
+STATUS PciEnableBusMaster(PciDevice* pci) {
+  Assert(pci != NULL);
+
+  pci->command = pci->command | (1 << 2);
+  PciWriteConfigDword(pci->bus, pci->device, 0, 1, pci->command);
+  return S_OK;
+}
 
 /* Initialize pci device */
 STATUS PciInit(void) {
@@ -136,26 +146,30 @@ STATUS PciInit(void) {
       DWORD rawBytes[5];
       for (int i = 0; i < 5; ++i) {
         DWORD result = PciReadConfigByte(bus, device, 0, i);
-
-        if (i == 1) {
-          PciWriteConfigDword(bus, device, 0, i, result | 0x04);
-        }
-
         rawBytes[i] = result;
       }
       PciDevice dev;
       Memset(&dev, 0, sizeof(PciDevice));
-
       Memcopy((BYTE*)&dev, (BYTE*)&rawBytes, 5 * sizeof(DWORD));
+
       if (dev.vendorId == PCI_INVALID_VENDOR)
         continue;
+
+      dev.bus = bus;
+      dev.device = device;
       dev.bar0 = dev.bar0 & 0xFFFFFFF0;
+      dev.bar1 = dev.bar1 & 0xFFFFFFF0;
+      dev.bar2 = dev.bar2 & 0xFFFFFFF0;
+      dev.bar3 = dev.bar3 & 0xFFFFFFF0;
+      dev.bar4 = dev.bar4 & 0xFFFFFFF0;
+      dev.bar5 = dev.bar5 & 0xFFFFFFF0;
 
       KPrint("%s %d, %s\n", PciGetVendor(dev.vendorId), dev.deviceId,
              PciGetDevice(dev.vendorId, dev.deviceId),
              PciGetClass(dev.classCode));
+
       if (dev.deviceId == 0x8139) {
-        KPrint("%u\n", dev.command & (1 << 2));
+        PciEnableBusMaster(&dev);
         Rtl8139Init(&dev);
       }
     }
