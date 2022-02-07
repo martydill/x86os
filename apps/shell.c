@@ -5,6 +5,11 @@ int builtin_cd(const char* destination) {
   return err;
 }
 
+int builtin_pwd(const char* workingDirectory) {
+  KPrint(workingDirectory);
+  return 0;
+}
+
 int main(int argc, char* argv[]) {
   char workingDirectory[255];
 
@@ -45,6 +50,11 @@ int main(int argc, char* argv[]) {
       // Check for builtins
       if (!strcmp(binaryName, "cd")) {
         builtin_cd(p);
+        continue;
+      }
+
+      if (!strcmp(binaryName, "pwd")) {
+        builtin_pwd(workingDirectory);
         continue;
       }
 
