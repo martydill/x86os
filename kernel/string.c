@@ -342,3 +342,14 @@ int atoi(const char* str) {
 
   return value * sign;
 }
+
+void* memset(void* s, int c, size_t n) {
+  int i = 0;
+
+  /* FIXME: Optimize this */
+  for (i = 0; i < n; ++i) {
+    ((char*)s)[i] = c;
+  }
+
+  return s;
+}
