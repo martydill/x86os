@@ -59,7 +59,7 @@ docker-build:
 	docker run -w /code -v `pwd`:/code -it x86os make
 
 run-qemu:
-	 qemu-system-i386 -fda ./floppy.img -netdev user,id=mynet0 -device rtl8139,netdev=mynet0
+	 qemu-system-i386 -fda ./floppy.img -netdev user,id=mynet0 -device rtl8139,netdev=mynet0 -serial stdio
 
 run-virtualbox:
 	vboxmanage controlvm x86os poweroff | true
