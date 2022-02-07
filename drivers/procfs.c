@@ -42,10 +42,9 @@ STATUS ProcFSOpen(char* name, int numBytes) {
   return S_OK;
 }
 
-STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
-  dir->Count = 0;
-  dir->Current = 0;
-
+// Opens the procfs root dir. Needs to fill in the DirImpl with a bunch
+// of entries corresponding to process ids.
+STATUS ProcFSOpenRootDir(char* name, struct _DirImpl* dir) {
   ProcessList* processList = ProcessGetProcesses();
   while (processList != NULL && processList->Process != NULL) {
     struct dirent* currentEntry = &dir->dirents[dir->Count];
@@ -62,10 +61,42 @@ STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
   return S_OK;
 }
 
+// Opens a procfs child process dir. Needs to fill in the DirImpl with a bunch
+// of entries corresponding to the individual process fields.
+STATUS ProcFSOpenChildDir(char* name, struct _DirImpl* dir) {
+  // Skip past /proc/ part
+  name = name + strlen("/proc/");
+  ProcessId processId = (ProcessId)atoi(name);
+  ProcessList* processList = ProcessGetProcessListNodeById(processId);
+  if (processList == NULL || processList->Process == NULL) {
+    return S_FAIL;
+  }
+
+  strcpy(dir->dirents[0].d_name, PROC_FIELD_CMDLINE,
+         strlen(PROC_FIELD_CMDLINE) + 1);
+  dir->dirents[0].st_mode = S_IFREG;
+  dir->Count = 1;
+
+  return S_OK;
+}
+
+STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
+  dir->Count = 0;
+  dir->Current = 0;
+  Debug("ProcFSOpenDir: '%s'\n", name);
+  // Root directory - fill with processes
+  if (!strcmp(name, "/proc")) {
+    return ProcFSOpenRootDir(name, dir);
+  } else {
+    return ProcFSOpenChildDir(name, dir);
+  }
+}
+
 STATUS ProcFSStat(char* name, struct stat* statbuf) {
   // TODO finish implementing this
   ProcessList* processList = ProcessGetProcesses();
   while (processList != NULL && processList->Process != NULL) {
+    // TODO set mode depending on whether we're looking in /proc or /proc/<id>
     statbuf->st_mode = S_IFDIR;
     processList = processList->Next;
   }
