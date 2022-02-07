@@ -1,6 +1,12 @@
 #include "kernel_shared.h"
 
 int builtin_cd(const char* destination) {
+  // Check for cd command by itself
+  // TODO should this be at the syscall level?
+  if (strlen(destination) == 0) {
+    destination = "/";
+  }
+
   int err = chdir(destination);
   return err;
 }
@@ -26,7 +32,7 @@ int main(int argc, char* argv[]) {
     KPrint(" $ ");
 
     char buf[255];
-
+    memset(buf, 0, sizeof(buf));
     int runInBackground = 0;
     int bytes = read(0, buf, 255);
     if (bytes > 0) {

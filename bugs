@@ -1,4 +1,5 @@
-can't cd back to previous dir or cd ..
+can't cd ..
 proc not showing up in ls
 stat failed for some ls calls
 crash after calling ps a few times
+can't cat file in usr
