@@ -1,5 +1,6 @@
 #include "kernel_shared.h"
 #include "kernel.h"
+#include "path.h"
 
 void Test_strlen() {
   char* p;
@@ -153,3 +154,13 @@ void Test_String() {
   Test_atoi();
   return;
 }
+
+void TestPathSkipFirstComponent() {
+  Assert(PathSkipFirstComponent(NULL) == NULL);
+  Assert(strcmp(PathSkipFirstComponent("/foo/bar"), "/bar") == 0);
+  Assert(strcmp(PathSkipFirstComponent("/foo/bar/hello.txt"),
+                "/bar/hello.txt") == 0);
+  Assert(PathSkipFirstComponent("hello.txt") == NULL);
+}
+
+void Test_Path() { TestPathSkipFirstComponent(); }

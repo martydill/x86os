@@ -114,4 +114,6 @@ ProcessList* ProcessGetProcessListNodeById(ProcessId id);
 
 Process* ProcessGetActiveProcess();
 
+const char* ProcessStatusToString(Process* process);
+
 #endif

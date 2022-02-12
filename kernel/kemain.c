@@ -169,6 +169,7 @@ void KeMain(MultibootInfo* bootInfo) {
 
   InstallInterruptHandler(0x80, KeSysCallHandler);
   Test_String();
+  Test_Path();
 
   KeDisableInterrupts();
   KPrint("Initializing VFS\n");

@@ -7,6 +7,11 @@ ProcessId currentProcess = 0;
 ProcessId nextId = 1;
 BYTE processCount = 0;
 
+// Must match order of defines in process.h
+const char* const ProcessStateNames[] = {
+    "pending",      "waiting", "running", "terminating", "foreground_blocked",
+    "wait_blocked", "sleeping"};
+
 void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage,
            ProcessId processId);
 
@@ -520,4 +525,10 @@ STATUS ProcessSleep(Process* p, unsigned int seconds) {
   p->State = STATE_SLEEPING;
   p->SleepBlock.SleepUntilTicks = TimerGetTicks() + seconds * 100;
   return S_OK;
+}
+
+const char* ProcessStatusToString(Process* process) {
+  Assert(process != NULL);
+
+  return ProcessStateNames[process->State];
 }
