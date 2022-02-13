@@ -121,13 +121,16 @@ STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
 }
 
 STATUS ProcFSStat(char* name, struct stat* statbuf) {
-  // TODO finish implementing this
-  ProcessList* processList = ProcessGetProcesses();
-  while (processList != NULL && processList->Process != NULL) {
-    // TODO set mode depending on whether we're looking in /proc or /proc/<id>
+  int depth = PathGetDepth(name);
+  if (depth == 2) {
+    // depth = 2, we're fetching the list of processes, so
+    // each record is a directory
     statbuf->st_mode = S_IFDIR;
-    processList = processList->Next;
+  } else {
+    // Otherwise, it's a file
+    statbuf->st_mode = S_IFREG;
   }
+
   return S_OK;
 }
 

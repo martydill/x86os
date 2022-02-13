@@ -30,3 +30,21 @@ char* PathSkipFirstComponent(const char* path) {
 
   return path;
 }
+
+// Returns how many levels there are in the path
+// e.g. /foo/bar/baz.txt returns 3
+int PathGetDepth(const char* path) {
+  int level = 0;
+
+  if (path == NULL) {
+    return level;
+  }
+
+  while (*path != 0) {
+    if (*path == '/') {
+      level = level + 1;
+    }
+    path++;
+  }
+  return level;
+}

@@ -163,4 +163,17 @@ void TestPathSkipFirstComponent() {
   Assert(PathSkipFirstComponent("hello.txt") == NULL);
 }
 
-void Test_Path() { TestPathSkipFirstComponent(); }
+void TestPathGetDepth() {
+  Assert(PathGetDepth(NULL) == 0);
+  Assert(PathGetDepth("/") == 1);
+  Assert(PathGetDepth("/foo") == 1);
+  Assert(PathGetDepth("/foo/bar") == 2);
+  Assert(PathGetDepth("/foo/bar.txt") == 2);
+  Assert(PathGetDepth("/foo/bar/baz") == 3);
+  Assert(PathGetDepth("/foo/bar/baz.txt") == 3);
+}
+
+void Test_Path() {
+  TestPathSkipFirstComponent();
+  TestPathGetDepth();
+}

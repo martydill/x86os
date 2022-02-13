@@ -5,5 +5,6 @@
 #include <kernel.h>
 
 char* PathSkipFirstComponent(const char* path);
+char* PathGetFirstComponent(const char* path);
 
 #endif
