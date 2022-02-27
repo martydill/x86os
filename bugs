@@ -1,5 +1,6 @@
 can't cd ..
-proc not showing up in ls
+can't do ls proc, only ls /proc
 stat failed for some ls calls
 crash after calling ps a few times
 can't cat file in usr
+can cd to directories that don't exist

@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         }
         write(1, "\n", 1);
       } else {
-        write(1, "Stat failed\n", 20);
+        // write(1, "Stat failed\n", 20);
       }
     }
   } while (d != NULL);

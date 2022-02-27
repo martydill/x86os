@@ -122,7 +122,11 @@ STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
 
 STATUS ProcFSStat(char* name, struct stat* statbuf) {
   int depth = PathGetDepth(name);
-  if (depth == 2) {
+  if (depth == 1) {
+    // depth = 1, we're fetching the root /proc dir, so
+    // it's a directory
+    statbuf->st_mode = S_IFDIR;
+  } else if (depth == 2) {
     // depth = 2, we're fetching the list of processes, so
     // each record is a directory
     statbuf->st_mode = S_IFDIR;

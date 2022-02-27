@@ -145,16 +145,17 @@ int SyscallOpendir(Registers* registers) {
       (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
   Debug("SYSCALL_OPENDIR %s\n", dirName);
 
-  // TODO get device, read from device depending on what dir we are accessing
   Device* device = FSDeviceForPath(dirName);
-  Debug("****************%s\n", device->Name);
-  Debug("Done find device\n");
   Process* active = ProcessGetActiveProcess();
+
+  // Step 1 - find any actual files in the device itself
   struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
   device->OpenDir(dirName, dir);
-  // FloppyReadDirectory(dirName, dir);
+
+  // Step 2 - find any mounts at the same level
+  FSAddMountsToDir(dirName, dir);
+
   return (DWORD)dir;
-  // Debug("Returning %u %d %d\n", registers->eax, dir->Count, dir->Current);
 }
 
 int SyscallReaddir(Registers* registers) { return registers->eax; }

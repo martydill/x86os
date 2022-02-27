@@ -165,7 +165,7 @@ void KeMain(MultibootInfo* bootInfo) {
 
   KPrint("Initializing virtual devices...\n");
   ProcFSInit();
-  NullDeviceInit();
+  // NullDeviceInit();
 
   InstallInterruptHandler(0x80, KeSysCallHandler);
   Test_String();
