@@ -8,6 +8,9 @@ int builtin_cd(const char* destination) {
   }
 
   int err = chdir(destination);
+  if (err != 0) {
+    KPrint("Could not change directory\n");
+  }
   return err;
 }
 
