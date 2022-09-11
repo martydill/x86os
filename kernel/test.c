@@ -173,7 +173,30 @@ void TestPathGetDepth() {
   Assert(PathGetDepth("/foo/bar/baz.txt") == 3);
 }
 
+void TestPathCombine() {
+  char buf[255];
+
+  PathCombine("/", "foo", &buf);
+  Assert(strcmp(buf, "/foo") == 0);
+
+  PathCombine("/foo", "bar", &buf);
+  Assert(strcmp(buf, "/foo/bar") == 0);
+
+  PathCombine("/foo", "/bar", &buf);
+  Assert(strcmp(buf, "/bar") == 0);
+
+  PathCombine("/foo/bar", ".", &buf);
+  Assert(strcmp(buf, "/foo/bar") == 0);
+
+  PathCombine("/foo/bar", "..", &buf);
+  Assert(strcmp(buf, "/foo") == 0);
+
+  PathCombine("/usr", "..", &buf);
+  Assert(strcmp(buf, "/") == 0);
+}
+
 void Test_Path() {
   TestPathSkipFirstComponent();
   TestPathGetDepth();
+  TestPathCombine();
 }

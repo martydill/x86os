@@ -46,26 +46,35 @@ int SyscallExit(Registers* registers) {
 int SyscallMount(const char* mountPoint, const char* destination) { return 0; }
 
 int SyscallOpen(Registers* registers) {
-  const char* pathname = (const char*)registers->ebx;
+  const char* filePath = (const char*)registers->ebx;
   int flags = (int)registers->ecx;
+
+  char buf[255];
+  Process* active = ProcessGetActiveProcess();
+  if (active == NULL) {
+    Debug("Could not fetch active process");
+    return S_FAIL;
+  }
+
+  PathCombine(&active->Environment.WorkingDirectory, filePath, &buf);
 
   ProcessId processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
-    Device* device = FSDeviceForPath(pathname);
+    Device* device = FSDeviceForPath(buf);
     if (device == NULL) {
-      Debug("Could not find device for path %s\n", pathname);
+      Debug("Could not find device for path %s\n", buf);
       return S_FAIL;
     }
 
     // TODO find better way to check for existence
     int fileSize;
-    BYTE* fileData = (BYTE*)device->Read(pathname, &fileSize);
+    BYTE* fileData = (BYTE*)device->Read(buf, &fileSize);
     if (fileData == NULL) {
-      Debug("Could not find file '%s%\n", pathname);
+      Debug("Could not find file '%s%\n", buf);
       return S_FAIL;
     }
 
-    int fd = ProcessOpenFile(processId, pathname, fileData, fileSize);
+    int fd = ProcessOpenFile(processId, buf, fileData, fileSize);
     Debug("Found fd %d with size %d\n", fd, fileSize);
     return fd;
   } else {
@@ -236,18 +245,48 @@ int SyscallStat(Registers* registers) {
 }
 
 int SyscallChdir(Registers* registers) {
-  Debug("SYSCALL_CHDIR");
+  Debug("SYSCALL_CHDIR\n");
   // TODO fix issue here and in other places where params passed to main are
   // kernel addresses not user addresses. Should require a
   // MMVIrtualAddressToPhysicalAddress here.
-  char* dirName = (char*)registers->ebx;
+
   Process* active = ProcessGetActiveProcess();
-  Debug("Changing to %s\n", dirName);
-  // TODO validate this
-  strcpy(&active->Environment.WorkingDirectory, dirName,
+
+  char currentDir[255];
+  char destPath[255];
+
+  char* dirName = (char*)registers->ebx;
+
+  strcpy(currentDir, &active->Environment.WorkingDirectory,
+         sizeof(active->Environment.WorkingDirectory));
+  Debug("CURRENT DIR: '%s', chainging to '%s'\n", currentDir, dirName);
+
+  PathCombine(currentDir, dirName, destPath);
+
+  Device* device = FSDeviceForPath(destPath);
+  if (device == NULL) {
+    Debug("Could not find device for %s\n", destPath);
+    return -1;
+  }
+
+  // We can always change to root directory, only stat if it's a non root
+  // directory
+  if (strcmp(destPath, "/")) {
+    struct stat statbuf;
+    STATUS result = device->Stat(destPath, &statbuf);
+    // If stat fails, let's assume directory does not exist
+    // If it succeeds, let's assume it's safe to change to
+    if (result != S_OK) {
+      Debug("Could not stat %s\n", destPath);
+      return -1;
+    }
+  }
+
+  Debug("Changing to %s\n", destPath);
+  strcpy(&active->Environment.WorkingDirectory, destPath,
          sizeof(active->Environment.WorkingDirectory));
   Debug("WD is now %s\n", active->Environment.WorkingDirectory);
-  return 1; // TODO return value on failure
+  return 0;
 }
 
 int SyscallGetcwd(Registers* registers) {

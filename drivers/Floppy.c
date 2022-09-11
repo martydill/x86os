@@ -388,6 +388,12 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
   char currentDirectory[256];
   strcpy(currentDirectory, "/", 2);
 
+  // Workaround for path lookups, need to fix later...
+  // Turn /usr into usr
+  if (strlen(name) > 1 && name[0] == '/') {
+    name++;
+  }
+
   if (dir != 0) {
     Debug("Reading sector\n");
     FloppyReadSector(dir, buf);
@@ -397,6 +403,7 @@ STATUS FloppyReadDirectory(char* name, struct _DirImpl* dirimpl) {
       Debug("Current directory is '%s'\n", currentDirectory);
       Debug("Current file is '%s' %d\n", e->name, e->attributes);
       Debug("Looking for directory '%s'\n", name);
+      // TODO checking usr, needs to match /usr
       // If this is the correct directory, start filling in entries
       if (!strcmp(currentDirectory, name)) {
         Debug("Found %s, count is %d\n", e->name, count);
@@ -494,6 +501,11 @@ char* FloppyReadFile(char* name, int* size) // todo get siz
       // KPrint("  %d B", e->size);
 
       // KPrint("\n");
+      // TODO properly handle child directories. This is a workaround
+      // to make things work in the root directory by skipping the /.
+      if (name[0] == '/') {
+        name++;
+      }
 
       if (!strcmp((const char*)e->name, name)) {
         Debug("Found cluster %d %s\n", e->firstClusterLow, name);
