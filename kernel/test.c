@@ -171,6 +171,10 @@ void TestPathGetDepth() {
   Assert(PathGetDepth("/foo/bar.txt") == 2);
   Assert(PathGetDepth("/foo/bar/baz") == 3);
   Assert(PathGetDepth("/foo/bar/baz.txt") == 3);
+
+  Assert(PathGetDepth("foo/bar/baz.txt") == 3);
+  Assert(PathGetDepth("bar/baz.txt") == 2);
+  Assert(PathGetDepth("baz.txt") == 1);
 }
 
 void TestPathCombine() {

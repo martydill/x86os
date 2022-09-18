@@ -92,6 +92,10 @@ int PathGetDepth(const char* path) {
     return level;
   }
 
+  if (*path != '/') {
+    level++;
+  }
+
   while (*path != 0) {
     if (*path == '/') {
       level = level + 1;

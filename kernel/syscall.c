@@ -154,15 +154,27 @@ int SyscallOpendir(Registers* registers) {
       (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
   Debug("SYSCALL_OPENDIR %s\n", dirName);
 
-  Device* device = FSDeviceForPath(dirName);
+  char buf[255];
   Process* active = ProcessGetActiveProcess();
+  if (active == NULL) {
+    Debug("Could not fetch active process");
+    return S_FAIL;
+  }
+
+  PathCombine(&active->Environment.WorkingDirectory, dirName, &buf);
+
+  Device* device = FSDeviceForPath(buf);
+  if (device == NULL) {
+    Debug("Could not find device for path '%s%'", buf);
+    return S_FAIL;
+  }
 
   // Step 1 - find any actual files in the device itself
   struct _DirImpl* dir = KMallocInProcess(active, sizeof(struct _DirImpl));
-  device->OpenDir(dirName, dir);
+  device->OpenDir(buf, dir);
 
   // Step 2 - find any mounts at the same level
-  FSAddMountsToDir(dirName, dir);
+  FSAddMountsToDir(buf, dir);
 
   return (DWORD)dir;
 }
@@ -217,7 +229,16 @@ int SyscallStat(Registers* registers) {
   Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, name,
         statbufPhysicalAddress);
 
-  Device* device = FSDeviceForPath(name);
+  char buf[255];
+  Process* active = ProcessGetActiveProcess();
+  if (active == NULL) {
+    Debug("Could not fetch active process");
+    return S_FAIL;
+  }
+
+  PathCombine(&active->Environment.WorkingDirectory, name, &buf);
+
+  Device* device = FSDeviceForPath(buf);
   Debug("****************%s\n", device->Name);
   Debug("Done find device\n");
 

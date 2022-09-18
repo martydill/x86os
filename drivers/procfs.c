@@ -92,10 +92,11 @@ STATUS ProcFSOpenRootDir(char* name, struct _DirImpl* dir) {
 // of entries corresponding to the individual process fields.
 STATUS ProcFSOpenChildDir(char* name, struct _DirImpl* dir) {
   // Skip past /proc/ part
-  name = name + strlen("/proc/");
-  ProcessId processId = (ProcessId)atoi(name);
+  char* processIdString = PathSkipFirstComponent(name) + 1;
+  ProcessId processId = (ProcessId)atoi(processIdString);
   ProcessList* processList = ProcessGetProcessListNodeById(processId);
   if (processList == NULL || processList->Process == NULL) {
+    Debug("Could not find process %d\n", processId);
     return S_FAIL;
   }
   for (int i = 0; i < sizeof(ProcFieldNames) / sizeof(const char*); ++i) {
@@ -113,7 +114,8 @@ STATUS ProcFSOpenDir(char* name, struct _DirImpl* dir) {
   dir->Current = 0;
   Debug("ProcFSOpenDir: '%s'\n", name);
   // Root directory - fill with processes
-  if (!strcmp(name, "/proc")) {
+  // TODO make this nicer
+  if (!strcmp(name, "/proc") || !strcmp(name, "proc")) {
     return ProcFSOpenRootDir(name, dir);
   } else {
     return ProcFSOpenChildDir(name, dir);
@@ -134,7 +136,8 @@ STATUS ProcFSStat(char* name, struct stat* statbuf) {
     // Otherwise, it's a file
     statbuf->st_mode = S_IFREG;
   }
-
+  Debug("Stat, path='%s', depth = %d, mode = %d\n", name, depth,
+        statbuf->st_mode);
   return S_OK;
 }
 
