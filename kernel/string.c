@@ -273,6 +273,13 @@ int isalpha(int c) {
   return 0;
 }
 
+int isdigit(int c) {
+  if (c >= '0' && c <= '9') {
+    return 1;
+  }
+  return 0;
+}
+
 int tolower(int c) {
   if (!isalpha(c)) {
     return c;

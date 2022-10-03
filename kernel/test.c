@@ -96,6 +96,20 @@ void Test_isalpha() {
   Assert(!isalpha(0));
 }
 
+void Test_isdigit() {
+  char* digits = "0123456789";
+  for (int i = 0; i < 10; ++i) {
+    Assert(isdigit(digits[i]));
+  }
+
+  Assert(!isdigit('a'));
+  Assert(!isdigit('$'));
+  Assert(!isdigit('.'));
+  Assert(!isdigit(NULL));
+  Assert(!isdigit(0));
+  Assert(!isdigit('z'));
+}
+
 void Test_tolower() {
   for (int i = 0; i < 26; ++i) {
     Assert(tolower(i + 'A') == i + 'a');
@@ -149,6 +163,7 @@ void Test_String() {
   Test_sprintf();
   Test_strstr();
   Test_isalpha();
+  Test_isdigit();
   Test_tolower();
   Test_strtok();
   Test_atoi();
