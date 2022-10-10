@@ -267,16 +267,11 @@ int SyscallStat(Registers* registers) {
 
 int SyscallChdir(Registers* registers) {
   Debug("SYSCALL_CHDIR\n");
-  // TODO fix issue here and in other places where params passed to main are
-  // kernel addresses not user addresses. Should require a
-  // MMVIrtualAddressToPhysicalAddress here.
-
   Process* active = ProcessGetActiveProcess();
 
   char currentDir[255];
   char destPath[255];
-
-  char* dirName = (char*)registers->ebx;
+  char* dirName = (char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
 
   strcpy(currentDir, &active->Environment.WorkingDirectory,
          sizeof(active->Environment.WorkingDirectory));
