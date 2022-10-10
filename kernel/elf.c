@@ -1,7 +1,6 @@
 #include <kernel.h>
 #include <elf.h>
 
-int count = 0;
 ProcessId ELFParseFile(BYTE* data, char* processName, char* commandLine,
                        BYTE priority) {
   if (data == NULL) {
@@ -14,11 +13,12 @@ ProcessId ELFParseFile(BYTE* data, char* processName, char* commandLine,
   Debug("Type: %d\n", header->e_type);
   Debug("Entry: %u\n", header->e_entry);
 
-  void* addr =
-      (void*)(1024 * 1024 * 64 + count * 1024 * 1024 * 4); // 1024 * 1024 * 8;
-  Debug("For physical address %u and data located at %c %c %c %c\n", addr,
-        data[0], data[1], data[2], data[3]);
-  count++;
+  // Where the process data will be located in physical memory
+  // TODO need to get this address from MM instead of hardcoding it
+
+  void* physicalAddressToLoadProcess = MMGetNextFreePageAddress();
+  Debug("For physical address %u and data located at %c %c %c %c\n",
+        physicalAddressToLoadProcess, data[0], data[1], data[2], data[3]);
   Debug("Section Headers: %u (%u bytes, offset %u)\n", header->e_shnum,
         header->e_shentsize, header->e_shoff);
   for (int i = 0; i < header->e_shnum; ++i) {
@@ -49,8 +49,9 @@ ProcessId ELFParseFile(BYTE* data, char* processName, char* commandLine,
           programHeader->p_offset, programHeader->p_memsz,
           programHeader->p_filesz);
     if (programHeader->p_type == 1) {
-      Debug("Loading %s at %u\n", commandLine, addr);
-      Memcopy(addr, data + programHeader->p_offset, programHeader->p_filesz);
+      Debug("Loading %s at %u\n", commandLine, physicalAddressToLoadProcess);
+      Memcopy(physicalAddressToLoadProcess, data + programHeader->p_offset,
+              programHeader->p_filesz);
     }
   }
 

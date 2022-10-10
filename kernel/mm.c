@@ -48,6 +48,25 @@ void* KMalloc(unsigned int numBytes) {
   return KMallocWithTag(numBytes, "BASE");
 }
 
+int MMGetNextFreePage() {
+  for (int i = 16; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i) {
+    if (PhysicalMemoryToProcessMap[i] < 1) {
+      Debug("MM: Next free page is %d %d\n", i, i * 4096 * 1024);
+      return i;
+    }
+  }
+}
+// Returns the physical adddress of the next free page
+DWORD MMGetNextFreePageAddress() {
+  for (int i = 16; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i) {
+    if (PhysicalMemoryToProcessMap[i] < 1) {
+      Debug("MM: Next free page is %d %d\n", i, i * 4096 * 1024);
+      return i * 4096 * 1024;
+    }
+  }
+  Assert(0);
+}
+
 void* KMallocInProcess(Process* p, unsigned int numBytes) {
   void* pointer = p->CurrentMemPtr;
   p->CurrentMemPtr += numBytes;
@@ -62,15 +81,40 @@ void KFree(void* pointer) {
   return;
 }
 
-STATUS MMMapPageToProcess(PageDirectory* pd, WORD page, WORD process) {
+STATUS MMAllocatePageToProcess(WORD page, WORD process) {
+  Assert(page < NUM_PAGE_DIRECTORY_ENTRIES);
+  Assert(process > 0);
 
+  Debug("MM: Assigned page %u to process %u\n", page, process);
+  PhysicalMemoryToProcessMap[page] = process;
+}
+
+int MMGetPageForProcess(WORD process) {
+  Assert(process > 0);
+
+  for (int i = 0; i < NUM_PAGE_DIRECTORY_ENTRIES; ++i) {
+    if (PhysicalMemoryToProcessMap[i] == process) {
+      return i;
+    }
+  }
+  Assert(0)
+}
+
+STATUS MMFreePage(WORD page) {
+  Assert(page > 16 && page < NUM_PAGE_DIRECTORY_ENTRIES);
+  Debug("MM: freed page %u\n", page);
+  PhysicalMemoryToProcessMap[page] = 0;
+  Memset(4096 * 1024 * 1024 * page, MEM_FILL_CHAR, 4096 * 1024 * 1024);
+}
+
+STATUS MMMapPageToProcess(PageDirectory* pd, WORD page, WORD process) {
   if (page >= NUM_PAGE_DIRECTORY_ENTRIES) {
     return S_FAIL;
   }
 
   // Keep track of what process owns it
-  PhysicalMemoryToProcessMap[page] = process;
-
+  // PhysicalMemoryToProcessMap[page] = process;
+  // Debug("MM: Page %d now belongs to %d\n", page, process);
   // Debug("Marking page %d as present for page directory %u and process %u\n",
   // page, pd, process); Mark as present
   pd->Entries[page] |= 1 << 0;

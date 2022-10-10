@@ -3,7 +3,9 @@
 #include <mm.h>
 #include <kernel_shared.h>
 
-ProcessId currentProcess = 0;
+// Stack starts at 64 MB + 8k
+#define VIRTUAL_STACK_ADDRESS (64 * 1024 * 1024 + 8 * 1024)
+
 ProcessId nextId = 1;
 BYTE processCount = 0;
 
@@ -15,8 +17,6 @@ const char* const ProcessStateNames[] = {
 void MMMap(PageDirectory* pageDirectory, int physicalPage, int virtualPage,
            ProcessId processId);
 
-// Process processes[MAX_PROCESSES];
-
 Process* foreground = NULL;
 ProcessList* processListStart = NULL;
 ProcessList* processListEnd = NULL;
@@ -24,27 +24,26 @@ Process* active = NULL;
 
 ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
                         char* commandLine) {
-  DWORD stackAddress = 64 * 1024 * 1024 + 8 * 1024;
-  // Memset(stackAddress - 1024*1024, 0, 1024*1024);
   Process* p = (Process*)KMalloc(sizeof(Process));
   Memset((BYTE*)p, 0, sizeof(Process));
   p->Id = nextId++;
   p->State = STATE_PENDING;
   p->Entry = (unsigned int)entryPoint;
   p->Priority = priority;
-  p->KernelStack = stackAddress;
-  p->PageDirectory = (PageDirectory*)KMallocWithTagAligned(
-      sizeof(PageDirectory), "BASE", 4096); // & 0xFFFFF000;
+  p->KernelStack = VIRTUAL_STACK_ADDRESS;
+  p->PageDirectory =
+      (PageDirectory*)KMallocWithTagAligned(sizeof(PageDirectory), "BASE",
+                                            4096); // & 0xFFFFF000;
   p->ParentId = active != NULL ? active->Id : 0;
-  Debug("Process id %d, , st: %u, memptr %u, calc %u\n", p->Id, p->KernelStack,
-        p->CurrentMemPtr,
-        stackAddress + 1024 * 1024 + (4 * 1024 * 1024 * (p->Id - 1)));
-  p->CurrentMemPtr =
-      (void*)((unsigned int)stackAddress + 1024 * 1024 +
-              (4 * 1024 * 1024 * (p->Id - 1))); // physical address
 
-  Debug("Process id %d, , st: %u, memptr %u\n", p->Id, p->KernelStack,
-        p->CurrentMemPtr);
+  int page = MMGetNextFreePage();
+
+  // Physical address of memory used for heap allocations
+  // TODO move to MM
+  p->CurrentMemPtr = page * 4 * 1024 * 1024 + 1024 * 1024;
+
+  Debug("Process id %d, page %u, st: %u, memptr %u\n", p->Id, page,
+        p->KernelStack, p->CurrentMemPtr);
   if (active != NULL) {
     // Copy parent's environment to child
     Memcopy((BYTE*)&p->Environment, (BYTE*)&active->Environment,
@@ -54,10 +53,9 @@ ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
   }
 
   Debug("Process id %d, memptr %u\n", p->Id, p->CurrentMemPtr);
-
   MMInitializePageDirectory(p->PageDirectory);
-  MMMap(p->PageDirectory, 16, 16 + (p->Id - 1), p->Id);
-  ;
+  MMMap(p->PageDirectory, 16, page, p->Id);
+  MMAllocatePageToProcess(page, p->Id);
 
   Debug("Commandline: %s\n", commandLine);
   strcpy(&p->Name, name, strlen(name));
@@ -134,7 +132,6 @@ void DumpProcesses() {
 STATUS ProcessSchedule(Registers* registers) {
 
   ProcessList* node;
-  // Debug("Schedule\n");
   if (processListStart->Process == NULL) {
     Debug("No processes yet\n");
     return S_FAIL;
@@ -152,6 +149,10 @@ STATUS ProcessSchedule(Registers* registers) {
   if (active) {
     if (active->State == STATE_TERMINATING) {
       Debug("%s %d died\n", active->Name, active->CpuTicks);
+
+      int pageForProcess = MMGetPageForProcess(active->Id);
+      MMFreePage(pageForProcess);
+
       Debug("ParentId was %d\n", active->ParentId);
       if (active->ParentId != 0) {
         ProcessList* node = ProcessGetProcessListNodeById(active->ParentId);
@@ -250,25 +251,8 @@ STATUS ProcessSchedule(Registers* registers) {
     active = processListStart->Process;
   }
 
-  // if (processCount > 0) {
-  //   if (foreground == active) {
-  //     currentProcess = currentProcess + 1;
-  //     if (currentProcess >= processCount) {
-  //       currentProcess = 0;
-  //     }
-  //     active = &processes[currentProcess];
-  //   } else {
-  //     active = foreground;
-  //   }
-
-  //   // Debug("Switch to process %d\n", currentProcess);
-  // }
-
   if (active) {
-    // Debug("Switching to process %s %u %u\n", active->Name, active->Entry,
-    // active->State);
     if (active->State == STATE_PENDING) {
-      // Debug("Making process running");
       Debug("Command line: %s\n", active->CommandLine);
       BYTE argcCounter = 1;
       char* c = active->CommandLine;
@@ -285,7 +269,10 @@ STATUS ProcessSchedule(Registers* registers) {
         p[cur] = KMallocInProcess(active, strlen(tok) + 1);
         Debug("%u: Found token %s at %u\n", p, tok, p[cur]);
         strcpy(p[cur], tok, strlen(tok) + 1);
-        p[cur] = p[cur] - (active->Id - 1) * 4 * 1024 * 1024;
+        // convert to virtual address
+        // TODO use a function
+        int page = MMGetPageForProcess(active->Id);
+        p[cur] = p[cur] - (page - 16) * 4 * 1024 * 1024;
         cur++;
         tok = strtok(NULL, ' ');
       }

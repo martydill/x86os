@@ -61,7 +61,8 @@ void IdleLoop();
 DWORD MMVirtualAddressToPhysicalAddress(DWORD virtualAddress) {
   ProcessId processId;
   if (ProcessGetCurrentProcess(&processId) == S_OK) {
-    DWORD phys = virtualAddress + (processId - 1) * 4 * 1024 * 1024;
+    int page = MMGetPageForProcess(processId);
+    DWORD phys = virtualAddress + (page - 16) * 4 * 1024 * 1024;
     Debug("Virt %u = phys %u for process %d\n", virtualAddress, phys,
           processId);
     return phys;
