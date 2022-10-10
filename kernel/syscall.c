@@ -21,9 +21,6 @@
 #include <fs.h>
 #include <syscall.h>
 
-// TODO
-Device* FSDeviceForPath();
-
 int SyscallKPrint(Registers* registers) {
   const char* data = (const char*)registers->ebx;
   KPrint(data);
