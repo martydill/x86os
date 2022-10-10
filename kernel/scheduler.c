@@ -8,8 +8,8 @@
 // Stack starts at 64 MB + 8k
 #define VIRTUAL_STACK_ADDRESS (64 * 1024 * 1024 + 8 * 1024)
 
+// Keep track of the next available process id
 ProcessId nextId = 1;
-BYTE processCount = 0;
 
 // Must match order of defines in process.h
 const char* const ProcessStateNames[] = {
@@ -33,9 +33,8 @@ ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
   p->Entry = (unsigned int)entryPoint;
   p->Priority = priority;
   p->KernelStack = VIRTUAL_STACK_ADDRESS;
-  p->PageDirectory =
-      (PageDirectory*)KMallocWithTagAligned(sizeof(PageDirectory), "BASE",
-                                            4096); // & 0xFFFFF000;
+  p->PageDirectory = (PageDirectory*)KMallocWithTagAligned(
+      sizeof(PageDirectory), "BASE", 4096);
   p->ParentId = active != NULL ? active->Id : 0;
 
   int page = MMGetNextFreePage();
@@ -67,7 +66,6 @@ ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
     Debug("Updating existing process list node %u %u %u\n", p, processListStart,
           processListStart->Next);
     processListStart->Process = p;
-    ++processCount;
   } else {
     Debug("Creating new process list node\n");
     Debug("Old end was %d\n", processListEnd->Process->Id);
@@ -77,7 +75,6 @@ ProcessId CreateProcess(void* entryPoint, char* name, BYTE priority,
     processListEnd->Next = next;
     next->Process = p;
     processListEnd = next;
-    ++processCount;
 
     Debug("New end is %d\n", processListEnd->Process->Id);
     Debug("Created %u %u %u %u %u %s %u\n", entryPoint, p, next,
@@ -166,8 +163,6 @@ STATUS ProcessSchedule(Registers* registers) {
                 node->Process->Id);
         }
       }
-
-      processCount--;
 
       if (node->Next) {
         node->Next->Prev = node->Prev;
