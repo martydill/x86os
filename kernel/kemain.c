@@ -199,9 +199,6 @@ void IdleLoop() {
   }
 }
 
-volatile int xPos = 0;
-volatile int yPos = 0;
-
 void KPrint(const char* format, ...) {
   va_list args;
   char buffer[8192]; // TODO make dynamic
@@ -215,9 +212,4 @@ void KPrint(const char* format, ...) {
   ConDisplayString(buffer, point.X, point.Y);
 
   return;
-}
-
-void KResetCursor() {
-  xPos = 0;
-  yPos = 0;
 }
