@@ -11,6 +11,9 @@
 // Keep track of the next available process id
 ProcessId nextId = 1;
 
+// Keep track of next available file descriptor
+int nextFileDescriptor = 1;
+
 // Must match order of defines in process.h
 const char* const ProcessStateNames[] = {
     "pending",      "waiting", "running", "terminating", "foreground_blocked",
@@ -398,8 +401,7 @@ int ProcessOpenFile(ProcessId id, char* name, BYTE* fileData, int size) {
   Process* p = node->Process;
   p->Files[0].Data = fileData;
   p->Files[0].CurrentLocation = fileData;
-  // p->Files[0].Path = &name;
-  p->Files[0].FileDescriptor = 123; // TODO use unique file descriptors
+  p->Files[0].FileDescriptor = nextFileDescriptor++;
   p->Files[0].Size = size;
   Debug("Opened fd %d with size %u at location %u\n",
         p->Files[0].FileDescriptor, size, fileData);
@@ -425,7 +427,6 @@ int ProcessReadFile(ProcessId id, int fd, void* buf, int count) {
     // buf is virtual address
     // convert to physical
     // todo consider process id
-    // Mapping 67108864-71303168 to 71303168-75497472 for process 2
     char* addr = buf + (4 * 1024 * 1024);
     Debug("Copy from %u to %u\n", p->StdinBuffer, addr);
     Memcopy((BYTE*)addr, (BYTE*)p->StdinBuffer, len);
@@ -434,6 +435,7 @@ int ProcessReadFile(ProcessId id, int fd, void* buf, int count) {
     Debug("Completed kernel mode read\n");
     return len;
   } else {
+    // TODO check file descriptor
     int bytesInFile =
         p->Files[0].Size - (p->Files[0].CurrentLocation - p->Files[0].Data);
     int bytesToRead = bytesInFile >= count ? count : bytesInFile;
