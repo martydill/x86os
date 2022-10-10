@@ -42,7 +42,7 @@ void KeEnableInterrupts();
 void SerialPortWriteString(const char* format, ...);
 
 #ifdef DEBUG
-#define Debug(args...) SerialPortWriteString(args)
+#define Debug(args...) SerialPortWriteString("%s", __FILE__); SerialPortWriteString(" %d: ", __LINE__); SerialPortWriteString(args); 
 #else
 #define Debug(args...)
 #endif

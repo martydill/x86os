@@ -1,3 +1,5 @@
+#define DEBUG 1
+
 #include <kernel.h>
 #include <process.h>
 #include <mm.h>
