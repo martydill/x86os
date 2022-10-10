@@ -1,4 +1,4 @@
-
+#define DEBUG 1
 /*
  * KeMain.c
  * Kernel entry point
@@ -21,6 +21,15 @@
 #include <fs.h>
 #include <syscall.h>
 #include <floppy.h>
+
+// Must match order in kernel_shared.h
+const char* SYSCALL_NAMES[] = {
+    TEXT(SYSCALL_EXIT),        TEXT(SYSCALL_KPRINT),   TEXT(SYSCALL_MOUNT),
+    TEXT(SYSCALL_OPEN),        TEXT(SYSCALL_READ),     TEXT(SYSCALL_WRITE),
+    TEXT(SYSCALL_POSIX_SPAWN), TEXT(SYSCALL_WAITPID),  TEXT(SYSCALL_OPENDIR),
+    TEXT(SYSCALL_READDIR),     TEXT(SYSCALL_CLOSEDIR), TEXT(SYSCALL_CHDIR),
+    TEXT(SYSCALL_GETCWD),      TEXT(SYSCALL_SLEEP),    TEXT(SYSCALL_KILL),
+    TEXT(SYSCALL_STAT),        TEXT(SYSCALL_FSTAT)};
 
 /* Enable interrupts */
 void KeEnableInterrupts(void) {
@@ -77,9 +86,11 @@ extern PageDirectory* kernelPageDirectory;
 
 void KeSysCallHandler(Registers* registers) {
   DWORD syscall = registers->eax;
-  Debug("Syscall handler %u %u %u %u %u %u %u %u %u\n", registers->eax,
-        registers->ebx, registers->ecx, registers->edx, registers->esi,
-        registers->edi, registers->ebp, registers->userEsp, registers->eip);
+  Debug("Begin %s %u %u %u %u %u %u %u %u %u\n", SYSCALL_NAMES[syscall],
+        registers->eax, registers->ebx, registers->ecx, registers->edx,
+        registers->esi, registers->edi, registers->ebp, registers->userEsp,
+        registers->eip);
+
   if (syscall == SYSCALL_EXIT) {
     registers->eax = SyscallExit(registers);
   } else if (syscall == SYSCALL_KPRINT) {
@@ -97,28 +108,24 @@ void KeSysCallHandler(Registers* registers) {
   } else if (syscall == SYSCALL_OPENDIR) {
     registers->eax = SyscallOpendir(registers);
   } else if (syscall == SYSCALL_READDIR) {
-    Debug("SYSCALL_READDIR %d\n", registers->ebx);
     registers->eax = SyscallReaddir(registers);
   } else if (syscall == SYSCALL_CLOSEDIR) {
-    Debug("SYSCALL_CLOSEDIR %d\n", registers->ebx);
     // TODO implement this
     registers->eax = SyscallClosedir(registers);
   } else if (syscall == SYSCALL_CHDIR) {
     registers->eax = SyscallChdir(registers);
   } else if (syscall == SYSCALL_GETCWD) {
-    Debug("SYSCALL_GETCWD");
     registers->eax = SyscallGetcwd(registers);
   } else if (syscall == SYSCALL_SLEEP) {
     registers->eax = SyscallSleep(registers);
   } else if (syscall == SYSCALL_KILL) {
-    Debug("SYSCALL_KILL %u\n", registers->ebx);
     registers->eax = SyscallKill(registers);
   } else if (syscall == SYSCALL_STAT) {
     registers->eax = SyscallStat(registers);
   } else {
     KePanic(registers);
   }
-  Debug("Done syscall handler %u, returning to %u for stack %u\n", syscall,
+  Debug("End %s %u, returning to %u for stack %u\n", SYSCALL_NAMES[syscall],
         registers->eip, registers->userEsp);
 }
 

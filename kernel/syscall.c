@@ -131,8 +131,6 @@ int SyscallPosixSpawn(Registers* registers) {
   DWORD pidPhysicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
   DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ecx);
   DWORD argvAddress = MMVirtualAddressToPhysicalAddress(registers->esi);
-  Debug("SYSCALL_POSIX_SPAWN path: %u %s argv: %u %s\n", physicalAddress,
-        physicalAddress, argvAddress, argvAddress);
   int size;
   BYTE* fileData = (BYTE*)FloppyReadFile((char*)physicalAddress, &size);
   if (fileData == NULL) {
@@ -152,7 +150,6 @@ int SyscallPosixSpawn(Registers* registers) {
 int SyscallOpendir(Registers* registers) {
   const char* dirName =
       (const char*)MMVirtualAddressToPhysicalAddress(registers->ebx);
-  Debug("SYSCALL_OPENDIR %s\n", dirName);
 
   char buf[255];
   Process* active = ProcessGetActiveProcess();
@@ -200,7 +197,6 @@ int SyscallWaitpid(Registers* registers) {
 } // TODO ssize_t, size_t
 
 int SyscallKill(Registers* registers) {
-  Debug("SYSCALL_KILL %u\n", registers->ebx);
   if (ProcessTerminate(registers->ebx) == S_OK) {
     Debug("Killed %d\n", registers->ebx);
     return 0;
@@ -211,7 +207,6 @@ int SyscallKill(Registers* registers) {
 }
 
 int SyscallSleep(Registers* registers) {
-  Debug("SYSCALL_SLEEP %u\n", registers->ebx);
   Process* active = ProcessGetActiveProcess();
   ProcessSleep(active, registers->ebx);
   ProcessSchedule(registers);
@@ -226,8 +221,6 @@ int SyscallStat(Registers* registers) {
   DWORD statbufPhysicalAddress =
       MMVirtualAddressToPhysicalAddress(registers->ecx);
   struct stat* statbuf = (struct stat*)statbufPhysicalAddress;
-  Debug("SYSCALL_STAT: %d %s %d\n", registers->ebx, name,
-        statbufPhysicalAddress);
 
   char buf[255];
   Process* active = ProcessGetActiveProcess();
@@ -266,7 +259,6 @@ int SyscallStat(Registers* registers) {
 }
 
 int SyscallChdir(Registers* registers) {
-  Debug("SYSCALL_CHDIR\n");
   Process* active = ProcessGetActiveProcess();
 
   char currentDir[255];
@@ -306,7 +298,6 @@ int SyscallChdir(Registers* registers) {
 }
 
 int SyscallGetcwd(Registers* registers) {
-  Debug("SYSCALL_GETCWD");
   DWORD physicalAddress = MMVirtualAddressToPhysicalAddress(registers->ebx);
   Process* active = ProcessGetActiveProcess();
   // TODO use caller's length

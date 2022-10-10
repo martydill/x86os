@@ -1,9 +1,12 @@
 
 #ifndef SYSCALL_H
 #define SYSCALL_H
+
 #include <kernel_shared.h>
 #include <kernel.h>
 #include <interrupt.h>
+
+#define TEXT(X) #X
 
 int SyscallKPrint(Registers* registers);
 int SyscallExit(Registers* registers);
