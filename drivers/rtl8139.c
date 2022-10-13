@@ -1,3 +1,4 @@
+#define DEBUG
 
 /*
 rtl8139.c
@@ -6,6 +7,7 @@ References:
 https://people.freebsd.org/~wpaul/RealTek/spec-8139c%28160%29.pdf
 https://wiki.osdev.org/RTL8139
 https://www.wfbsoftware.de/realtek-rtl8139-network-interface-card/
+https://en.wikipedia.org/wiki/Address_Resolution_Protocol
 */
 
 #include <kernel_shared.h>
@@ -50,8 +52,29 @@ typedef struct {
   char Buffer[1792];
 } RtlTransmitBuffer;
 
-RtlTransmitBuffer TransmitBuffers[4];
+// https://en.wikipedia.org/wiki/Ethernet_frame
+typedef struct {
+  BYTE Preamble[7];
+  BYTE StartFrameDelimiter;
+  BYTE DestMacAddress[6];
+  BYTE SrcMacAddress[6];
+  WORD Length;
+} EthernetPacket;
 
+typedef struct {
+  WORD HType;
+  WORD PType;
+  BYTE HLen;
+  BYTE PLen;
+  WORD Oper;
+  WORD Sha[3];
+  DWORD Spa;
+  WORD Tha[3];
+  DWORD Tpa;
+} ARPPacket;
+
+RtlTransmitBuffer TransmitBuffers[4];
+BYTE macAddress[6];
 char tsad[255];
 int CurrentTransmitBuffer = 0;
 
@@ -129,6 +152,12 @@ STATUS Rtl8139Init(PciDevice* pciDevice) {
   IoWritePortByte(baseAddress + RTL_COMMAND_OFFSET, RTL_COMMAND_RST);
   while ((IoReadPortByte(baseAddress + RTL_COMMAND_OFFSET) & RTL_COMMAND_RST) !=
          0) {
+  }
+
+  // Get MAC Addres
+  // TODO need hex support in KPrint to display it
+  for (int i = 0; i < 6; ++i) {
+    macAddress[i] = IoReadPortByte(baseAddress + i);
   }
 
   // Enable reads and writes
