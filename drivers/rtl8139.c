@@ -50,16 +50,15 @@ typedef struct {
   DWORD TsadOffset;
   DWORD TsdOffset;
   char Buffer[1792];
-} RtlTransmitBuffer;
+} __attribute__((packed)) RtlTransmitBuffer;
 
 // https://en.wikipedia.org/wiki/Ethernet_frame
 typedef struct {
-  BYTE Preamble[7];
-  BYTE StartFrameDelimiter;
   BYTE DestMacAddress[6];
   BYTE SrcMacAddress[6];
   WORD Length;
-} EthernetPacket;
+  BYTE Payload[255];
+} __attribute__((packed)) EthernetPacket;
 
 typedef struct {
   WORD HType;
@@ -71,7 +70,7 @@ typedef struct {
   DWORD Spa;
   WORD Tha[3];
   DWORD Tpa;
-} ARPPacket;
+} __attribute__((packed)) ARPPacket;
 
 RtlTransmitBuffer TransmitBuffers[4];
 BYTE macAddress[6];
@@ -103,8 +102,16 @@ STATUS Rtl8139Send(char* data) {
   const DWORD baseAddress = rtl->bar0;
   const RtlTransmitBuffer* transmitBuffer =
       &TransmitBuffers[CurrentTransmitBuffer];
-  const int length = strlen(data);
-  Memcopy(transmitBuffer->Buffer, data, length);
+
+  EthernetPacket packet;
+
+  Memset(packet.DestMacAddress, 255, 6);
+  Memcopy(packet.SrcMacAddress, macAddress, sizeof(macAddress));
+  Memcopy(packet.Payload, data, sizeof(ARPPacket));
+  packet.Length = 0x0608;
+
+  const int length = 64;
+  Memcopy(transmitBuffer->Buffer, &packet, length);
 
   IoWritePortDword(baseAddress + transmitBuffer->TsadOffset,
                    transmitBuffer->Buffer);
@@ -124,6 +131,7 @@ STATUS Rtl8139Send(char* data) {
 
   return S_OK;
 }
+#define SWAP_WORD(x) ((x >> 8) | (x << 8))
 
 STATUS Rtl8139Init(PciDevice* pciDevice) {
   KPrint("Starting RTL8139 init for %u %u\n", pciDevice->bar0, pciDevice->bar1);
@@ -158,14 +166,24 @@ STATUS Rtl8139Init(PciDevice* pciDevice) {
   // TODO need hex support in KPrint to display it
   for (int i = 0; i < 6; ++i) {
     macAddress[i] = IoReadPortByte(baseAddress + i);
+    KPrint("*%d*", macAddress[i]);
   }
 
   // Enable reads and writes
   IoWritePortByte(baseAddress + RTL_COMMAND_OFFSET, RTL_COMMAND_TE);
   IoWritePortDword(baseAddress + RTL_TCR_OFFSET, 0x03000600);
 
-  Rtl8139Send("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-  Rtl8139Send("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb");
+  ARPPacket arp;
+  arp.HType = SWAP_WORD(1);
+  arp.PType = SWAP_WORD(0x0800);
+  arp.HLen = 6;
+  arp.PLen = 4;
+  arp.Oper = SWAP_WORD(1);
+  Memcopy(arp.Sha, macAddress, 6);
+  arp.Spa = 8156233232;
+  Memset(arp.Tha, 0, sizeof(arp.Tha));
+  arp.Tpa = 134744072; // 3232235521;
+  Rtl8139Send((char*)&arp);
 
   KPrint("Done RTL8139 init\n");
   return S_OK;
