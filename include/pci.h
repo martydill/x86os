@@ -24,10 +24,22 @@ typedef struct PciDevice_S {
   DWORD bar3;
   DWORD bar4;
   DWORD bar5;
+  DWORD cardbus;
+  WORD subsystemVendorId;
+  WORD subsystemId;
+  DWORD expansionRomBaseAddress;
+  BYTE capabilitiesPointer;
+  BYTE reserved[3];
+  DWORD reserved2;
+  BYTE interruptLine;
+  BYTE interruptPin;
+  BYTE minGrant;
+  BYTE maxLatency;
+
   // Not actually part of the PCI spec, just extra accounting fields
   DWORD bus;
   DWORD device;
-} PciDevice;
+} __attribute__((packed)) PciDevice;
 
 DWORD PciReadConfigByte(BYTE bus, BYTE device, BYTE function, BYTE reg);
 STATUS PciInit(void);

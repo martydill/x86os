@@ -3,7 +3,7 @@
  * pci.c
  * pci driver
  */
-
+#define DEBUG 1
 #include <kernel.h>
 #include <pci.h>
 #include <interrupt.h>
@@ -143,14 +143,14 @@ STATUS PciInit(void) {
 
   for (BYTE bus = 0; bus < 0xFF; ++bus) {
     for (BYTE device = 0; device < 0x16; ++device) {
-      DWORD rawBytes[5];
-      for (int i = 0; i < 5; ++i) {
+      DWORD rawBytes[16];
+      for (int i = 0; i < 16; ++i) {
         DWORD result = PciReadConfigByte(bus, device, 0, i);
         rawBytes[i] = result;
       }
       PciDevice dev;
       Memset(&dev, 0, sizeof(PciDevice));
-      Memcopy((BYTE*)&dev, (BYTE*)&rawBytes, 5 * sizeof(DWORD));
+      Memcopy((BYTE*)&dev, (BYTE*)&rawBytes, sizeof(PciDevice) - 8);
 
       if (dev.vendorId == PCI_INVALID_VENDOR)
         continue;
@@ -164,9 +164,9 @@ STATUS PciInit(void) {
       dev.bar4 = dev.bar4 & 0xFFFFFFF0;
       dev.bar5 = dev.bar5 & 0xFFFFFFF0;
 
-      KPrint("%s %d, %s\n", PciGetVendor(dev.vendorId), dev.deviceId,
-             PciGetDevice(dev.vendorId, dev.deviceId),
-             PciGetClass(dev.classCode));
+      KPrint("%s %d, %s, %d, interrupt %d\n", PciGetVendor(dev.vendorId),
+             dev.deviceId, PciGetDevice(dev.vendorId, dev.deviceId),
+             PciGetClass(dev.classCode), dev.interruptLine);
 
       if (dev.deviceId == 0x8139) {
         PciEnableBusMaster(&dev);
