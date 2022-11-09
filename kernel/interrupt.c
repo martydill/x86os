@@ -1,4 +1,4 @@
-
+#define DEBUG 1
 #include <kernel.h>
 #include <interrupt.h>
 #include <io.h>
@@ -153,6 +153,10 @@ void InitializeIDT(void) {
   Memset((void*)&idtTable, 0, 256 * sizeof(struct IDTEntry_S));
   Memset((void*)&irqHandlers, 0, MAX_IRQ * sizeof(void*));
 
+  // Unmask all interrupts so that everything can fire
+  IoWritePortByte(PIC1_DATA, 0x00);
+  IoWritePortByte(PIC2_DATA, 0x00);
+
   /* Standard exceptions */
   AddKernelModeHandler(0, _interrupt0);
   AddKernelModeHandler(1, _interrupt1);
@@ -199,6 +203,13 @@ void InitializeIDT(void) {
   AddKernelModeHandler(39, _interrupt39);
   AddKernelModeHandler(40, _interrupt40);
   AddKernelModeHandler(41, _interrupt41);
+  AddKernelModeHandler(42, _interrupt42);
+  AddKernelModeHandler(43, _interrupt43);
+  AddKernelModeHandler(44, _interrupt44);
+  AddKernelModeHandler(45, _interrupt45);
+  AddKernelModeHandler(46, _interrupt46);
+  AddKernelModeHandler(47, _interrupt47);
+  AddKernelModeHandler(48, _interrupt48);
   AddKernelModeHandler(112, _interrupt112);
 
   // Syscall handler is in user mode
@@ -244,12 +255,15 @@ void KeExceptionHandler(Registers* registers) {
   /* remapped irq */
   // irq = registers->interruptNumber;// - MAX_INTERRUPT;
   // Assert(irq < MAX_IRQ && irq < sizeof(irqHandlers));
-
+  if (registers->interruptNumber != 32) {
+    Debug("Interrupt %d\n", registers->interruptNumber);
+  }
   void (*handler)() = irqHandlers[registers->interruptNumber];
-  if (handler == NULL)
+  if (handler == NULL) {
     Debug("NULL handler for interrupt %d\r\n", registers->interruptNumber);
-  else
+  } else {
     handler(registers);
+  }
 
   /* If this is an IRQ handler, tell the PIC we are done */
   if (registers->interruptNumber >= MAX_INTERRUPT) {

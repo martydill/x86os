@@ -185,6 +185,55 @@ _interrupt41:
 	push 41
 	jmp _interrupt_handler
 
+global _interrupt42
+_interrupt42:
+	cli
+	push 0
+	push 42
+	jmp _interrupt_handler
+
+global _interrupt43
+_interrupt43:
+	cli
+	push 0
+	push 43
+	jmp _interrupt_handler
+
+
+global _interrupt44
+_interrupt44:
+	cli
+	push 0
+	push 44
+	jmp _interrupt_handler
+
+global _interrupt45
+_interrupt45:
+	cli
+	push 0
+	push 45
+	jmp _interrupt_handler
+
+global _interrupt46
+_interrupt46:
+	cli
+	push 0
+	push 46
+	jmp _interrupt_handler
+
+global _interrupt47
+_interrupt47:
+	cli
+	push 0
+	push 47
+	jmp _interrupt_handler
+
+global _interrupt48
+_interrupt48:
+	cli
+	push 0
+	push 48
+	jmp _interrupt_handler
 
 global _interrupt112
 _interrupt112:
