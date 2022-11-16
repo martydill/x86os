@@ -1,10 +1,11 @@
-#define DEBUG
+#define DEBUG 1
 
 /*
 rtl8139.c
 A simple driver for the rtl8139 network card.
 References:
 https://people.freebsd.org/~wpaul/RealTek/spec-8139c%28160%29.pdf
+https://www.cs.usfca.edu/~cruse/cs326f04/RTL8139_ProgrammersGuide.pdf
 https://wiki.osdev.org/RTL8139
 https://www.wfbsoftware.de/realtek-rtl8139-network-interface-card/
 https://en.wikipedia.org/wiki/Address_Resolution_Protocol
@@ -20,6 +21,8 @@ https://en.wikipedia.org/wiki/Address_Resolution_Protocol
 #include <dma.h>
 #include <elf.h>
 #include "pci.h"
+
+#define RBSTART 0x30
 
 #define RTL_CONFIG1_OFFSET 0x52
 #define RTL_COMMAND_OFFSET 0x37
@@ -39,18 +42,37 @@ https://en.wikipedia.org/wiki/Address_Resolution_Protocol
 #define RTL_TCR_OFFSET 0x40
 #define RTL_RCR_OFFSET 0x44
 
+#define RTL_RCR_ACCEPT_BROADCAST (1 << 3)
+#define RTL_RCR_ACCEPT_MULTICAST (1 << 2)
+#define RTL_RCR_ACCEPT_PHYSICAL_MATCH (1 << 1)
+#define RTL_RCR_ACCEPT_PHYSICAL_ADDRESS (1 << 0)
+
 #define RTL_COMMAND_RST (1 << 4)
 #define RTL_COMMAND_RE (1 << 3)
 #define RTL_COMMAND_TE (1 << 2)
 
+#define IMR_ROK 1 << 0
+#define IMR_TOK 1 << 2
+
+#define ISR_ROK 1 << 0
+#define ISR_TOK 1 << 2
+
+#define RTL_IMR 0x03c
+#define RTL_ISR 0x03e
+
 Device device;
-PciDevice* rtl;
+PciDevice* rtl = 0;
 
 typedef struct {
   DWORD TsadOffset;
   DWORD TsdOffset;
   char Buffer[1792];
 } __attribute__((packed)) RtlTransmitBuffer;
+
+typedef struct {
+  char Buffer[8192 + 16];
+  WORD ReceivePointerOffset;
+} __attribute__((packed)) RTLReceiveBuffer;
 
 // https://en.wikipedia.org/wiki/Ethernet_frame
 typedef struct {
@@ -73,6 +95,7 @@ typedef struct {
 } __attribute__((packed)) ARPPacket;
 
 RtlTransmitBuffer TransmitBuffers[4];
+RTLReceiveBuffer ReceiveBuffer;
 BYTE macAddress[6];
 char tsad[255];
 int CurrentTransmitBuffer = 0;
@@ -116,22 +139,58 @@ STATUS Rtl8139Send(char* data) {
   IoWritePortDword(baseAddress + transmitBuffer->TsadOffset,
                    transmitBuffer->Buffer);
 
-  Debug("Sending %d bytes at '%s'\n", length, transmitBuffer->Buffer);
   DWORD status = 0;
   status |= length & 0x1FFF;
   status |= 0 << 13;
+
   IoWritePortDword(baseAddress + transmitBuffer->TsdOffset, status);
+
   Rtl8139WaitForTransmit();
 
   CurrentTransmitBuffer++;
   if (CurrentTransmitBuffer >= 3) {
     CurrentTransmitBuffer = 0;
   }
-  KPrint("Switched to transmit buffer: %u\n", CurrentTransmitBuffer);
+  Debug("Switched to transmit buffer: %u\n", CurrentTransmitBuffer);
 
   return S_OK;
 }
 #define SWAP_WORD(x) ((x >> 8) | (x << 8))
+#define SWAP_DWORD(x)                                                          \
+  ((x >> 24) & 0xff) | ((x << 8) & 0xff0000) | ((x >> 8) & 0xff00) |           \
+      ((x << 24) & 0xff000000)
+
+void Rtl8139Interrupt(Registers* registers) {
+  const DWORD baseAddress = rtl->bar0;
+  // IoWritePortWord(baseAddress + RTL_IMR, 0);
+
+  WORD result = IoReadPortWord(baseAddress + RTL_ISR);
+  if (result == 0) {
+    // No actual interrupt here, do nothing
+    return;
+  }
+  if (result & ISR_TOK) {
+    // Successful transmit
+    Debug("Successful transmit\n");
+    IoWritePortWord(baseAddress + RTL_ISR, ISR_TOK);
+  }
+  if (result & ISR_ROK) {
+    Debug("Successful receive\n");
+    // Receive buffer contains a header and a length, each two bytes. Skip
+    // them.
+    DWORD addr = ReceiveBuffer.Buffer + ReceiveBuffer.ReceivePointerOffset;
+    EthernetPacket* ep = addr + 4;
+    Debug("Source: %s  Dest: %d:%d:%d:%d:%d:%d  Len: %d\n", ep->SrcMacAddress,
+          ep->DestMacAddress[0], ep->DestMacAddress[1], ep->DestMacAddress[2],
+          ep->DestMacAddress[3], ep->DestMacAddress[4], ep->DestMacAddress[5],
+          ep->Length);
+
+    IoWritePortWord(baseAddress + RTL_ISR, ISR_ROK);
+  }
+  if (!(result & ISR_ROK) && !(result & ISR_TOK)) {
+    Debug("Other: %d\n", result);
+  }
+}
 
 STATUS Rtl8139Init(PciDevice* pciDevice) {
   KPrint("Starting RTL8139 init for %u %u\n", pciDevice->bar0, pciDevice->bar1);
@@ -170,9 +229,27 @@ STATUS Rtl8139Init(PciDevice* pciDevice) {
   }
 
   // Enable reads and writes
-  IoWritePortByte(baseAddress + RTL_COMMAND_OFFSET, RTL_COMMAND_TE);
+  IoWritePortByte(baseAddress + RTL_COMMAND_OFFSET,
+                  RTL_COMMAND_TE | RTL_COMMAND_RE);
   IoWritePortDword(baseAddress + RTL_TCR_OFFSET, 0x03000600);
+  IoWritePortWord(baseAddress + 0x44, 0xf | (1 << 7));
 
+  // Enable reads of everything for now
+  IoWritePortDword(baseAddress + RTL_RCR_OFFSET,
+                   //  RTL_RCR_ACCEPT_BROADCAST | RTL_RCR_ACCEPT_MULTICAST |
+                   //  RTL_RCR_ACCEPT_PHYSICAL_ADDRESS |
+                   RTL_RCR_ACCEPT_PHYSICAL_MATCH);
+
+  // Enable read and write interrupts
+  IoWritePortWord(baseAddress + RTL_IMR, IMR_ROK | IMR_TOK);
+
+  // Configure read buffer
+  ReceiveBuffer.ReceivePointerOffset = 0;
+  IoWritePortDword(baseAddress + RBSTART, &ReceiveBuffer.Buffer);
+
+  InstallIrqHandler(pciDevice->interruptLine, Rtl8139Interrupt);
+
+  // BUild and send an arp packet
   ARPPacket arp;
   arp.HType = SWAP_WORD(1);
   arp.PType = SWAP_WORD(0x0800);
@@ -180,12 +257,15 @@ STATUS Rtl8139Init(PciDevice* pciDevice) {
   arp.PLen = 4;
   arp.Oper = SWAP_WORD(1);
   Memcopy(arp.Sha, macAddress, 6);
-  arp.Spa = 8156233232;
-  Memset(arp.Tha, 0, sizeof(arp.Tha));
-  arp.Tpa = 134744072; // 3232235521;
+  arp.Spa = 0; // SWAP_DWORD(3232235619);
+  Memset(arp.Tha, 0xFF, sizeof(arp.Tha));
+  arp.Tpa = SWAP_DWORD(3232235682);
+
   Rtl8139Send((char*)&arp);
 
-  KPrint("Done RTL8139 init\n");
+  KPrint("Done RTL8139 init, interrupt %u %u %u, line %u, pin %u\n",
+         pciDevice->maxLatency, pciDevice->minGrant, pciDevice->vendorId,
+         pciDevice->interruptLine, pciDevice->interruptPin);
   return S_OK;
 }
 
