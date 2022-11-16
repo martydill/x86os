@@ -22,6 +22,8 @@ https://en.wikipedia.org/wiki/Address_Resolution_Protocol
 #include <elf.h>
 #include "pci.h"
 
+#define ETHERTYPE_ARP 2054
+
 #define RBSTART 0x30
 
 #define RTL_CONFIG1_OFFSET 0x52
@@ -155,10 +157,24 @@ STATUS Rtl8139Send(char* data) {
 
   return S_OK;
 }
-#define SWAP_WORD(x) ((x >> 8) | (x << 8))
+#define SWAP_WORD(x) (((x & 0x00ff) << 8) | ((x & 0xff00) >> 8))
 #define SWAP_DWORD(x)                                                          \
   ((x >> 24) & 0xff) | ((x << 8) & 0xff0000) | ((x >> 8) & 0xff00) |           \
       ((x << 24) & 0xff000000)
+
+void HandleEthernetPacket(EthernetPacket* packet) {
+  WORD type = SWAP_WORD(packet->Length);
+  Debug("Source: %s  Dest: %d:%d:%d:%d:%d:%d  Len: %d\n", packet->SrcMacAddress,
+        packet->DestMacAddress[0], packet->DestMacAddress[1],
+        packet->DestMacAddress[2], packet->DestMacAddress[3],
+        packet->DestMacAddress[4], packet->DestMacAddress[5], type);
+
+  if (type == ETHERTYPE_ARP) {
+    ARPPacket* p = packet->Payload;
+    Debug("Arp packet sha: %s spa: %d tha: %s tpa: %d\n", p->Sha, p->Spa,
+          p->Tha, p->Tpa);
+  }
+}
 
 void Rtl8139Interrupt(Registers* registers) {
   const DWORD baseAddress = rtl->bar0;
@@ -180,10 +196,7 @@ void Rtl8139Interrupt(Registers* registers) {
     // them.
     DWORD addr = ReceiveBuffer.Buffer + ReceiveBuffer.ReceivePointerOffset;
     EthernetPacket* ep = addr + 4;
-    Debug("Source: %s  Dest: %d:%d:%d:%d:%d:%d  Len: %d\n", ep->SrcMacAddress,
-          ep->DestMacAddress[0], ep->DestMacAddress[1], ep->DestMacAddress[2],
-          ep->DestMacAddress[3], ep->DestMacAddress[4], ep->DestMacAddress[5],
-          ep->Length);
+    HandleEthernetPacket(ep);
 
     IoWritePortWord(baseAddress + RTL_ISR, ISR_ROK);
   }
