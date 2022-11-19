@@ -170,10 +170,40 @@ void HandleEthernetPacket(EthernetPacket* packet) {
         packet->DestMacAddress[4], packet->DestMacAddress[5], type);
 
   if (type == ETHERTYPE_ARP) {
-    ARPPacket* p = packet->Payload;
-    Debug("Arp packet sha: %s spa: %d tha: %s tpa: %d\n", p->Sha, p->Spa,
-          p->Tha, p->Tpa);
+    HandleArpPacket((ARPPacket*)packet->Payload);
   }
+}
+
+typedef DWORD in_addr_t;
+struct in_addr {
+  in_addr_t s_addr;
+};
+
+typedef DWORD uint32_t;
+
+// https://pubs.opengroup.org/onlinepubs/9699919799/functions/htonl.html
+uint32_t ntohl(uint32_t netlong) { return SWAP_DWORD(netlong); }
+
+// https://pubs.opengroup.org/onlinepubs/009695399/functions/inet_addr.html
+char* inet_ntoa(struct in_addr in) {
+  static char inetBuf[4 * sizeof("255")];
+  DWORD ip = ntohl(in.s_addr);
+  BYTE octet1 = (ip >> 24) & 0xFF;
+  BYTE octet2 = (ip >> 16) & 0xFF;
+  BYTE octet3 = (ip >> 8) & 0xFF;
+  BYTE octet4 = ip & 0xFF;
+  sprintf(sizeof(inetBuf), inetBuf, "%u.%u.%u.%u", octet1, octet2, octet3,
+          octet4);
+  return inetBuf;
+}
+
+void HandleArpPacket(ARPPacket* p) {
+  Debug("Arp packet sha: %s spa: %u tha: %s tpa: %u\n", p->Sha, p->Spa, p->Tha,
+        p->Tpa);
+
+  struct in_addr addr;
+  addr.s_addr = p->Spa;
+  Debug("Sender ip: %s\n", inet_ntoa(addr));
 }
 
 void Rtl8139Interrupt(Registers* registers) {
