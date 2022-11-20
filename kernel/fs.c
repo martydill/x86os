@@ -1,4 +1,4 @@
-
+#define DEBUG 1
 
 #include <kernel.h>
 #include <kernel_shared.h>
@@ -7,6 +7,7 @@
 
 Filesystem* RootFS = NULL;
 Filesystem* ProcFS = NULL;
+Filesystem* NetFS = NULL;
 Filesystem* NullFS = NULL;
 
 Filesystem* FSMount(char* deviceName, char* mountPoint, BYTE type,
@@ -104,6 +105,9 @@ STATUS FSInit() {
 
   ProcFS = FSMount("procfs", "/proc", FS_TYPE_VIRTUAL, RootFS);
   Debug("Found procfs %u %s\n", ProcFS, ProcFS->MountPoint);
+
+  NetFS = FSMount("netfs", "/net", FS_TYPE_VIRTUAL, RootFS);
+  Debug("Found netfs%u %s\n", NetFS, NetFS->MountPoint);
 
   NullFS = FSMount("null", "/null", FS_TYPE_VIRTUAL, RootFS);
   Debug("Found null %u %s\n", NullFS, NullFS->MountPoint);

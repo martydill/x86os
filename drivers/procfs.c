@@ -3,7 +3,6 @@
 #include <device.h>
 #include <process.h>
 #include <kernel_shared.h>
-#include <process.h>
 
 #define PROC_FIELD_CMDLINE "cmdline"
 #define PROC_FIELD_ID "id"
